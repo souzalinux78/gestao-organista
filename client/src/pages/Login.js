@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { login } from '../services/api';
 import './Login.css';
 
@@ -9,6 +10,7 @@ function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { updateUser } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,10 +21,10 @@ function Login() {
       const response = await login(email, senha);
       const { token, user, igrejas } = response.data;
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('igrejas', JSON.stringify(igrejas));
+      // Atualizar estado do usuário através do contexto
+      updateUser(user, token, igrejas);
 
+      // Navegar para home
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Erro ao fazer login');

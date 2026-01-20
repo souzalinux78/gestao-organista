@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Organistas from './pages/Organistas';
 import Igrejas from './pages/Igrejas';
@@ -10,31 +11,18 @@ import InstallPrompt from './components/InstallPrompt';
 import './App.css';
 
 function PrivateRoute({ children }) {
+  const { user, loading } = useAuth();
   const token = localStorage.getItem('token');
+  
+  if (loading) {
+    return <div className="loading">Carregando...</div>;
+  }
+  
   return token ? children : <Navigate to="/login" />;
 }
 
-function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-    }
-    setLoading(false);
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('igrejas');
-    setUser(null);
-    window.location.href = '/login';
-  };
+function AppContent() {
+  const { user, loading, logout } = useAuth();
 
   if (loading) {
     return <div className="loading">Carregando...</div>;
@@ -43,7 +31,7 @@ function App() {
   return (
     <Router>
       <div className="App">
-        {user && <Header user={user} onLogout={handleLogout} />}
+        {user && <Header user={user} onLogout={logout} />}
         <div className="container">
           <Routes>
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
@@ -60,6 +48,14 @@ function App() {
         <InstallPrompt />
       </div>
     </Router>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
