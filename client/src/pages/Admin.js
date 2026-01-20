@@ -46,7 +46,12 @@ function Admin() {
     e.preventDefault();
     try {
       if (editing) {
-        await updateUsuario(editing.id, formData);
+        // Se estiver editando, só enviar senha se ela foi preenchida
+        const dataToSend = { ...formData };
+        if (!dataToSend.senha || dataToSend.senha.trim() === '') {
+          delete dataToSend.senha; // Não enviar senha vazia
+        }
+        await updateUsuario(editing.id, dataToSend);
         showAlert('Usuário atualizado com sucesso!');
       } else {
         await createUsuario(formData);

@@ -169,13 +169,24 @@ router.get('/usuarios', authenticate, isAdmin, async (req, res) => {
 // Atualizar usuário (apenas admin)
 router.put('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
   try {
-    const { nome, email, role, ativo, igreja_ids } = req.body;
+    const { nome, email, senha, role, ativo, igreja_ids } = req.body;
     const pool = db.getDb();
 
     // Verificar se usuário existe
     const [users] = await pool.execute('SELECT * FROM usuarios WHERE id = ?', [req.params.id]);
     if (users.length === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Verificar se email já está em uso por outro usuário
+    if (email) {
+      const [existing] = await pool.execute(
+        'SELECT id FROM usuarios WHERE email = ? AND id != ?',
+        [email, req.params.id]
+      );
+      if (existing.length > 0) {
+        return res.status(400).json({ error: 'Email já está em uso por outro usuário' });
+      }
     }
 
     // Atualizar dados do usuário
@@ -189,6 +200,12 @@ router.put('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
     if (email) {
       updates.push('email = ?');
       values.push(email);
+    }
+    if (senha) {
+      // Hash da senha antes de atualizar
+      const senhaHash = await bcrypt.hash(senha, 10);
+      updates.push('senha_hash = ?');
+      values.push(senhaHash);
     }
     if (role) {
       updates.push('role = ?');
