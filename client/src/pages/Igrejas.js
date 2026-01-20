@@ -307,21 +307,66 @@ function Igrejas({ user }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000
+          zIndex: 1000,
+          padding: '15px',
+          boxSizing: 'border-box',
+          overflow: 'auto'
         }}>
-          <div className="card" style={{ maxWidth: '600px', maxHeight: '80vh', overflow: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2>Organistas Oficializadas - {selectedIgreja.nome}</h2>
-              <button className="btn btn-secondary" onClick={() => setShowOrganistasModal(false)}>
+          <div className="card" style={{ 
+            maxWidth: '600px', 
+            width: '100%',
+            maxHeight: '90vh', 
+            overflow: 'auto',
+            margin: 'auto',
+            position: 'relative'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '20px',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              <h2 style={{ 
+                fontSize: 'clamp(1.1rem, 4vw, 1.5rem)',
+                margin: 0,
+                flex: '1 1 auto',
+                minWidth: '200px'
+              }}>
+                Organistas Oficializadas - {selectedIgreja.nome}
+              </h2>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowOrganistasModal(false)}
+                style={{ 
+                  minWidth: '80px',
+                  flexShrink: 0
+                }}
+              >
                 Fechar
               </button>
             </div>
             
-            <h3 style={{ marginBottom: '15px' }}>Adicionar Organista</h3>
+            <h3 style={{ 
+              marginBottom: '15px',
+              fontSize: 'clamp(1rem, 3.5vw, 1.2rem)'
+            }}>Adicionar Organista</h3>
             {allOrganistas.filter(o => !organistasIgreja.find(oi => oi.id === o.id)).length === 0 ? (
-              <div style={{ padding: '15px', background: '#fff3cd', border: '1px solid #ffc107', borderRadius: '4px', marginBottom: '20px' }}>
+              <div style={{ 
+                padding: '15px', 
+                background: '#fff3cd', 
+                border: '1px solid #ffc107', 
+                borderRadius: '4px', 
+                marginBottom: '20px',
+                fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)'
+              }}>
                 <strong>⚠️ Nenhuma organista disponível</strong>
-                <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem' }}>
+                <p style={{ 
+                  margin: '5px 0 0 0', 
+                  fontSize: 'clamp(0.8rem, 2.2vw, 0.9rem)',
+                  lineHeight: '1.5'
+                }}>
                   Todas as organistas oficializadas já estão associadas a esta igreja, ou não há organistas marcadas como "Oficializada" e "Ativa".
                   <br />
                   Vá em "Organistas" e verifique se há organistas marcadas como oficializadas.
@@ -336,7 +381,15 @@ function Igrejas({ user }) {
                       e.target.value = '';
                     }
                   }}
-                  style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px', 
+                    marginBottom: '10px',
+                    fontSize: '16px',
+                    borderRadius: '8px',
+                    border: '2px solid var(--gray-medium)',
+                    boxSizing: 'border-box'
+                  }}
                 >
                   <option value="">Selecione uma organista oficializada...</option>
                   {allOrganistas
@@ -348,26 +401,51 @@ function Igrejas({ user }) {
                     ))}
                 </select>
                 {allOrganistas.filter(o => !organistasIgreja.find(oi => oi.id === o.id)).length > 0 ? (
-                  <p style={{ fontSize: '0.85rem', color: '#28a745', margin: '5px 0', fontWeight: '600' }}>
+                  <p style={{ 
+                    fontSize: 'clamp(0.8rem, 2.2vw, 0.9rem)', 
+                    color: '#28a745', 
+                    margin: '5px 0', 
+                    fontWeight: '600' 
+                  }}>
                     ✅ {allOrganistas.filter(o => !organistasIgreja.find(oi => oi.id === o.id)).length} organista(s) disponível(is) para adicionar
                   </p>
                 ) : allOrganistas.length > 0 ? (
-                  <p style={{ fontSize: '0.85rem', color: '#ffc107', margin: '5px 0', fontWeight: '600' }}>
+                  <p style={{ 
+                    fontSize: 'clamp(0.8rem, 2.2vw, 0.9rem)', 
+                    color: '#ffc107', 
+                    margin: '5px 0', 
+                    fontWeight: '600' 
+                  }}>
                     ⚠️ Todas as organistas oficializadas já estão associadas a esta igreja
                   </p>
                 ) : (
-                  <p style={{ fontSize: '0.85rem', color: '#dc3545', margin: '5px 0', fontWeight: '600' }}>
+                  <p style={{ 
+                    fontSize: 'clamp(0.8rem, 2.2vw, 0.9rem)', 
+                    color: '#dc3545', 
+                    margin: '5px 0', 
+                    fontWeight: '600' 
+                  }}>
                     ❌ Nenhuma organista oficializada e ativa cadastrada no sistema
                   </p>
                 )}
               </div>
             )}
 
-            <h3 style={{ marginBottom: '15px' }}>Organistas da Igreja ({organistasIgreja.length})</h3>
+            <h3 style={{ 
+              marginBottom: '15px',
+              fontSize: 'clamp(1rem, 3.5vw, 1.2rem)'
+            }}>Organistas da Igreja ({organistasIgreja.length})</h3>
             {organistasIgreja.length === 0 ? (
-              <div style={{ padding: '15px', background: '#fff3cd', border: '1px solid #ffc107', borderRadius: '4px', marginBottom: '20px' }}>
+              <div style={{ 
+                padding: '15px', 
+                background: '#fff3cd', 
+                border: '1px solid #ffc107', 
+                borderRadius: '4px', 
+                marginBottom: '20px',
+                fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)'
+              }}>
                 <strong>⚠️ Nenhuma organista oficializada associada a esta igreja</strong>
-                <p style={{ margin: '10px 0 0 0', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                <p style={{ margin: '10px 0 0 0', fontSize: 'clamp(0.8rem, 2.2vw, 0.9rem)', lineHeight: '1.6' }}>
                   <strong>Para gerar rodízios, você precisa adicionar organistas acima.</strong>
                   <br />
                   Se não aparecer nenhuma organista no dropdown, verifique:
@@ -378,32 +456,38 @@ function Igrejas({ user }) {
                 </p>
               </div>
             ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>Telefone</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {organistasIgreja.map(organista => (
-                    <tr key={organista.id}>
-                      <td>{organista.nome}</td>
-                      <td>{organista.telefone || '-'}</td>
-                      <td>
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleRemoveOrganista(organista.id)}
-                          style={{ fontSize: '12px', padding: '5px 10px' }}
-                        >
-                          Remover
-                        </button>
-                      </td>
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Telefone</th>
+                      <th>Ações</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {organistasIgreja.map(organista => (
+                      <tr key={organista.id}>
+                        <td style={{ fontWeight: '500' }}>{organista.nome}</td>
+                        <td>{organista.telefone || '-'}</td>
+                        <td>
+                          <button
+                            className="btn btn-danger"
+                            onClick={() => handleRemoveOrganista(organista.id)}
+                            style={{ 
+                              fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', 
+                              padding: '8px 12px',
+                              minWidth: '80px'
+                            }}
+                          >
+                            Remover
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

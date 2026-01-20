@@ -258,7 +258,7 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
       throw new Error('Nenhum culto ativo encontrado para esta igreja');
     }
     
-    // 2. Buscar organistas oficializadas da igreja
+    // 2. Buscar organistas oficializadas da igreja ordenadas por ordem de associação (mais antiga primeiro)
     const [organistas] = await pool.execute(
       `SELECT o.* FROM organistas o
        INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
@@ -266,7 +266,7 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
          AND oi.oficializada = 1 
          AND o.oficializada = 1 
          AND o.ativa = 1
-       ORDER BY o.nome`,
+       ORDER BY oi.id ASC, oi.created_at ASC`,
       [igrejaId]
     );
     

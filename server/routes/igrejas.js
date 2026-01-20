@@ -196,7 +196,7 @@ router.get('/:id/organistas', authenticate, async (req, res) => {
        FROM organistas o
        INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
        WHERE oi.igreja_id = ? AND oi.oficializada = 1 AND o.oficializada = 1 AND o.ativa = 1
-       ORDER BY o.nome`,
+       ORDER BY oi.id ASC, oi.created_at ASC`,
       [req.params.id]
     );
     
