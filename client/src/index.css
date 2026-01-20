@@ -253,6 +253,18 @@ code {
   padding: 14px 12px;
   text-align: left;
   border-bottom: 1px solid var(--gray-medium);
+}
+
+.table th {
+  white-space: nowrap;
+}
+
+.table td {
+  word-wrap: break-word;
+  vertical-align: middle;
+}
+
+.table td:last-child {
   white-space: nowrap;
 }
 

@@ -164,7 +164,7 @@ function Igrejas({ user }) {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <h2>Igrejas</h2>
           {user?.role === 'admin' && (
             <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
@@ -243,54 +243,56 @@ function Igrejas({ user }) {
         {igrejas.length === 0 ? (
           <div className="empty">Nenhuma igreja cadastrada</div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Endereço</th>
-                <th>Encarregado Local</th>
-                <th>Encarregado Regional</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {igrejas.map(igreja => (
-                <tr key={igreja.id}>
-                  <td>{igreja.nome}</td>
-                  <td>{igreja.endereco || '-'}</td>
-                  <td>{igreja.encarregado_local_nome || '-'}</td>
-                  <td>{igreja.encarregado_regional_nome || '-'}</td>
-                  <td>
-                    <div className="actions">
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => handleEdit(igreja)}
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="btn btn-success"
-                        onClick={() => handleManageOrganistas(igreja)}
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        Organistas
-                      </button>
-                      {user?.role === 'admin' && (
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleDelete(igreja.id)}
-                          style={{ fontSize: '12px', padding: '5px 10px' }}
-                        >
-                          Deletar
-                        </button>
-                      )}
-                    </div>
-                  </td>
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Endereço</th>
+                  <th>Encarregado Local</th>
+                  <th>Encarregado Regional</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {igrejas.map(igreja => (
+                  <tr key={igreja.id}>
+                    <td style={{ fontWeight: '600' }}>{igreja.nome}</td>
+                    <td style={{ maxWidth: '300px', wordBreak: 'break-word' }}>{igreja.endereco || '-'}</td>
+                    <td>{igreja.encarregado_local_nome || '-'}</td>
+                    <td>{igreja.encarregado_regional_nome || '-'}</td>
+                    <td>
+                      <div className="actions">
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => handleEdit(igreja)}
+                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn btn-success"
+                          onClick={() => handleManageOrganistas(igreja)}
+                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '90px' }}
+                        >
+                          Organistas
+                        </button>
+                        {user?.role === 'admin' && (
+                          <button
+                            className="btn btn-danger"
+                            onClick={() => handleDelete(igreja.id)}
+                            style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
+                          >
+                            Deletar
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
