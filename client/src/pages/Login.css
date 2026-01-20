@@ -123,11 +123,14 @@
 @media (max-width: 768px) {
   .login-container {
     padding: 15px;
+    min-height: 100vh;
+    min-height: -webkit-fill-available; /* iOS Safari */
   }
 
   .login-card {
     padding: 30px 25px;
     border-radius: 12px;
+    max-width: 100%;
   }
 
   .login-card h1 {
@@ -141,19 +144,45 @@
   .login-card .form-group input {
     padding: 12px;
     font-size: 16px; /* Evita zoom no iOS */
+    -webkit-appearance: none;
+    border-radius: 8px;
   }
 
   .login-card .btn-primary {
     padding: 12px;
+    min-height: 44px; /* Tamanho mínimo de toque */
+  }
+
+  .login-logo img {
+    max-width: 150px;
+    max-height: 120px;
   }
 }
 
 @media (max-width: 480px) {
+  .login-container {
+    padding: 10px;
+  }
+
   .login-card {
     padding: 25px 20px;
   }
 
   .login-card h1 {
     font-size: 1.5rem;
+  }
+
+  .login-logo img {
+    max-width: 120px;
+    max-height: 100px;
+  }
+}
+
+/* PWA - Safe area para iPhone X+ */
+@supports (padding: max(0px)) {
+  .login-container {
+    padding-left: max(15px, env(safe-area-inset-left));
+    padding-right: max(15px, env(safe-area-inset-right));
+    padding-bottom: max(15px, env(safe-area-inset-bottom));
   }
 }

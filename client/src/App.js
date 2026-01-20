@@ -6,6 +6,7 @@ import Igrejas from './pages/Igrejas';
 import Cultos from './pages/Cultos';
 import Rodizios from './pages/Rodizios';
 import Admin from './pages/Admin';
+import InstallPrompt from './components/InstallPrompt';
 import './App.css';
 
 function PrivateRoute({ children }) {
@@ -56,6 +57,7 @@ function App() {
             )}
           </Routes>
         </div>
+        <InstallPrompt />
       </div>
     </Router>
   );
@@ -84,8 +86,8 @@ function Header({ user, onLogout }) {
               e.target.style.display = 'block';
             }}
           />
-          <div style={{ flex: 1 }}>
-            <h1>🎹 Sistema de Gestão de Organistas</h1>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 style={{ fontSize: 'clamp(1.2rem, 4vw, 2rem)', wordBreak: 'break-word', margin: 0 }}>🎹 Sistema de Gestão de Organistas</h1>
             {user && (
               <div style={{ fontSize: '0.9rem', marginTop: '5px', opacity: 0.9 }}>
                 {user.nome} ({user.role === 'admin' ? 'Administrador' : 'Usuário'})
