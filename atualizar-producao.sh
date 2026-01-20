@@ -97,7 +97,7 @@ pm2 status
 # 8. Testar API
 echo -e "${YELLOW}🧪 Testando API...${NC}"
 sleep 2
-if curl -f http://localhost:5000/api/health > /dev/null 2>&1; then
+if curl -f http://localhost:5001/api/health > /dev/null 2>&1; then
     echo -e "${GREEN}✅ API respondendo corretamente${NC}"
 else
     echo -e "${RED}❌ API não está respondendo! Verifique os logs:${NC}"

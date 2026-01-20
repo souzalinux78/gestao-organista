@@ -5,11 +5,13 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--blue-primary) 0%, var(--blue-light) 100%);
+  background-color: var(--blue-primary); /* Fundo azul sólido */
   padding: 20px;
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  width: 100%;
 }
 
 .login-container::before {
@@ -154,18 +156,20 @@
 /* Responsividade Mobile */
 @media (max-width: 768px) {
   .login-container {
-    padding: 8px;
-    align-items: flex-start;
-    padding-top: max(8px, env(safe-area-inset-top));
+    padding: 15px;
+    align-items: center; /* Centralizar verticalmente */
+    justify-content: center; /* Centralizar horizontalmente */
+    padding-top: max(15px, env(safe-area-inset-top));
     padding-bottom: max(15px, env(safe-area-inset-bottom));
     min-height: 100vh;
     min-height: -webkit-fill-available;
   }
 
   .login-card {
-    padding: 14px 12px;
+    padding: 20px 18px;
     border-radius: 12px;
     max-width: 100%;
+    width: 100%;
     margin: 0 auto;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
     flex-shrink: 0;
@@ -235,14 +239,17 @@
 
 @media (max-width: 480px) {
   .login-container {
-    padding: 6px;
-    padding-top: max(6px, env(safe-area-inset-top));
+    padding: 12px;
+    align-items: center; /* Centralizar verticalmente */
+    justify-content: center; /* Centralizar horizontalmente */
+    padding-top: max(12px, env(safe-area-inset-top));
     padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
 
   .login-card {
-    padding: 12px 10px;
+    padding: 18px 16px;
     border-radius: 10px;
+    width: 100%;
   }
 
   .login-card h1 {
@@ -308,13 +315,16 @@
 /* Telas muito pequenas (menos de 360px) */
 @media (max-width: 360px) {
   .login-container {
-    padding: 5px;
-    padding-top: max(5px, env(safe-area-inset-top));
+    padding: 10px;
+    align-items: center; /* Centralizar verticalmente */
+    justify-content: center; /* Centralizar horizontalmente */
+    padding-top: max(10px, env(safe-area-inset-top));
     padding-bottom: max(10px, env(safe-area-inset-bottom));
   }
 
   .login-card {
-    padding: 10px 8px;
+    padding: 16px 14px;
+    width: 100%;
   }
 
   .login-card h1 {
