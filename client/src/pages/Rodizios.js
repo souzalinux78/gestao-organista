@@ -211,8 +211,47 @@ function Rodizios({ user }) {
   };
 
   const formatarData = (dataStr) => {
-    const [ano, mes, dia] = dataStr.split('-');
-    return `${dia}/${mes}/${ano}`;
+    if (!dataStr) return '-';
+    
+    try {
+      // Se for uma string ISO (com T e Z)
+      if (typeof dataStr === 'string' && dataStr.includes('T')) {
+        const data = new Date(dataStr);
+        if (isNaN(data.getTime())) {
+          // Tentar parsear formato YYYY-MM-DD
+          const partes = dataStr.split('T')[0].split('-');
+          if (partes.length === 3) {
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+          }
+          return dataStr;
+        }
+        const dia = String(data.getDate()).padStart(2, '0');
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        const ano = data.getFullYear();
+        return `${dia}/${mes}/${ano}`;
+      }
+      
+      // Se for formato YYYY-MM-DD
+      if (typeof dataStr === 'string' && dataStr.includes('-') && !dataStr.includes('T')) {
+        const [ano, mes, dia] = dataStr.split('-');
+        if (ano && mes && dia) {
+          return `${dia}/${mes}/${ano}`;
+        }
+      }
+      
+      // Se for um objeto Date
+      if (dataStr instanceof Date) {
+        const dia = String(dataStr.getDate()).padStart(2, '0');
+        const mes = String(dataStr.getMonth() + 1).padStart(2, '0');
+        const ano = dataStr.getFullYear();
+        return `${dia}/${mes}/${ano}`;
+      }
+      
+      return String(dataStr);
+    } catch (error) {
+      console.error('Erro ao formatar data:', error, dataStr);
+      return String(dataStr);
+    }
   };
 
   if (loading) {
@@ -387,9 +426,11 @@ function Rodizios({ user }) {
               <tbody>
                 {rodizios.map(rodizio => (
                   <tr key={rodizio.id}>
-                    <td>{formatarData(rodizio.data_culto)}</td>
-                    <td>{rodizio.dia_semana}</td>
-                    <td>{rodizio.hora_culto}</td>
+                    <td style={{ fontWeight: '500', whiteSpace: 'nowrap' }}>{formatarData(rodizio.data_culto)}</td>
+                    <td style={{ textTransform: 'capitalize' }}>{rodizio.dia_semana}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      {rodizio.hora_culto ? (rodizio.hora_culto.includes(':') ? rodizio.hora_culto.split(':').slice(0, 2).join(':') : rodizio.hora_culto) : '-'}
+                    </td>
                     <td>
                       <span style={{
                         padding: '4px 8px',
