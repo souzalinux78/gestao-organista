@@ -1,6 +1,16 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const db = require('../database/db');
 
 async function migrateRodiziosFuncao() {
+  // Inicializar banco de dados
+  try {
+    await db.init();
+  } catch (error) {
+    console.error('Erro ao inicializar banco de dados:', error);
+    process.exit(1);
+  }
+  
   const pool = db.getDb();
   
   try {
@@ -60,9 +70,13 @@ async function migrateRodiziosFuncao() {
     }
     
     console.log('✅ Migração concluída com sucesso!');
+    
+    // Fechar conexão
+    await db.close();
     process.exit(0);
   } catch (error) {
     console.error('❌ Erro na migração:', error);
+    await db.close().catch(() => {});
     process.exit(1);
   }
 }

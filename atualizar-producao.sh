@@ -82,7 +82,11 @@ echo -e "${GREEN}✅ Frontend buildado${NC}"
 # 5. Executar migrações (se houver)
 echo -e "${YELLOW}🔄 Verificando migrações...${NC}"
 if [ -f "server/scripts/migrate-rodizios-funcao.js" ]; then
-    node server/scripts/migrate-rodizios-funcao.js || echo -e "${YELLOW}⚠️  Migração não executada ou já aplicada${NC}"
+    if node server/scripts/migrate-rodizios-funcao.js 2>/dev/null; then
+        echo -e "${GREEN}✅ Migração executada${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Migração não executada ou já aplicada${NC}"
+    fi
 fi
 
 # 6. Reiniciar aplicação
@@ -96,12 +100,30 @@ pm2 status
 
 # 8. Testar API
 echo -e "${YELLOW}🧪 Testando API...${NC}"
-sleep 2
-if curl -f http://localhost:5001/api/health > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ API respondendo corretamente${NC}"
-else
-    echo -e "${RED}❌ API não está respondendo! Verifique os logs:${NC}"
+sleep 5  # Aguardar mais tempo para a API iniciar
+MAX_RETRIES=5
+RETRY_COUNT=0
+API_RESPONDING=false
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if curl -f http://localhost:5001/api/health > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ API respondendo corretamente${NC}"
+        API_RESPONDING=true
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        echo -e "${YELLOW}⏳ Aguardando API iniciar... (tentativa $RETRY_COUNT/$MAX_RETRIES)${NC}"
+        sleep 3
+    fi
+done
+
+if [ "$API_RESPONDING" = false ]; then
+    echo -e "${RED}❌ API não está respondendo após $MAX_RETRIES tentativas!${NC}"
+    echo -e "${YELLOW}📋 Verifique os logs:${NC}"
     echo "pm2 logs gestao-organista-api --lines 50"
+    echo ""
+    echo -e "${YELLOW}📋 Verifique se a porta 5001 está correta no .env${NC}"
+    echo -e "${YELLOW}📋 Verifique se o banco de dados está acessível${NC}"
     exit 1
 fi
 
