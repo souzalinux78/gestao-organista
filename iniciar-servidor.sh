@@ -15,9 +15,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Verificar se a porta 5000 está em uso
-echo -e "${YELLOW}🔍 Verificando porta 5000...${NC}"
-if lsof -Pi :5000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+# Obter porta do .env ou usar padrão
+PORTA=$(grep "^PORT=" .env 2>/dev/null | cut -d '=' -f2 || echo "5001")
+echo -e "${YELLOW}🔍 Verificando porta $PORTA...${NC}"
+if lsof -Pi :$PORTA -sTCP:LISTEN -t >/dev/null 2>&1 ; then
     echo -e "${YELLOW}⚠️  Porta 5000 já está em uso${NC}"
     
     # Verificar se é PM2
@@ -27,13 +28,13 @@ if lsof -Pi :5000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
         pm2 delete gestao-organista-api
         sleep 2
     else
-        # Matar processo na porta 5000
-        echo -e "${YELLOW}🔪 Matando processo na porta 5000...${NC}"
-        sudo lsof -ti:5000 | xargs kill -9 2>/dev/null || true
+        # Matar processo na porta
+        echo -e "${YELLOW}🔪 Matando processo na porta $PORTA...${NC}"
+        sudo lsof -ti:$PORTA | xargs kill -9 2>/dev/null || true
         sleep 2
     fi
 else
-    echo -e "${GREEN}✅ Porta 5000 livre${NC}"
+    echo -e "${GREEN}✅ Porta $PORTA livre${NC}"
 fi
 
 # Verificar se o arquivo .env existe
@@ -69,10 +70,13 @@ sleep 3
 echo -e "${YELLOW}🔍 Verificando status...${NC}"
 pm2 status
 
+# Obter porta para teste
+PORTA_TESTE=$(grep "^PORT=" .env 2>/dev/null | cut -d '=' -f2 || echo "5001")
+
 # Testar API
-echo -e "${YELLOW}🧪 Testando API...${NC}"
+echo -e "${YELLOW}🧪 Testando API na porta $PORTA_TESTE...${NC}"
 sleep 2
-if curl -f http://localhost:5000/api/health > /dev/null 2>&1; then
+if curl -f http://localhost:$PORTA_TESTE/api/health > /dev/null 2>&1; then
     echo -e "${GREEN}✅ Servidor iniciado com sucesso!${NC}"
     echo ""
     echo "📝 Comandos úteis:"
@@ -80,6 +84,7 @@ if curl -f http://localhost:5000/api/health > /dev/null 2>&1; then
     echo "  - Ver status: pm2 status"
     echo "  - Parar: pm2 stop gestao-organista-api"
     echo "  - Reiniciar: pm2 restart gestao-organista-api"
+    echo "  - Porta: $PORTA_TESTE"
 else
     echo -e "${RED}❌ API não está respondendo. Verifique os logs:${NC}"
     echo "pm2 logs gestao-organista-api --lines 50"
