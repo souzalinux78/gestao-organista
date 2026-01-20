@@ -6,7 +6,7 @@
 BACKUP_DIR="/var/backups/gestao-organista"
 DATE=$(date +%Y%m%d_%H%M%S)
 DB_NAME="gestao_organista"
-DB_USER="gestao_user"
+DB_USER="root"
 
 # Carregar senha do .env ou solicitar
 if [ -f .env ]; then
