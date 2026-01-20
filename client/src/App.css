@@ -1,0 +1,44 @@
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav a.active {
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-light) 100%);
+  color: var(--blue-primary);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+}
+
+/* Responsividade para Header */
+@media (max-width: 768px) {
+  .header > div {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 15px;
+  }
+
+  .header > div > div:first-child {
+    width: 100%;
+  }
+
+  .header button {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+}
+
+/* Melhorias de acessibilidade */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Modo escuro (opcional, para futuro) */
+@media (prefers-color-scheme: dark) {
+  /* Pode ser implementado no futuro */
+}

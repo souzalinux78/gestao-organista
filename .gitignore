@@ -1,0 +1,8 @@
+node_modules/
+client/node_modules/
+.env
+*.log
+.DS_Store
+server/database/database.sqlite
+dist/
+build/
