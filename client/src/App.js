@@ -68,13 +68,30 @@ function Header({ user, onLogout }) {
   return (
     <div className="header">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <h1>🎹 Sistema de Gestão de Organistas</h1>
-          {user && (
-            <div style={{ fontSize: '0.9rem', marginTop: '5px', opacity: 0.9 }}>
-              {user.nome} ({user.role === 'admin' ? 'Administrador' : 'Usuário'})
-            </div>
-          )}
+        <div style={{ flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <img 
+            src={process.env.PUBLIC_URL + '/logo.png'} 
+            alt="Logo" 
+            style={{ 
+              height: '50px', 
+              width: 'auto',
+              display: 'none' 
+            }}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+            onLoad={(e) => {
+              e.target.style.display = 'block';
+            }}
+          />
+          <div style={{ flex: 1 }}>
+            <h1>🎹 Sistema de Gestão de Organistas</h1>
+            {user && (
+              <div style={{ fontSize: '0.9rem', marginTop: '5px', opacity: 0.9 }}>
+                {user.nome} ({user.role === 'admin' ? 'Administrador' : 'Usuário'})
+              </div>
+            )}
+          </div>
         </div>
         {user && (
           <button 

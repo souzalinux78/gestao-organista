@@ -34,6 +34,15 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
+        <div className="login-logo">
+          <img 
+            src={process.env.PUBLIC_URL + '/logo.png'} 
+            alt="Logo" 
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
         <h1>🎹 Sistema de Gestão de Organistas</h1>
         <h2>Login</h2>
         
