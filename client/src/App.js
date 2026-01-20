@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Organistas from './pages/Organistas';
@@ -23,38 +23,39 @@ function PrivateRoute({ children }) {
 
 function AppContent() {
   const { user, loading, logout } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <div className="loading">Carregando...</div>;
   }
 
   return (
-    <Router>
-      <div className="App">
-        {user && <Header user={user} onLogout={logout} />}
-        <div className="container">
-          <Routes>
-            <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-            <Route path="/" element={<PrivateRoute><Home user={user} /></PrivateRoute>} />
-            <Route path="/organistas" element={<PrivateRoute><Organistas /></PrivateRoute>} />
-            <Route path="/igrejas" element={<PrivateRoute><Igrejas user={user} /></PrivateRoute>} />
-            <Route path="/cultos" element={<PrivateRoute><Cultos user={user} /></PrivateRoute>} />
-            <Route path="/rodizios" element={<PrivateRoute><Rodizios user={user} /></PrivateRoute>} />
-            {user?.role === 'admin' && (
-              <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
-            )}
-          </Routes>
-        </div>
-        <InstallPrompt />
+    <div className="App">
+      {user && <Header user={user} onLogout={logout} />}
+      <div className="container">
+        <Routes>
+          <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+          <Route path="/" element={<PrivateRoute><Home user={user} /></PrivateRoute>} />
+          <Route path="/organistas" element={<PrivateRoute><Organistas /></PrivateRoute>} />
+          <Route path="/igrejas" element={<PrivateRoute><Igrejas user={user} /></PrivateRoute>} />
+          <Route path="/cultos" element={<PrivateRoute><Cultos user={user} /></PrivateRoute>} />
+          <Route path="/rodizios" element={<PrivateRoute><Rodizios user={user} /></PrivateRoute>} />
+          {user?.role === 'admin' && (
+            <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
+          )}
+        </Routes>
       </div>
-    </Router>
+      {location.pathname !== '/login' && <InstallPrompt />}
+    </div>
   );
 }
 
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <Router>
+        <AppContent />
+      </Router>
     </AuthProvider>
   );
 }
