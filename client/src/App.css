@@ -4,6 +4,19 @@
   flex-direction: column;
 }
 
+/* Quando estiver na página de login, remover estilos do App */
+body.login-page .App {
+  min-height: 100vh;
+  display: block;
+  background: transparent;
+}
+
+body.login-page .App .container {
+  padding: 0;
+  margin: 0;
+  max-width: 100%;
+}
+
 .nav a.active {
   background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-light) 100%);
   color: var(--blue-primary);

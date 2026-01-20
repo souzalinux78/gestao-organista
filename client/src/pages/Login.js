@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { login } from '../services/api';
@@ -11,6 +11,17 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { updateUser } = useAuth();
+
+  // Adicionar classe ao body quando estiver na página de login
+  useEffect(() => {
+    document.body.classList.add('login-page');
+    document.documentElement.classList.add('login-page');
+    
+    return () => {
+      document.body.classList.remove('login-page');
+      document.documentElement.classList.remove('login-page');
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
