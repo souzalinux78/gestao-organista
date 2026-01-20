@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS `igrejas` (
   `encarregado_local_telefone` VARCHAR(20),
   `encarregado_regional_nome` VARCHAR(255),
   `encarregado_regional_telefone` VARCHAR(20),
+  `mesma_organista_ambas_funcoes` TINYINT(1) DEFAULT 0,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_igrejas_nome` (`nome`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

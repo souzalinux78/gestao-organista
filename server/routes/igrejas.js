@@ -58,7 +58,8 @@ router.post('/', authenticate, async (req, res) => {
       encarregado_local_nome, 
       encarregado_local_telefone,
       encarregado_regional_nome,
-      encarregado_regional_telefone
+      encarregado_regional_telefone,
+      mesma_organista_ambas_funcoes
     } = req.body;
     const pool = db.getDb();
     
@@ -66,15 +67,17 @@ router.post('/', authenticate, async (req, res) => {
       `INSERT INTO igrejas (
         nome, endereco, 
         encarregado_local_nome, encarregado_local_telefone,
-        encarregado_regional_nome, encarregado_regional_telefone
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
+        encarregado_regional_nome, encarregado_regional_telefone,
+        mesma_organista_ambas_funcoes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         nome, 
         endereco || null,
         encarregado_local_nome || null,
         encarregado_local_telefone || null,
         encarregado_regional_nome || null,
-        encarregado_regional_telefone || null
+        encarregado_regional_telefone || null,
+        mesma_organista_ambas_funcoes ? 1 : 0
       ]
     );
     
@@ -85,7 +88,8 @@ router.post('/', authenticate, async (req, res) => {
       encarregado_local_nome,
       encarregado_local_telefone,
       encarregado_regional_nome,
-      encarregado_regional_telefone
+      encarregado_regional_telefone,
+      mesma_organista_ambas_funcoes: mesma_organista_ambas_funcoes ? 1 : 0
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -115,7 +119,8 @@ router.put('/:id', authenticate, async (req, res) => {
       encarregado_local_nome, 
       encarregado_local_telefone,
       encarregado_regional_nome,
-      encarregado_regional_telefone
+      encarregado_regional_telefone,
+      mesma_organista_ambas_funcoes
     } = req.body;
     const pool = db.getDb();
     
@@ -123,7 +128,8 @@ router.put('/:id', authenticate, async (req, res) => {
       `UPDATE igrejas SET 
         nome = ?, endereco = ?,
         encarregado_local_nome = ?, encarregado_local_telefone = ?,
-        encarregado_regional_nome = ?, encarregado_regional_telefone = ?
+        encarregado_regional_nome = ?, encarregado_regional_telefone = ?,
+        mesma_organista_ambas_funcoes = ?
       WHERE id = ?`,
       [
         nome, 
@@ -132,6 +138,7 @@ router.put('/:id', authenticate, async (req, res) => {
         encarregado_local_telefone || null,
         encarregado_regional_nome || null,
         encarregado_regional_telefone || null,
+        mesma_organista_ambas_funcoes ? 1 : 0,
         req.params.id
       ]
     );
@@ -147,7 +154,8 @@ router.put('/:id', authenticate, async (req, res) => {
       encarregado_local_nome,
       encarregado_local_telefone,
       encarregado_regional_nome,
-      encarregado_regional_telefone
+      encarregado_regional_telefone,
+      mesma_organista_ambas_funcoes: mesma_organista_ambas_funcoes ? 1 : 0
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

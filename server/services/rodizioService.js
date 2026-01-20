@@ -66,8 +66,8 @@ const calcularHoraMeiaHora = (horaCulto) => {
 };
 
 // Função para verificar se organista tocou recentemente (evitar sequências)
-// Reduzido para 1 dia para permitir mais distribuição
-const organistaTocouRecentemente = (organistaId, dataAtual, rodiziosGerados, diasVerificar = 1) => {
+// Verifica se tocou nos últimos 7 dias para evitar cultos muito próximos
+const organistaTocouRecentemente = (organistaId, dataAtual, rodiziosGerados, diasVerificar = 7) => {
   const dataLimite = new Date(dataAtual);
   dataLimite.setDate(dataLimite.getDate() - diasVerificar);
   
@@ -76,6 +76,19 @@ const organistaTocouRecentemente = (organistaId, dataAtual, rodiziosGerados, dia
     return r.organista_id === organistaId && 
            dataRodizio >= dataLimite && 
            dataRodizio < dataAtual;
+  });
+};
+
+// Função para verificar se organista tocou em cultos muito próximos (dentro de X dias)
+const organistaTocouMuitoProximo = (organistaId, dataAtual, rodiziosGerados, diasMinimos = 7) => {
+  return rodiziosGerados.some(r => {
+    if (r.organista_id !== organistaId) return false;
+    
+    const dataRodizio = new Date(r.data_culto);
+    const diferencaDias = Math.abs((dataAtual - dataRodizio) / (1000 * 60 * 60 * 24));
+    
+    // Se tocou em um culto dentro dos dias mínimos (antes ou depois), evitar
+    return diferencaDias < diasMinimos && diferencaDias > 0;
   });
 };
 
@@ -140,8 +153,9 @@ const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, di
   // 2. Menor desequilíbrio (priorizar quem tem funções mais equilibradas)
   // 3. Penalizar quem sempre faz a mesma função
   // 4. Menor contador total (garantir que todas toquem igualmente)
-  // 5. Quem não tocou no mesmo dia da semana
-  // 6. Quem não tocou recentemente
+  // 5. Quem não tocou muito recentemente (evitar cultos seguidos)
+  // 6. Quem não tocou no mesmo dia da semana
+  // 7. Ordem de cadastro (menor ID = mais antiga)
   const organistasOrdenadas = [...organistas].sort((a, b) => {
     const contadorFuncaoA = funcao === 'meia_hora' ? contadoresMeiaHora[a.id] : contadoresTocarCulto[a.id];
     const contadorFuncaoB = funcao === 'meia_hora' ? contadoresMeiaHora[b.id] : contadoresTocarCulto[b.id];
@@ -165,21 +179,22 @@ const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, di
     const diffTotal = contadoresTotal[a.id] - contadoresTotal[b.id];
     if (diffTotal !== 0) return diffTotal;
     
-    // Prioridade 5: Verificar se tocou no mesmo dia da semana
+    // Prioridade 5: Verificar se tocou muito recentemente (evitar cultos seguidos)
+    const aTocouMuitoProximo = organistaTocouMuitoProximo(a.id, dataAtual, rodiziosGerados, 7);
+    const bTocouMuitoProximo = organistaTocouMuitoProximo(b.id, dataAtual, rodiziosGerados, 7);
+    
+    if (aTocouMuitoProximo && !bTocouMuitoProximo) return 1;
+    if (!aTocouMuitoProximo && bTocouMuitoProximo) return -1;
+    
+    // Prioridade 6: Verificar se tocou no mesmo dia da semana
     const aTocouMesmoDia = organistaTocouNoMesmoDiaSemana(a.id, diaSemana, rodiziosGerados);
     const bTocouMesmoDia = organistaTocouNoMesmoDiaSemana(b.id, diaSemana, rodiziosGerados);
     
     if (aTocouMesmoDia && !bTocouMesmoDia) return 1;
     if (!aTocouMesmoDia && bTocouMesmoDia) return -1;
     
-    // Prioridade 6: Verificar se tocou recentemente
-    const aTocou = organistaTocouRecentemente(a.id, dataAtual, rodiziosGerados);
-    const bTocou = organistaTocouRecentemente(b.id, dataAtual, rodiziosGerados);
-    
-    if (aTocou && !bTocou) return 1;
-    if (!aTocou && bTocou) return -1;
-    
-    return 0;
+    // Prioridade 7: Ordem de cadastro (menor ID = mais antiga)
+    return a.id - b.id;
   });
   
   // Retornar a primeira que:
@@ -187,18 +202,38 @@ const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, di
   // 2. Priorizar quem menos fez esta função específica
   // 3. Priorizar quem menos tocou no total (garantir distribuição)
   
-  // Primeiro, filtrar organistas que já estão escaladas para outra função no mesmo culto
+  // Primeiro, filtrar organistas que:
+  // 1. Já estão escaladas para outra função no mesmo culto
+  // 2. Tocararam muito recentemente (evitar cultos seguidos)
   const organistasDisponiveis = organistasOrdenadas.filter(organista => {
     const jaEscaladaOutraFuncao = rodiziosGerados.some(r => 
       r.organista_id === organista.id && 
       r.data_culto === formatarData(dataAtual) &&
       r.funcao !== funcao
     );
-    return !jaEscaladaOutraFuncao;
+    
+    const tocouMuitoProximo = organistaTocouMuitoProximo(organista.id, dataAtual, rodiziosGerados, 7);
+    
+    return !jaEscaladaOutraFuncao && !tocouMuitoProximo;
   });
   
-  // Se não há organistas disponíveis (todas já escaladas), retornar a primeira da lista original
+  // Se não há organistas disponíveis (todas já escaladas ou tocaram recentemente), 
+  // usar as que não estão escaladas para outra função (mesmo que tenham tocado recentemente)
   if (organistasDisponiveis.length === 0) {
+    const organistasNaoEscaladas = organistasOrdenadas.filter(organista => {
+      const jaEscaladaOutraFuncao = rodiziosGerados.some(r => 
+        r.organista_id === organista.id && 
+        r.data_culto === formatarData(dataAtual) &&
+        r.funcao !== funcao
+      );
+      return !jaEscaladaOutraFuncao;
+    });
+    
+    if (organistasNaoEscaladas.length > 0) {
+      return organistasNaoEscaladas[0];
+    }
+    
+    // Último recurso: retornar a primeira da lista original
     return organistasOrdenadas[0];
   }
   
@@ -210,7 +245,20 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
   const pool = db.getDb();
   
   try {
-    // 1. Buscar cultos ativos da igreja
+    // 1. Buscar informações da igreja (incluindo se permite mesma organista para ambas funções)
+    const [igrejas] = await pool.execute(
+      'SELECT * FROM igrejas WHERE id = ?',
+      [igrejaId]
+    );
+    
+    if (igrejas.length === 0) {
+      throw new Error('Igreja não encontrada');
+    }
+    
+    const igreja = igrejas[0];
+    const permiteMesmaOrganista = igreja.mesma_organista_ambas_funcoes === 1;
+    
+    // 2. Buscar cultos ativos da igreja
     const [cultos] = await pool.execute(
       'SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1',
       [igrejaId]
@@ -220,7 +268,7 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
       throw new Error('Nenhum culto ativo encontrado para esta igreja');
     }
     
-    // 2. Buscar organistas oficializadas da igreja ordenadas por ordem de associação (mais antiga primeiro)
+    // 3. Buscar organistas oficializadas da igreja ordenadas por ordem de associação (mais antiga primeiro)
     const [organistas] = await pool.execute(
       `SELECT o.* FROM organistas o
        INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
@@ -265,7 +313,7 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
       }
     }
     
-    // 3. Buscar rodízios existentes
+    // 4. Buscar rodízios existentes
     const [rodiziosExistentes] = await pool.execute(
       `SELECT culto_id, data_culto, funcao 
        FROM rodizios 
@@ -274,11 +322,11 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
       [igrejaId]
     );
     
-    // 4. Gerar datas para o período
+    // 5. Gerar datas para o período
     const dataInicio = new Date();
     const dataFim = adicionarMeses(dataInicio, periodoMeses);
     
-    // 5. Gerar rodízio
+    // 6. Gerar rodízio
     const novosRodizios = [];
     const rodiziosGerados = []; // Para controle de distribuição
     
@@ -358,103 +406,104 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
         };
       };
       
-      // Se não existe nenhum dos dois, gerar ambos com inversão de funções
+      // Se não existe nenhum dos dois, gerar ambos com rotação em pares
       if (!existeMeiaHora && !existeTocarCulto) {
-        const rodizioAnterior = obterUltimoRodizio();
-        
         let organistaMeiaHora, organistaTocarCulto;
         
-        // Calcular contadores para todas as organistas
-        const contadoresTotal = {};
-        const contadoresMeiaHora = {};
-        const contadoresTocarCulto = {};
-        
-        organistas.forEach(o => {
-          contadoresTotal[o.id] = rodiziosGerados.filter(r => r.organista_id === o.id).length;
-          contadoresMeiaHora[o.id] = rodiziosGerados.filter(r => 
-            r.organista_id === o.id && r.funcao === 'meia_hora'
-          ).length;
-          contadoresTocarCulto[o.id] = rodiziosGerados.filter(r => 
-            r.organista_id === o.id && r.funcao === 'tocar_culto'
-          ).length;
-        });
-        
-        // Ordenar organistas por: 1) quem menos fez cada função, 2) quem menos tocou no total
-        const organistasOrdenadasMeiaHora = [...organistas].sort((a, b) => {
-          // Prioridade 1: quem menos fez meia_hora
-          const diffMeiaHora = contadoresMeiaHora[a.id] - contadoresMeiaHora[b.id];
-          if (diffMeiaHora !== 0) return diffMeiaHora;
-          // Prioridade 2: quem menos tocou no total
-          return contadoresTotal[a.id] - contadoresTotal[b.id];
-        });
-        
-        const organistasOrdenadasTocarCulto = [...organistas].sort((a, b) => {
-          // Prioridade 1: quem menos fez tocar_culto
-          const diffTocarCulto = contadoresTocarCulto[a.id] - contadoresTocarCulto[b.id];
-          if (diffTocarCulto !== 0) return diffTocarCulto;
-          // Prioridade 2: quem menos tocou no total
-          return contadoresTotal[a.id] - contadoresTotal[b.id];
-        });
-        
-        // Verificar se há rodízio anterior para inverter
-        if (rodizioAnterior) {
-          const organistaAnteriorMeiaHora = organistas.find(o => 
-            o.id === rodizioAnterior.organistaMeiaHora
-          );
-          const organistaAnteriorTocarCulto = organistas.find(o => 
-            o.id === rodizioAnterior.organistaTocarCulto
-          );
+        // Verificar se a igreja permite mesma organista para ambas funções
+        if (permiteMesmaOrganista) {
+          // Mesma organista para ambas funções: usar rotação simples
+          const organistasOrdenadasPorId = [...organistas].sort((a, b) => a.id - b.id);
+          // Contar quantos cultos já foram gerados (cada culto tem 2 rodízios quando mesma organista)
+          const numeroCulto = rodiziosGerados.filter(r => r.funcao === 'meia_hora').length;
+          const indiceOrganista = numeroCulto % organistasOrdenadasPorId.length;
+          const organistaEscolhida = organistasOrdenadasPorId[indiceOrganista];
           
-          // Se ambas estão disponíveis e estão entre as que menos tocaram, inverter
-          if (organistaAnteriorMeiaHora && organistaAnteriorTocarCulto) {
-            const menorContador = Math.min(...Object.values(contadoresTotal));
-            const ambasMenosTocaram = 
-              contadoresTotal[organistaAnteriorMeiaHora.id] === menorContador &&
-              contadoresTotal[organistaAnteriorTocarCulto.id] === menorContador;
-            
-            if (ambasMenosTocaram) {
-              // Inverter funções
-              organistaMeiaHora = organistaAnteriorTocarCulto;
-              organistaTocarCulto = organistaAnteriorMeiaHora;
-            } else {
-              // Usar as que menos tocaram/fizeram cada função
-              organistaMeiaHora = organistasOrdenadasMeiaHora[0];
-              organistaTocarCulto = organistasOrdenadasTocarCulto.find(o => 
-                o.id !== organistaMeiaHora.id
-              ) || organistasOrdenadasTocarCulto[0];
-            }
-          } else {
-            // Usar as que menos tocaram/fizeram cada função
-            organistaMeiaHora = organistasOrdenadasMeiaHora[0];
-            organistaTocarCulto = organistasOrdenadasTocarCulto.find(o => 
-              o.id !== organistaMeiaHora.id
-            ) || organistasOrdenadasTocarCulto[0];
-          }
+          organistaMeiaHora = organistaEscolhida;
+          organistaTocarCulto = organistaEscolhida; // Mesma organista para ambas
+          
+          console.log(`[DEBUG] Igreja permite mesma organista: ${organistaEscolhida.nome} (ID:${organistaEscolhida.id}) faz ambas funções`);
         } else {
-          // Primeira vez - escolher baseado em quem menos fez cada função
-          organistaMeiaHora = organistasOrdenadasMeiaHora[0];
-          organistaTocarCulto = organistasOrdenadasTocarCulto.find(o => 
-            o.id !== organistaMeiaHora.id
-          ) || organistasOrdenadasTocarCulto[0];
-        }
-        
-        // Garantir que são diferentes
-        if (organistaMeiaHora.id === organistaTocarCulto.id && organistas.length > 1) {
-          // Se são iguais e há mais organistas, escolher a próxima que menos tocou
-          const proximaOrganista = organistasOrdenadasTocarCulto.find(o => 
-            o.id !== organistaMeiaHora.id
-          );
+          // Duas organistas diferentes: usar rotação em pares
+          // Ordenar organistas por ID (ordem de cadastro)
+          const organistasOrdenadasPorId = [...organistas].sort((a, b) => a.id - b.id);
           
-          if (proximaOrganista) {
-            organistaTocarCulto = proximaOrganista;
-          } else {
-            // Se não encontrou, pegar qualquer outra
-            const outraOrganista = organistas.find(o => o.id !== organistaMeiaHora.id);
-            if (outraOrganista) {
-              organistaTocarCulto = outraOrganista;
+          // Criar pares de organistas (1-2, 3-4, 5-6, etc.)
+          const pares = [];
+          for (let i = 0; i < organistasOrdenadasPorId.length; i += 2) {
+            if (i + 1 < organistasOrdenadasPorId.length) {
+              pares.push([organistasOrdenadasPorId[i], organistasOrdenadasPorId[i + 1]]);
+            } else {
+              // Se número ímpar, última organista forma par com a primeira
+              pares.push([organistasOrdenadasPorId[i], organistasOrdenadasPorId[0]]);
             }
           }
+          
+          // Contar quantos cultos já foram gerados para determinar qual par usar
+          const numeroCulto = rodiziosGerados.length / 2; // Cada culto tem 2 rodízios (meia_hora e tocar_culto)
+          const indicePar = numeroCulto % pares.length;
+          const parAtual = pares[indicePar];
+          
+          // Determinar se deve inverter o par baseado no ciclo
+          // Ciclo 0: par normal (1-2), Ciclo 1: par invertido (2-1), Ciclo 2: par normal (1-2), etc.
+          const ciclo = Math.floor(numeroCulto / pares.length);
+          const inverterPar = ciclo % 2 === 1;
+          
+          if (inverterPar) {
+            // Par invertido: segunda organista faz meia_hora, primeira faz tocar_culto
+            organistaMeiaHora = parAtual[1];
+            organistaTocarCulto = parAtual[0];
+          } else {
+            // Par normal: primeira organista faz meia_hora, segunda faz tocar_culto
+            organistaMeiaHora = parAtual[0];
+            organistaTocarCulto = parAtual[1];
+          }
+          
+          // Verificar se as organistas escolhidas tocaram muito recentemente
+          const meiaHoraTocouProximo = organistaTocouMuitoProximo(organistaMeiaHora.id, item.data, rodiziosGerados, 7);
+          const tocarCultoTocouProximo = organistaTocouMuitoProximo(organistaTocarCulto.id, item.data, rodiziosGerados, 7);
+          
+          // Se alguma tocou muito recentemente, usar o próximo par disponível
+          if (meiaHoraTocouProximo || tocarCultoTocouProximo) {
+            // Tentar próximo par
+            const proximoIndicePar = (indicePar + 1) % pares.length;
+            const proximoPar = pares[proximoIndicePar];
+            
+            const proximoCiclo = Math.floor((numeroCulto + 1) / pares.length);
+            const proximoInverterPar = proximoCiclo % 2 === 1;
+            
+            if (proximoInverterPar) {
+              organistaMeiaHora = proximoPar[1];
+              organistaTocarCulto = proximoPar[0];
+            } else {
+              organistaMeiaHora = proximoPar[0];
+              organistaTocarCulto = proximoPar[1];
+            }
+            
+            // Verificar novamente
+            const novaMeiaHoraTocouProximo = organistaTocouMuitoProximo(organistaMeiaHora.id, item.data, rodiziosGerados, 7);
+            const novaTocarCultoTocouProximo = organistaTocouMuitoProximo(organistaTocarCulto.id, item.data, rodiziosGerados, 7);
+            
+            // Se ainda tocou muito recentemente, usar qualquer par disponível
+            if (novaMeiaHoraTocouProximo || novaTocarCultoTocouProximo) {
+              // Buscar primeiro par que não tocou recentemente
+              for (const par of pares) {
+                const par1Tocou = organistaTocouMuitoProximo(par[0].id, item.data, rodiziosGerados, 7);
+                const par2Tocou = organistaTocouMuitoProximo(par[1].id, item.data, rodiziosGerados, 7);
+                
+                if (!par1Tocou && !par2Tocou) {
+                  organistaMeiaHora = par[0];
+                  organistaTocarCulto = par[1];
+                  break;
+                }
+              }
+            }
+          }
+          
+          console.log(`[DEBUG] Rodízio ${numeroCulto + 1}: Par ${indicePar + 1}/${pares.length}, Ciclo ${ciclo}, Invertido: ${inverterPar}`);
         }
+        
+        console.log(`[DEBUG] Organistas: Meia Hora=${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}), Tocar Culto=${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
         
         // Calcular horário da meia hora
         const horaMeiaHora = calcularHoraMeiaHora(culto.hora);

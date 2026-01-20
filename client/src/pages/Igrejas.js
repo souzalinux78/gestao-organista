@@ -13,7 +13,8 @@ function Igrejas({ user }) {
     encarregado_local_nome: '',
     encarregado_local_telefone: '',
     encarregado_regional_nome: '',
-    encarregado_regional_telefone: ''
+    encarregado_regional_telefone: '',
+    mesma_organista_ambas_funcoes: false
   });
   const [alert, setAlert] = useState(null);
   const [selectedIgreja, setSelectedIgreja] = useState(null);
@@ -93,7 +94,8 @@ function Igrejas({ user }) {
       encarregado_local_nome: igreja.encarregado_local_nome || '',
       encarregado_local_telefone: igreja.encarregado_local_telefone || '',
       encarregado_regional_nome: igreja.encarregado_regional_nome || '',
-      encarregado_regional_telefone: igreja.encarregado_regional_telefone || ''
+      encarregado_regional_telefone: igreja.encarregado_regional_telefone || '',
+      mesma_organista_ambas_funcoes: igreja.mesma_organista_ambas_funcoes === 1 || igreja.mesma_organista_ambas_funcoes === true
     });
     setShowForm(true);
   };
@@ -151,7 +153,8 @@ function Igrejas({ user }) {
       encarregado_local_nome: '',
       encarregado_local_telefone: '',
       encarregado_regional_nome: '',
-      encarregado_regional_telefone: ''
+      encarregado_regional_telefone: '',
+      mesma_organista_ambas_funcoes: false
     });
     setEditing(null);
     setShowForm(false);
@@ -233,6 +236,20 @@ function Igrejas({ user }) {
                 onChange={(e) => setFormData({ ...formData, encarregado_regional_telefone: e.target.value })}
                 placeholder="(00) 00000-0000"
               />
+            </div>
+            <div className="form-group" style={{ marginTop: '20px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={formData.mesma_organista_ambas_funcoes}
+                  onChange={(e) => setFormData({ ...formData, mesma_organista_ambas_funcoes: e.target.checked })}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+                <span>Permitir que a mesma organista faça meia hora e tocar no culto</span>
+              </label>
+              <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '5px', marginLeft: '30px' }}>
+                Se marcado, no rodízio a mesma organista fará ambas as funções. Se não marcado, uma organista fará meia hora e outra tocará no culto.
+              </p>
             </div>
             <button type="submit" className="btn btn-primary">
               {editing ? 'Atualizar' : 'Salvar'}
