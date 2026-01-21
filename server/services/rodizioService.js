@@ -281,7 +281,7 @@ const isOficializadaParaCulto = (o) => {
   return o.oficializada === 1 || o.oficializada === true;
 };
 
-const gerarRodizio = async (igrejaId, periodoMeses, organistaInicial = null) => {
+const gerarRodizio = async (igrejaId, periodoMeses) => {
   const pool = db.getDb();
   
   try {
@@ -324,33 +324,26 @@ const gerarRodizio = async (igrejaId, periodoMeses, organistaInicial = null) => 
       [igrejaId]
     );
     
-    let organistasOrdenadas = aplicarCicloOrdem(ordemBaseOrganistas(organistasRaw), rodizioCiclo);
+    // 4. Calcular o ciclo baseado no número de CULTOS (não organistas)
+    // O ciclo varia de 0 a (numero_cultos - 1), depois volta para 0
+    // Exemplo: Igreja com 2 cultos e 6 organistas
+    //   Ciclo 1 (rodizioCiclo=0): [1,2,3,4,5,6] (inverte os primeiros 1 = nada muda)
+    //   Ciclo 2 (rodizioCiclo=1): [2,1,3,4,5,6] (inverte os primeiros 2)
+    //   Ciclo 1 (rodizioCiclo=2): [1,2,3,4,5,6] (volta ao ciclo 1)
+    // Exemplo: Igreja com 3 cultos e 9 organistas
+    //   Ciclo 1 (rodizioCiclo=0): [1,2,3,4,5,6,7,8,9] (inverte os primeiros 1)
+    //   Ciclo 2 (rodizioCiclo=1): [2,1,3,4,5,6,7,8,9] (inverte os primeiros 2)
+    //   Ciclo 3 (rodizioCiclo=2): [3,2,1,4,5,6,7,8,9] (inverte os primeiros 3)
+    //   Ciclo 1 (rodizioCiclo=3): [1,2,3,4,5,6,7,8,9] (volta ao ciclo 1)
+    const numeroCultos = cultos.length;
+    const numeroOrganistas = organistasRaw.length;
+    const cicloCalculado = numeroCultos > 0 ? (rodizioCiclo % numeroCultos) : 0;
     
-    // 4. Se organista_inicial foi especificada, rotacionar a lista para começar por ela
-    if (organistaInicial !== null && organistaInicial > 0) {
-      // Encontrar o índice da organista com a ordem especificada
-      // A ordem pode estar em associacao_ordem ou ordem (dependendo da estrutura)
-      const ordemField = organistasOrdenadas[0]?.associacao_ordem !== undefined ? 'associacao_ordem' : 'ordem';
-      const indiceInicial = organistasOrdenadas.findIndex(o => {
-        const ordem = o[ordemField];
-        return ordem === organistaInicial;
-      });
-      
-      if (indiceInicial !== -1) {
-        // Rotacionar a lista para começar pela organista especificada
-        organistasOrdenadas = [
-          ...organistasOrdenadas.slice(indiceInicial),
-          ...organistasOrdenadas.slice(0, indiceInicial)
-        ];
-        console.log(`[DEBUG] Rodízio iniciará pela organista de ordem ${organistaInicial} (índice ${indiceInicial})`);
-      } else {
-        console.log(`[DEBUG] Organista de ordem ${organistaInicial} não encontrada. Iniciando pela primeira.`);
-      }
-    }
+    let organistasOrdenadas = aplicarCicloOrdem(ordemBaseOrganistas(organistasRaw), cicloCalculado);
     
     console.log(`[DEBUG] Organistas associadas encontradas:`, organistasOrdenadas.length);
-    console.log(`[DEBUG] Ciclo do rodízio (igreja):`, rodizioCiclo);
-    console.log(`[DEBUG] Organista inicial escolhida:`, organistaInicial || 'não especificada (começará pela primeira)');
+    console.log(`[DEBUG] Cultos ativos encontrados:`, numeroCultos);
+    console.log(`[DEBUG] Ciclo do rodízio (igreja): ${rodizioCiclo} → Ciclo calculado: ${cicloCalculado + 1} (baseado em ${numeroCultos} cultos)`);
     console.log(`[DEBUG] Ordem aplicada:`, organistasOrdenadas.map(o => {
       const ordem = o.associacao_ordem !== undefined ? o.associacao_ordem : o.ordem;
       return { id: o.id, ordem: ordem ?? null, nome: o.nome };
@@ -506,41 +499,34 @@ const gerarRodizio = async (igrejaId, periodoMeses, organistaInicial = null) => 
 
           console.log(`[DEBUG] Igreja permite mesma organista: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}) faz ambas funções`);
         } else {
-          // Duas organistas diferentes: usar rotação em pares
-          // Ordenar organistas por ID (ordem de cadastro)
-          const organistasOrdenadasPorId = organistasOrdenadas;
+          // Duas organistas diferentes: distribuir baseado na ordem do ciclo
+          // Garantir que cada organista toque em um culto diferente em cada ciclo
           
-          // Criar pares de organistas (1-2, 3-4, 5-6, etc.)
-          const pares = [];
-          for (let i = 0; i < organistasOrdenadasPorId.length; i += 2) {
-            if (i + 1 < organistasOrdenadasPorId.length) {
-              pares.push([organistasOrdenadasPorId[i], organistasOrdenadasPorId[i + 1]]);
-            } else {
-              // Se número ímpar, última organista forma par com a primeira
-              pares.push([organistasOrdenadasPorId[i], organistasOrdenadasPorId[0]]);
-            }
-          }
-          
-          // Contar quantos cultos já foram gerados para determinar qual par usar
+          // Contar quantos cultos já foram gerados neste período
           const numeroCulto = rodiziosGerados.length / 2; // Cada culto tem 2 rodízios (meia_hora e tocar_culto)
-          const indicePar = numeroCulto % pares.length;
-          const parAtual = pares[indicePar];
           
-          // Determinar se deve inverter o par baseado no ciclo
-          // Ciclo 0: par normal (1-2), Ciclo 1: par invertido (2-1), Ciclo 2: par normal (1-2), etc.
-          const ciclo = Math.floor(numeroCulto / pares.length);
-          const inverterPar = ciclo % 2 === 1;
+          // Calcular qual culto do ciclo atual (0 a numeroCultos-1)
+          const cultoNoCiclo = numeroCulto % numeroCultos;
           
-          if (inverterPar) {
-            // Par invertido: segunda organista faz meia_hora, primeira faz tocar_culto
-            organistaMeiaHora = parAtual[1];
-            organistaTocarCulto = parAtual[0];
-          } else {
-            // Par normal: primeira organista faz meia_hora, segunda faz tocar_culto
-            organistaMeiaHora = parAtual[0];
-            organistaTocarCulto = parAtual[1];
-          }
-
+          // Usar a ordem das organistas já calculada pelo ciclo
+          // Distribuir sequencialmente: cada culto do ciclo usa um par diferente de organistas
+          // Par 0: organistas[0] e organistas[1]
+          // Par 1: organistas[2] e organistas[3]
+          // Par 2: organistas[4] e organistas[5]
+          // E assim por diante...
+          
+          const indicePar = cultoNoCiclo;
+          const indiceOrganista1 = (indicePar * 2) % organistasOrdenadas.length;
+          const indiceOrganista2 = (indiceOrganista1 + 1) % organistasOrdenadas.length;
+          
+          const organista1 = organistasOrdenadas[indiceOrganista1];
+          const organista2 = organistasOrdenadas[indiceOrganista2];
+          
+          // Determinar qual organista faz qual função baseado na ordem do ciclo
+          // No ciclo atual, a primeira organista do par faz meia_hora, a segunda faz tocar_culto
+          organistaMeiaHora = organista1;
+          organistaTocarCulto = organista2;
+          
           // Regra: não-oficializada só pode ficar em meia_hora; tocar_culto precisa ser oficializada.
           // Se cair uma não-oficializada no culto, tentar inverter (se a outra for oficializada) ou buscar outro par.
           if (!isOficializadaParaCulto(organistaTocarCulto)) {
@@ -549,70 +535,32 @@ const gerarRodizio = async (igrejaId, periodoMeses, organistaInicial = null) => 
               organistaMeiaHora = organistaTocarCulto;
               organistaTocarCulto = tmp;
             } else {
-              // Buscar um par onde a posição de culto seja oficializada
-              const parValido = pares.find(par => {
-                const a = par[0];
-                const b = par[1];
-                // Preferir b no culto por padrão do par normal
-                return isOficializadaParaCulto(a) || isOficializadaParaCulto(b);
-              });
-              if (!parValido) {
-                throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
-              }
-              // Forçar uma oficializada para o culto
-              const [a, b] = parValido;
-              if (isOficializadaParaCulto(b)) {
-                organistaMeiaHora = a;
-                organistaTocarCulto = b;
-              } else {
-                organistaMeiaHora = b;
-                organistaTocarCulto = a;
-              }
-            }
-          }
-          
-          // Verificar se as organistas escolhidas tocaram muito recentemente
-          const meiaHoraTocouProximo = organistaTocouMuitoProximo(organistaMeiaHora.id, item.data, rodiziosGerados, 7);
-          const tocarCultoTocouProximo = organistaTocouMuitoProximo(organistaTocarCulto.id, item.data, rodiziosGerados, 7);
-          
-          // Se alguma tocou muito recentemente, usar o próximo par disponível
-          if (meiaHoraTocouProximo || tocarCultoTocouProximo) {
-            // Tentar próximo par
-            const proximoIndicePar = (indicePar + 1) % pares.length;
-            const proximoPar = pares[proximoIndicePar];
-            
-            const proximoCiclo = Math.floor((numeroCulto + 1) / pares.length);
-            const proximoInverterPar = proximoCiclo % 2 === 1;
-            
-            if (proximoInverterPar) {
-              organistaMeiaHora = proximoPar[1];
-              organistaTocarCulto = proximoPar[0];
-            } else {
-              organistaMeiaHora = proximoPar[0];
-              organistaTocarCulto = proximoPar[1];
-            }
-            
-            // Verificar novamente
-            const novaMeiaHoraTocouProximo = organistaTocouMuitoProximo(organistaMeiaHora.id, item.data, rodiziosGerados, 7);
-            const novaTocarCultoTocouProximo = organistaTocouMuitoProximo(organistaTocarCulto.id, item.data, rodiziosGerados, 7);
-            
-            // Se ainda tocou muito recentemente, usar qualquer par disponível
-            if (novaMeiaHoraTocouProximo || novaTocarCultoTocouProximo) {
-              // Buscar primeiro par que não tocou recentemente
-              for (const par of pares) {
-                const par1Tocou = organistaTocouMuitoProximo(par[0].id, item.data, rodiziosGerados, 7);
-                const par2Tocou = organistaTocouMuitoProximo(par[1].id, item.data, rodiziosGerados, 7);
+              // Buscar próximo par válido com organista oficializada
+              let parEncontrado = false;
+              for (let i = 0; i < organistasOrdenadas.length; i += 2) {
+                const org1 = organistasOrdenadas[i];
+                const org2 = organistasOrdenadas[(i + 1) % organistasOrdenadas.length];
                 
-                if (!par1Tocou && !par2Tocou) {
-                  organistaMeiaHora = par[0];
-                  organistaTocarCulto = par[1];
+                if (isOficializadaParaCulto(org1) || isOficializadaParaCulto(org2)) {
+                  if (isOficializadaParaCulto(org2)) {
+                    organistaMeiaHora = org1;
+                    organistaTocarCulto = org2;
+                  } else {
+                    organistaMeiaHora = org2;
+                    organistaTocarCulto = org1;
+                  }
+                  parEncontrado = true;
                   break;
                 }
               }
+              
+              if (!parEncontrado) {
+                throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
+              }
             }
           }
           
-          console.log(`[DEBUG] Rodízio ${numeroCulto + 1}: Par ${indicePar + 1}/${pares.length}, Ciclo ${ciclo}, Invertido: ${inverterPar}`);
+          console.log(`[DEBUG] Rodízio ${numeroCulto + 1}: Culto ${cultoNoCiclo + 1}/${numeroCultos} do ciclo, Par ${indicePar + 1}`);
         }
         
         console.log(`[DEBUG] Organistas: Meia Hora=${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}), Tocar Culto=${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);

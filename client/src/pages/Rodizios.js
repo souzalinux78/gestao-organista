@@ -17,8 +17,7 @@ function Rodizios({ user }) {
   });
   const [gerarForm, setGerarForm] = useState({
     igreja_id: '',
-    periodo_meses: 6,
-    organista_inicial: ''
+    periodo_meses: 6
   });
   const [alert, setAlert] = useState(null);
 
@@ -137,10 +136,7 @@ function Rodizios({ user }) {
       await limparRodiziosIgreja(gerarForm.igreja_id);
       
       // Depois gerar novo
-      const organistaInicial = gerarForm.organista_inicial && gerarForm.organista_inicial !== '' 
-        ? parseInt(gerarForm.organista_inicial) 
-        : null;
-      const response = await gerarRodizio(parseInt(gerarForm.igreja_id), gerarForm.periodo_meses, organistaInicial);
+      const response = await gerarRodizio(parseInt(gerarForm.igreja_id), gerarForm.periodo_meses);
       showAlert(`Rodízio limpo e regenerado com sucesso! ${response.data.rodizios} rodízios criados.`);
       loadRodizios();
     } catch (error) {
@@ -160,12 +156,9 @@ function Rodizios({ user }) {
     
     try {
       setLoadingGerar(true);
-      const organistaInicial = gerarForm.organista_inicial && gerarForm.organista_inicial !== '' 
-        ? parseInt(gerarForm.organista_inicial) 
-        : null;
-      const response = await gerarRodizio(parseInt(gerarForm.igreja_id), gerarForm.periodo_meses, organistaInicial);
+      const response = await gerarRodizio(parseInt(gerarForm.igreja_id), gerarForm.periodo_meses);
       showAlert(`Rodízio gerado com sucesso! ${response.data.rodizios} rodízios criados.`);
-      setGerarForm({ igreja_id: '', periodo_meses: 6, organista_inicial: '' });
+      setGerarForm({ igreja_id: '', periodo_meses: 6 });
       loadRodizios();
     } catch (error) {
       const errorMessage = error.response?.data?.error || 'Erro ao gerar rodízio';
@@ -333,18 +326,8 @@ function Rodizios({ user }) {
               <option value={6}>6 meses</option>
               <option value={12}>12 meses</option>
             </select>
-          </div>
-          <div className="form-group">
-            <label>Começar pela organista de ordem</label>
-            <input
-              type="number"
-              value={gerarForm.organista_inicial}
-              onChange={(e) => setGerarForm({ ...gerarForm, organista_inicial: e.target.value })}
-              placeholder="Ex: 2 (deixe vazio para começar pela primeira)"
-              min="1"
-            />
             <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
-              Escolha de qual número de organista começar o rodízio. Ex: se você tem organistas 1,2,3,4,5,6 e digitar 2, o rodízio começará pela organista de ordem 2.
+              O ciclo do rodízio é calculado automaticamente baseado no número de organistas. A cada geração, o ciclo avança automaticamente.
             </small>
           </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
