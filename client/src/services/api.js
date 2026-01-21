@@ -77,8 +77,12 @@ export const deleteCulto = (id) => api.delete(`/cultos/${id}`);
 
 // Rodízios
 export const getRodizios = (params) => api.get('/rodizios', { params });
-export const gerarRodizio = (igrejaId, periodoMeses) => 
-  api.post('/rodizios/gerar', { igreja_id: igrejaId, periodo_meses: periodoMeses });
+export const gerarRodizio = (igrejaId, periodoMeses, organistaInicial = null) => 
+  api.post('/rodizios/gerar', { 
+    igreja_id: igrejaId, 
+    periodo_meses: periodoMeses,
+    organista_inicial: organistaInicial
+  });
 export const getRodizioPDF = (igrejaId, periodoInicio, periodoFim) => {
   const params = {};
   if (periodoInicio) params.periodo_inicio = periodoInicio;

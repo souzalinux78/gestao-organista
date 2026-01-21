@@ -281,7 +281,7 @@ const isOficializadaParaCulto = (o) => {
   return o.oficializada === 1 || o.oficializada === true;
 };
 
-const gerarRodizio = async (igrejaId, periodoMeses) => {
+const gerarRodizio = async (igrejaId, periodoMeses, organistaInicial = null) => {
   const pool = db.getDb();
   
   try {
@@ -324,11 +324,37 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
       [igrejaId]
     );
     
-    const organistasOrdenadas = aplicarCicloOrdem(ordemBaseOrganistas(organistasRaw), rodizioCiclo);
+    let organistasOrdenadas = aplicarCicloOrdem(ordemBaseOrganistas(organistasRaw), rodizioCiclo);
+    
+    // 4. Se organista_inicial foi especificada, rotacionar a lista para começar por ela
+    if (organistaInicial !== null && organistaInicial > 0) {
+      // Encontrar o índice da organista com a ordem especificada
+      // A ordem pode estar em associacao_ordem ou ordem (dependendo da estrutura)
+      const ordemField = organistasOrdenadas[0]?.associacao_ordem !== undefined ? 'associacao_ordem' : 'ordem';
+      const indiceInicial = organistasOrdenadas.findIndex(o => {
+        const ordem = o[ordemField];
+        return ordem === organistaInicial;
+      });
+      
+      if (indiceInicial !== -1) {
+        // Rotacionar a lista para começar pela organista especificada
+        organistasOrdenadas = [
+          ...organistasOrdenadas.slice(indiceInicial),
+          ...organistasOrdenadas.slice(0, indiceInicial)
+        ];
+        console.log(`[DEBUG] Rodízio iniciará pela organista de ordem ${organistaInicial} (índice ${indiceInicial})`);
+      } else {
+        console.log(`[DEBUG] Organista de ordem ${organistaInicial} não encontrada. Iniciando pela primeira.`);
+      }
+    }
     
     console.log(`[DEBUG] Organistas associadas encontradas:`, organistasOrdenadas.length);
     console.log(`[DEBUG] Ciclo do rodízio (igreja):`, rodizioCiclo);
-    console.log(`[DEBUG] Ordem aplicada:`, organistasOrdenadas.map(o => ({ id: o.id, ordem: o.ordem ?? null, nome: o.nome })));
+    console.log(`[DEBUG] Organista inicial escolhida:`, organistaInicial || 'não especificada (começará pela primeira)');
+    console.log(`[DEBUG] Ordem aplicada:`, organistasOrdenadas.map(o => {
+      const ordem = o.associacao_ordem !== undefined ? o.associacao_ordem : o.ordem;
+      return { id: o.id, ordem: ordem ?? null, nome: o.nome };
+    }));
     
     if (organistasOrdenadas.length === 0) {
       const [organistasOficializadas] = await pool.execute(
