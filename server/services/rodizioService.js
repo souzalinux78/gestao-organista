@@ -442,12 +442,15 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       culto_id: r.culto_id
     }));
     
-    // CONTADOR DE CICLOS: Incrementa apenas quando TODAS as organistas foram escaladas uma vez
-    // Este contador persiste durante toda a geração e é usado na fórmula: (indiceOrganista + numeroDoCiclo) % numeroCultos
-    let numeroDoCiclo = 0;
+    // CONTADOR GLOBAL CONTÍNUO: Um único contador que define tanto a organista quanto o dia do culto
+    // Este contador NUNCA reinicia e é usado para calcular:
+    // - indiceOrganista = contadorGlobal % numeroOrganistas
+    // - indiceDia = contadorGlobal % numeroCultos
+    // Isso garante que o rodízio seja verdadeiramente contínuo e progressivo
     
-    // Rastrear quais organistas já foram escaladas no ciclo atual
-    const organistasEscaladasNoCicloAtual = new Set();
+    // Inicializar o contador global baseado nos rodízios existentes
+    // O contador começa do número total de rodízios já gerados
+    let contadorGlobal = rodiziosExistentes.length;
     
     // Obter a ordem base das organistas (sem aplicar ciclo de inversão)
     const organistasBase = ordemBaseOrganistas(organistasRaw);
@@ -459,19 +462,7 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
     });
     
     console.log(`[DEBUG] Organistas base (ordem):`, organistasBase.map((o, idx) => `${idx}: ${o.nome}`).join(', '));
-    
-    // Inicializar o contador de ciclos baseado nos rodízios existentes
-    // Se já existem rodízios, calcular quantos ciclos completos já foram gerados
-    if (rodiziosExistentes.length > 0) {
-      // Contar quantas organistas únicas já foram escaladas
-      const organistasEscaladas = new Set(rodiziosExistentes.map(r => r.organista_id));
-      // Estimar o número de ciclos baseado no número de rodízios existentes
-      // Cada ciclo completo tem: numeroOrganistas * numeroCultos * 2 (meia_hora + tocar_culto)
-      const rodiziosPorCiclo = organistasBase.length * numeroCultos * 2;
-      const ciclosEstimados = Math.floor(rodiziosExistentes.length / rodiziosPorCiclo);
-      numeroDoCiclo = ciclosEstimados;
-      console.log(`[DEBUG] Rodízios existentes detectados. Ciclo inicial estimado: ${numeroDoCiclo}`);
-    }
+    console.log(`[DEBUG] Contador global inicial: ${contadorGlobal} (baseado em ${rodiziosExistentes.length} rodízios existentes)`);
     
     // Primeiro, coletar TODAS as datas de TODOS os cultos em ordem cronológica
     const todasDatas = [];
@@ -572,6 +563,15 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
         // Encontrar o índice do culto atual (qual dia da semana é este culto)
         const indiceCulto = cultos.findIndex(c => c.id === culto.id);
         
+        // Calcular qual organista e qual dia devem ser usados baseado no contador global
+        // Fórmula: indiceOrganista = contadorGlobal % numeroOrganistas
+        //          indiceDia = contadorGlobal % numeroCultos
+        const indiceOrganistaCalculado = contadorGlobal % numeroOrganistas;
+        const indiceDiaCalculado = contadorGlobal % numeroCultos;
+        
+        console.log(`[DEBUG] Contador global: ${contadorGlobal}`);
+        console.log(`[DEBUG] Organista calculada: índice ${indiceOrganistaCalculado}, Dia calculado: índice ${indiceDiaCalculado} (esperado: ${indiceCulto})`);
+        
         // Verificar se a igreja permite mesma organista para ambas funções
         if (permiteMesmaOrganista) {
           // Mesma organista para ambas funções: usar rotação simples
@@ -595,72 +595,74 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
 
           console.log(`[DEBUG] Igreja permite mesma organista: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}) faz ambas funções`);
         } else {
-          // Duas organistas diferentes: distribuir baseado na ROTAÇÃO CIRCULAR
-          // LÓGICA: Cada organista avança pelos dias de culto de forma circular
-          // Fórmula OBRIGATÓRIA: indiceDia = (indiceOrganista + numeroDoCiclo) % totalDeDias
-          // O numeroDoCiclo só incrementa quando TODAS as organistas foram escaladas uma vez
+          // Duas organistas diferentes: usar CONTADOR GLOBAL CONTÍNUO
+          // LÓGICA: O contador global define tanto a organista quanto o dia
+          // - indiceOrganista = contadorGlobal % numeroOrganistas
+          // - indiceDia = contadorGlobal % numeroCultos
+          // O contador incrementa a cada rodízio gerado e NUNCA reinicia
           
-          console.log(`[DEBUG] Ciclo: ${numeroDoCiclo}, Dia: ${culto.dia_semana} (índice: ${indiceCulto})`);
-          
-          // Filtrar organistas cujo dia calculado corresponde ao dia atual do culto
-          // Fórmula: (indiceOrganista + numeroDoCiclo) % numeroCultos === indiceCulto
-          const organistasCandidatas = organistasBase.filter(org => {
-            const indiceOrg = indicePorOrganista[org.id];
-            const diaCalculado = (indiceOrg + numeroDoCiclo) % numeroCultos;
-            
-            console.log(`[DEBUG] ${org.nome} (índice ${indiceOrg}): (${indiceOrg} + ${numeroDoCiclo}) % ${numeroCultos} = ${diaCalculado} (esperado: ${indiceCulto})`);
-            
-            return diaCalculado === indiceCulto;
-          });
-          
-          console.log(`[DEBUG] Organistas candidatas para ${culto.dia_semana} (índice ${indiceCulto}): ${organistasCandidatas.map(o => o.nome).join(', ')}`);
-          
-          if (organistasCandidatas.length === 0) {
-            // Se não houver candidatas exatas, usar todas (caso extremo)
-            console.log(`[DEBUG] AVISO: Nenhuma organista correspondeu à fórmula, usando todas`);
-            organistasParaDistribuir = organistasBase;
-          } else {
-            organistasParaDistribuir = organistasCandidatas;
+          // Verificar se o dia calculado corresponde ao dia atual do culto
+          if (indiceDiaCalculado !== indiceCulto) {
+            // Se o dia calculado não corresponde, pular este culto (não gerar rodízio)
+            console.log(`[DEBUG] Pulando ${culto.dia_semana} - dia calculado (${indiceDiaCalculado}) não corresponde ao dia do culto (${indiceCulto})`);
+            continue; // Pular para o próximo item
           }
           
-          // Usar distribuição equilibrada entre as candidatas
-          organistaMeiaHora = distribuirOrganistas(organistasParaDistribuir, rodiziosGerados, item.data, 'meia_hora', culto.dia_semana);
+          // Selecionar a organista baseada no contador global
+          const organistaCalculada = organistasBase[indiceOrganistaCalculado];
           
-          console.log(`[DEBUG] Organista escolhida para meia_hora: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}) no dia ${indiceCulto} (${culto.dia_semana})`);
+          if (!organistaCalculada) {
+            throw new Error(`Erro: Organista no índice ${indiceOrganistaCalculado} não encontrada`);
+          }
           
-          // Para tocar_culto, aplicar a mesma lógica de rotação circular
-          // Excluir a organista escolhida para meia_hora e garantir que seja oficializada
-          const organistasParaCulto = organistasParaDistribuir.filter(o => {
-            if (o.id === organistaMeiaHora.id) return false;
-            if (!isOficializadaParaCulto(o)) return false;
-            return true;
-          });
+          console.log(`[DEBUG] Organista selecionada: ${organistaCalculada.nome} (índice ${indiceOrganistaCalculado})`);
           
-          if (organistasParaCulto.length > 0) {
-            organistaTocarCulto = distribuirOrganistas(organistasParaCulto, rodiziosGerados, item.data, 'tocar_culto', culto.dia_semana);
+          // Verificar se a organista calculada pode fazer meia_hora
+          // Se não puder (não oficializada), buscar a próxima disponível
+          if (!isOficializadaParaCulto(organistaCalculada)) {
+            // Buscar próxima organista que pode fazer meia_hora
+            let organistaMeiaHoraEncontrada = null;
+            for (let i = 0; i < organistasBase.length; i++) {
+              const idx = (indiceOrganistaCalculado + i) % organistasBase.length;
+              const org = organistasBase[idx];
+              if (org && !isOficializadaParaCulto(org)) {
+                organistaMeiaHoraEncontrada = org;
+                break;
+              }
+            }
+            organistaMeiaHora = organistaMeiaHoraEncontrada || organistaCalculada;
+          } else {
+            organistaMeiaHora = organistaCalculada;
+          }
+          
+          console.log(`[DEBUG] Organista escolhida para meia_hora: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id})`);
+          
+          // Para tocar_culto, buscar próxima organista oficializada (diferente da meia_hora)
+          // Usar o próximo índice no contador global para garantir rotação
+          let organistaTocarCultoEncontrada = null;
+          for (let i = 1; i < organistasBase.length; i++) {
+            const idx = (indiceOrganistaCalculado + i) % organistasBase.length;
+            const org = organistasBase[idx];
+            if (org && org.id !== organistaMeiaHora.id && isOficializadaParaCulto(org)) {
+              organistaTocarCultoEncontrada = org;
+              break;
+            }
+          }
+          
+          if (organistaTocarCultoEncontrada) {
+            organistaTocarCulto = organistaTocarCultoEncontrada;
             console.log(`[DEBUG] Organista escolhida para tocar_culto: ${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
           } else {
-            // Se não houver organista oficializada nas candidatas, buscar em todas (exceto meia_hora)
-            const organistasOficializadas = organistasBase.filter(o => {
-              if (o.id === organistaMeiaHora.id) return false;
-              if (!isOficializadaParaCulto(o)) return false;
-              return true;
-            });
-            if (organistasOficializadas.length > 0) {
-              organistaTocarCulto = distribuirOrganistas(organistasOficializadas, rodiziosGerados, item.data, 'tocar_culto', culto.dia_semana);
-              console.log(`[DEBUG] Organista escolhida para tocar_culto (fallback): ${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
+            // Último recurso: buscar qualquer organista oficializada (exceto meia_hora)
+            const qualquerOficializada = organistasBase.find(o => 
+              o.id !== organistaMeiaHora.id && 
+              isOficializadaParaCulto(o)
+            );
+            if (qualquerOficializada) {
+              organistaTocarCulto = qualquerOficializada;
+              console.log(`[DEBUG] Organista escolhida para tocar_culto (último recurso): ${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
             } else {
-              // Último recurso: buscar qualquer organista oficializada (exceto meia_hora)
-              const qualquerOficializada = organistasBase.find(o => 
-                o.id !== organistaMeiaHora.id && 
-                isOficializadaParaCulto(o)
-              );
-              if (qualquerOficializada) {
-                organistaTocarCulto = qualquerOficializada;
-                console.log(`[DEBUG] Organista escolhida para tocar_culto (último recurso): ${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
-              } else {
-                throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
-              }
+              throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
             }
           }
 
@@ -696,8 +698,6 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
             }
           }
           
-          const numeroCultosGeradosNestaExecucao = novosRodizios.length / 2;
-          console.log(`[DEBUG] Rodízio ${numeroCultosGeradosNestaExecucao + 1}: Ciclo ${numeroDoCiclo}, Organistas escaladas no ciclo: ${organistasEscaladasNoCicloAtual.size}/${organistasBase.length}`);
         }
         
         console.log(`[DEBUG] Organistas: Meia Hora=${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}), Tocar Culto=${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
@@ -735,21 +735,12 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
      rodiziosGerados.push(rodizioMeiaHora);
      rodiziosGerados.push(rodizioTocarCulto);
      
-     // Registrar que estas organistas foram escaladas no ciclo atual
-     organistasEscaladasNoCicloAtual.add(organistaMeiaHora.id);
-     if (organistaTocarCulto.id !== organistaMeiaHora.id) {
-       organistasEscaladasNoCicloAtual.add(organistaTocarCulto.id);
-     }
-     
-     // Verificar se todas as organistas foram escaladas e incrementar o ciclo se necessário
-     if (organistasEscaladasNoCicloAtual.size >= organistasBase.length) {
-       numeroDoCiclo++;
-       organistasEscaladasNoCicloAtual.clear();
-       console.log(`[DEBUG] Todas as organistas foram escaladas. Incrementando ciclo para: ${numeroDoCiclo}`);
-     }
+     // Incrementar o contador global após gerar o rodízio (uma vez por culto)
+     // O contador é incrementado uma vez por culto, não por função
+     contadorGlobal++;
      
      console.log(`[DEBUG] Rodízio gerado para ${dataFormatada}: Meia Hora=${organistaMeiaHora.nome}, Tocar Culto=${organistaTocarCulto.nome}`);
-     console.log(`[DEBUG] Ciclo atual: ${numeroDoCiclo}, Organistas escaladas no ciclo: ${organistasEscaladasNoCicloAtual.size}/${organistasBase.length}`);
+     console.log(`[DEBUG] Contador global após rodízio: ${contadorGlobal}`);
    } else {
         // Se só falta um, usar a lógica antiga
         if (!existeMeiaHora) {
