@@ -442,11 +442,23 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       culto_id: r.culto_id
     }));
     
-    // Rastrear qual dia cada organista tocou em cada ciclo
-    // Estrutura: { organistaId: { ciclo: { indiceCulto, data } } }
-    // Exemplo: { 1: { 0: { indiceCulto: 0, data: ... }, 1: { indiceCulto: 1, data: ... } } }
-    // = organista 1 tocou no culto 0 (segunda) no ciclo 0, e no culto 1 (quarta) no ciclo 1
-    const historicoDiasOrganistas = {};
+    // CONTADOR DE CICLOS: Incrementa apenas quando TODAS as organistas foram escaladas uma vez
+    // Este contador persiste durante toda a geração e é usado na fórmula: (indiceOrganista + numeroDoCiclo) % numeroCultos
+    let numeroDoCiclo = 0;
+    
+    // Rastrear quais organistas já foram escaladas no ciclo atual
+    const organistasEscaladasNoCicloAtual = new Set();
+    
+    // Obter a ordem base das organistas (sem aplicar ciclo de inversão)
+    const organistasBase = ordemBaseOrganistas(organistasRaw);
+    
+    // Criar um mapa de índice para cada organista baseado na ordem
+    const indicePorOrganista = {};
+    organistasBase.forEach((org, idx) => {
+      indicePorOrganista[org.id] = idx;
+    });
+    
+    console.log(`[DEBUG] Organistas base (ordem):`, organistasBase.map((o, idx) => `${idx}: ${o.nome}`).join(', '));
     
     // Inicializar histórico com rodízios existentes
     // Agrupar rodízios por organista e por data para determinar o ciclo
@@ -688,10 +700,7 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       if (!existeMeiaHora && !existeTocarCulto) {
         let organistaMeiaHora, organistaTocarCulto;
         
-        // Calcular ciclo atual (necessário para ambos os casos: mesma organista ou diferentes)
-        const numeroCultosGeradosNestaExecucao = novosRodizios.length / 2;
-        const cicloAtual = cicloCalculado + Math.floor(numeroCultosGeradosNestaExecucao / numeroCultos);
-        const cicloAtualMod = cicloAtual % numeroCultos;
+        // Encontrar o índice do culto atual (qual dia da semana é este culto)
         const indiceCulto = cultos.findIndex(c => c.id === culto.id);
         
         // Verificar se a igreja permite mesma organista para ambas funções
@@ -719,27 +728,18 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
         } else {
           // Duas organistas diferentes: distribuir baseado na ROTAÇÃO CIRCULAR
           // LÓGICA: Cada organista avança pelos dias de culto de forma circular
-          // Fórmula: diaDoCulto = (indiceOrganista + numeroDoCiclo) % totalDeDias
-          // Isso garante que cada organista rode por todos os dias ao longo dos ciclos
+          // Fórmula OBRIGATÓRIA: indiceDia = (indiceOrganista + numeroDoCiclo) % totalDeDias
+          // O numeroDoCiclo só incrementa quando TODAS as organistas foram escaladas uma vez
           
-          // Obter a ordem base das organistas (sem aplicar ciclo de inversão)
-          const organistasBase = ordemBaseOrganistas(organistasRaw);
-          
-          // Criar um mapa de índice para cada organista baseado na ordem
-          const indicePorOrganista = {};
-          organistasBase.forEach((org, idx) => {
-            indicePorOrganista[org.id] = idx;
-          });
-          
-          console.log(`[DEBUG] Ciclo atual: ${cicloAtualMod + 1}, Dia: ${culto.dia_semana} (índice: ${indiceCulto})`);
+          console.log(`[DEBUG] Ciclo: ${numeroDoCiclo}, Dia: ${culto.dia_semana} (índice: ${indiceCulto})`);
           
           // Filtrar organistas cujo dia calculado corresponde ao dia atual do culto
-          // Fórmula: (indiceOrganista + cicloAtualMod) % numeroCultos === indiceCulto
+          // Fórmula: (indiceOrganista + numeroDoCiclo) % numeroCultos === indiceCulto
           const organistasCandidatas = organistasBase.filter(org => {
             const indiceOrg = indicePorOrganista[org.id];
-            const diaCalculado = (indiceOrg + cicloAtualMod) % numeroCultos;
+            const diaCalculado = (indiceOrg + numeroDoCiclo) % numeroCultos;
             
-            console.log(`[DEBUG] ${org.nome} (índice ${indiceOrg}): (${indiceOrg} + ${cicloAtualMod}) % ${numeroCultos} = ${diaCalculado} (esperado: ${indiceCulto})`);
+            console.log(`[DEBUG] ${org.nome} (índice ${indiceOrg}): (${indiceOrg} + ${numeroDoCiclo}) % ${numeroCultos} = ${diaCalculado} (esperado: ${indiceCulto})`);
             
             return diaCalculado === indiceCulto;
           });
@@ -756,8 +756,6 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
           
           // Usar distribuição equilibrada entre as candidatas
           organistaMeiaHora = distribuirOrganistas(organistasParaDistribuir, rodiziosGerados, item.data, 'meia_hora', culto.dia_semana);
-          
-          console.log(`[DEBUG] Organista escolhida para meia_hora: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id})`);
           
           console.log(`[DEBUG] Organista escolhida para meia_hora: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}) no dia ${indiceCulto} (${culto.dia_semana})`);
           
@@ -829,8 +827,8 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
             }
           }
           
-          const cultoNoCiclo = numeroCultosGeradosNestaExecucao % numeroCultos;
-          console.log(`[DEBUG] Rodízio ${numeroCultosGeradosNestaExecucao + 1}: Ciclo ${cicloAtualMod + 1}, Culto ${cultoNoCiclo + 1}/${numeroCultos} do ciclo`);
+          const numeroCultosGeradosNestaExecucao = novosRodizios.length / 2;
+          console.log(`[DEBUG] Rodízio ${numeroCultosGeradosNestaExecucao + 1}: Ciclo ${numeroDoCiclo}, Organistas escaladas no ciclo: ${organistasEscaladasNoCicloAtual.size}/${organistasBase.length}`);
         }
         
         console.log(`[DEBUG] Organistas: Meia Hora=${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}), Tocar Culto=${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
@@ -868,41 +866,21 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
      rodiziosGerados.push(rodizioMeiaHora);
      rodiziosGerados.push(rodizioTocarCulto);
      
-     // Atualizar histórico: registrar que estas organistas tocaram neste dia neste ciclo
-     // Usar a organista da meia_hora como referência (ou tocar_culto se for a mesma)
-     const organistaReferencia = organistaMeiaHora;
-     
-     if (!historicoDiasOrganistas[organistaReferencia.id]) {
-       historicoDiasOrganistas[organistaReferencia.id] = {};
+     // Registrar que estas organistas foram escaladas no ciclo atual
+     organistasEscaladasNoCicloAtual.add(organistaMeiaHora.id);
+     if (organistaTocarCulto.id !== organistaMeiaHora.id) {
+       organistasEscaladasNoCicloAtual.add(organistaTocarCulto.id);
      }
      
-     // Registrar o dia que esta organista tocou no ciclo atual
-     // Se já existe um registro para este ciclo, manter o mais recente
-     if (!historicoDiasOrganistas[organistaReferencia.id][cicloAtualMod] || 
-         new Date(historicoDiasOrganistas[organistaReferencia.id][cicloAtualMod].data) < new Date(item.data)) {
-       historicoDiasOrganistas[organistaReferencia.id][cicloAtualMod] = {
-         indiceCulto: indiceCulto,
-         data: new Date(item.data)
-       };
+     // Verificar se todas as organistas foram escaladas e incrementar o ciclo se necessário
+     if (organistasEscaladasNoCicloAtual.size >= organistasBase.length) {
+       numeroDoCiclo++;
+       organistasEscaladasNoCicloAtual.clear();
+       console.log(`[DEBUG] Todas as organistas foram escaladas. Incrementando ciclo para: ${numeroDoCiclo}`);
      }
      
-     // Se a organista de tocar_culto é diferente, também registrar
-     if (organistaTocarCulto.id !== organistaReferencia.id) {
-       if (!historicoDiasOrganistas[organistaTocarCulto.id]) {
-         historicoDiasOrganistas[organistaTocarCulto.id] = {};
-       }
-       
-       if (!historicoDiasOrganistas[organistaTocarCulto.id][cicloAtualMod] || 
-           new Date(historicoDiasOrganistas[organistaTocarCulto.id][cicloAtualMod].data) < new Date(item.data)) {
-         historicoDiasOrganistas[organistaTocarCulto.id][cicloAtualMod] = {
-           indiceCulto: indiceCulto,
-           data: new Date(item.data)
-         };
-       }
-     }
-
      console.log(`[DEBUG] Rodízio gerado para ${dataFormatada}: Meia Hora=${organistaMeiaHora.nome}, Tocar Culto=${organistaTocarCulto.nome}`);
-     console.log(`[DEBUG] Histórico atualizado: ${organistaReferencia.nome} tocou em ${culto.dia_semana} (índice ${indiceCulto}) no ciclo ${cicloAtualMod + 1}`);
+     console.log(`[DEBUG] Ciclo atual: ${numeroDoCiclo}, Organistas escaladas no ciclo: ${organistasEscaladasNoCicloAtual.size}/${organistasBase.length}`);
    } else {
         // Se só falta um, usar a lógica antiga
         if (!existeMeiaHora) {
