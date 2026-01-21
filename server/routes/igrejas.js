@@ -3,11 +3,39 @@ const router = express.Router();
 const db = require('../database/db');
 const { authenticate, getUserIgrejas } = require('../middleware/auth');
 
-// Listar igrejas (filtrado por usuário)
+// Listar igrejas (filtrado por usuário, admin vê todas)
 router.get('/', authenticate, async (req, res) => {
   try {
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
-    res.json(igrejas);
+    const pool = db.getDb();
+    
+    // Admin vê todas as igrejas com informações adicionais
+    if (req.user.role === 'admin') {
+      const [igrejas] = await pool.execute(
+        `SELECT 
+          i.id, i.nome, i.endereco, 
+          i.encarregado_local_nome, i.encarregado_local_telefone,
+          i.encarregado_regional_nome, i.encarregado_regional_telefone,
+          i.mesma_organista_ambas_funcoes, i.rodizio_ciclo,
+          i.created_at,
+          COUNT(DISTINCT oi.organista_id) as total_organistas,
+          COUNT(DISTINCT ui.usuario_id) as total_usuarios,
+          COUNT(DISTINCT c.id) as total_cultos
+         FROM igrejas i
+         LEFT JOIN organistas_igreja oi ON i.id = oi.igreja_id
+         LEFT JOIN usuario_igreja ui ON i.id = ui.igreja_id
+         LEFT JOIN cultos c ON i.id = c.igreja_id AND c.ativo = 1
+         GROUP BY i.id, i.nome, i.endereco, 
+                  i.encarregado_local_nome, i.encarregado_local_telefone,
+                  i.encarregado_regional_nome, i.encarregado_regional_telefone,
+                  i.mesma_organista_ambas_funcoes, i.rodizio_ciclo, i.created_at
+         ORDER BY i.nome`
+      );
+      res.json(igrejas);
+    } else {
+      // Usuário comum vê apenas suas igrejas
+      const igrejas = await getUserIgrejas(req.user.id, false);
+      res.json(igrejas);
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -271,6 +271,13 @@ function Igrejas({ user }) {
                   <th>Endereço</th>
                   <th>Encarregado Local</th>
                   <th>Encarregado Regional</th>
+                  {user?.role === 'admin' && (
+                    <>
+                      <th style={{ textAlign: 'center' }}>Organistas</th>
+                      <th style={{ textAlign: 'center' }}>Usuários</th>
+                      <th style={{ textAlign: 'center' }}>Cultos</th>
+                    </>
+                  )}
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -281,6 +288,49 @@ function Igrejas({ user }) {
                     <td style={{ maxWidth: '300px', wordBreak: 'break-word' }}>{igreja.endereco || '-'}</td>
                     <td>{igreja.encarregado_local_nome || '-'}</td>
                     <td>{igreja.encarregado_regional_nome || '-'}</td>
+                    {user?.role === 'admin' && (
+                      <>
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{ 
+                            display: 'inline-block',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            backgroundColor: igreja.total_organistas > 0 ? '#e7f3ff' : '#fff3cd',
+                            color: igreja.total_organistas > 0 ? '#0066cc' : '#856404',
+                            fontWeight: '600',
+                            fontSize: '0.9rem'
+                          }}>
+                            {igreja.total_organistas || 0}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{ 
+                            display: 'inline-block',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            backgroundColor: igreja.total_usuarios > 0 ? '#e7f3ff' : '#fff3cd',
+                            color: igreja.total_usuarios > 0 ? '#0066cc' : '#856404',
+                            fontWeight: '600',
+                            fontSize: '0.9rem'
+                          }}>
+                            {igreja.total_usuarios || 0}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{ 
+                            display: 'inline-block',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            backgroundColor: igreja.total_cultos > 0 ? '#e7f3ff' : '#fff3cd',
+                            color: igreja.total_cultos > 0 ? '#0066cc' : '#856404',
+                            fontWeight: '600',
+                            fontSize: '0.9rem'
+                          }}>
+                            {igreja.total_cultos || 0}
+                          </span>
+                        </td>
+                      </>
+                    )}
                     <td>
                       <div className="actions">
                         <button
