@@ -281,7 +281,7 @@ const isOficializadaParaCulto = (o) => {
   return o.oficializada === 1 || o.oficializada === true;
 };
 
-const gerarRodizio = async (igrejaId, periodoMeses) => {
+const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
   const pool = db.getDb();
   
   try {
@@ -337,13 +337,22 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
     //   Ciclo 1 (rodizioCiclo=3): [1,2,3,4,5,6,7,8,9] (volta ao ciclo 1)
     const numeroCultos = cultos.length;
     const numeroOrganistas = organistasRaw.length;
-    const cicloCalculado = numeroCultos > 0 ? (rodizioCiclo % numeroCultos) : 0;
+    
+    let cicloCalculado;
+    if (cicloInicial !== null && cicloInicial > 0) {
+      // ciclo_inicial vem como 1-based (1, 2, 3...), converter para 0-based (0, 1, 2...)
+      cicloCalculado = (cicloInicial - 1) % numeroCultos;
+    } else {
+      // Usar o ciclo da igreja se não foi especificado
+      cicloCalculado = numeroCultos > 0 ? (rodizioCiclo % numeroCultos) : 0;
+    }
     
     let organistasOrdenadas = aplicarCicloOrdem(ordemBaseOrganistas(organistasRaw), cicloCalculado);
     
     console.log(`[DEBUG] Organistas associadas encontradas:`, organistasOrdenadas.length);
     console.log(`[DEBUG] Cultos ativos encontrados:`, numeroCultos);
-    console.log(`[DEBUG] Ciclo do rodízio (igreja): ${rodizioCiclo} → Ciclo calculado: ${cicloCalculado + 1} (baseado em ${numeroCultos} cultos)`);
+    console.log(`[DEBUG] Ciclo inicial escolhido: ${cicloInicial || 'não especificado (usando ciclo da igreja: ' + rodizioCiclo + ')'}`);
+    console.log(`[DEBUG] Ciclo calculado: ${cicloCalculado + 1} (baseado em ${numeroCultos} cultos)`);
     console.log(`[DEBUG] Ordem aplicada:`, organistasOrdenadas.map(o => {
       const ordem = o.associacao_ordem !== undefined ? o.associacao_ordem : o.ordem;
       return { id: o.id, ordem: ordem ?? null, nome: o.nome };

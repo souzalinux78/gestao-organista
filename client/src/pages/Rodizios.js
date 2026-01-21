@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRodizios, gerarRodizio, getRodizioPDF, getDiagnosticoIgreja, limparRodiziosIgreja, testarWebhook } from '../services/api';
-import { getIgrejas } from '../services/api';
+import { getIgrejas, getCultosIgreja } from '../services/api';
 
 function Rodizios({ user }) {
   const navigate = useNavigate();
@@ -17,8 +17,10 @@ function Rodizios({ user }) {
   });
   const [gerarForm, setGerarForm] = useState({
     igreja_id: '',
-    periodo_meses: 6
+    periodo_meses: 6,
+    ciclo_inicial: ''
   });
+  const [cultosIgreja, setCultosIgreja] = useState([]);
   const [alert, setAlert] = useState(null);
 
   useEffect(() => {
@@ -33,6 +35,31 @@ function Rodizios({ user }) {
       setFiltros(prev => ({ ...prev, igreja_id: igrejas[0].id.toString() }));
     }
   }, [igrejas, user]);
+
+  // Carregar cultos quando a igreja for selecionada
+  useEffect(() => {
+    if (gerarForm.igreja_id) {
+      loadCultosIgreja(gerarForm.igreja_id);
+    } else {
+      setCultosIgreja([]);
+      setGerarForm(prev => ({ ...prev, ciclo_inicial: '' }));
+    }
+  }, [gerarForm.igreja_id]);
+
+  const loadCultosIgreja = async (igrejaId) => {
+    try {
+      const response = await getCultosIgreja(igrejaId);
+      const cultosAtivos = response.data.filter(c => c.ativo === 1);
+      setCultosIgreja(cultosAtivos);
+      // Se houver apenas 1 ciclo, definir como padrão
+      if (cultosAtivos.length === 1 && !gerarForm.ciclo_inicial) {
+        setGerarForm(prev => ({ ...prev, ciclo_inicial: '1' }));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar cultos da igreja:', error);
+      setCultosIgreja([]);
+    }
+  };
 
   const loadIgrejas = async () => {
     try {
@@ -136,7 +163,10 @@ function Rodizios({ user }) {
       await limparRodiziosIgreja(gerarForm.igreja_id);
       
       // Depois gerar novo
-      const response = await gerarRodizio(parseInt(gerarForm.igreja_id), gerarForm.periodo_meses);
+      const cicloInicial = gerarForm.ciclo_inicial && gerarForm.ciclo_inicial !== '' 
+        ? parseInt(gerarForm.ciclo_inicial) 
+        : 1;
+      const response = await gerarRodizio(parseInt(gerarForm.igreja_id), gerarForm.periodo_meses, cicloInicial);
       showAlert(`Rodízio limpo e regenerado com sucesso! ${response.data.rodizios} rodízios criados.`);
       loadRodizios();
     } catch (error) {
@@ -154,11 +184,20 @@ function Rodizios({ user }) {
       return;
     }
     
+    if (!gerarForm.ciclo_inicial || gerarForm.ciclo_inicial === '') {
+      showAlert('Selecione o ciclo inicial', 'error');
+      return;
+    }
+    
     try {
       setLoadingGerar(true);
-      const response = await gerarRodizio(parseInt(gerarForm.igreja_id), gerarForm.periodo_meses);
+      const response = await gerarRodizio(
+        parseInt(gerarForm.igreja_id), 
+        gerarForm.periodo_meses,
+        parseInt(gerarForm.ciclo_inicial)
+      );
       showAlert(`Rodízio gerado com sucesso! ${response.data.rodizios} rodízios criados.`);
-      setGerarForm({ igreja_id: '', periodo_meses: 6 });
+      setGerarForm({ igreja_id: '', periodo_meses: 6, ciclo_inicial: '' });
       loadRodizios();
     } catch (error) {
       const errorMessage = error.response?.data?.error || 'Erro ao gerar rodízio';
@@ -326,10 +365,29 @@ function Rodizios({ user }) {
               <option value={6}>6 meses</option>
               <option value={12}>12 meses</option>
             </select>
-            <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
-              O ciclo do rodízio é calculado automaticamente baseado no número de organistas. A cada geração, o ciclo avança automaticamente.
-            </small>
           </div>
+          {gerarForm.igreja_id && cultosIgreja.length > 0 && (
+            <div className="form-group">
+              <label>Ciclo Inicial *</label>
+              <select
+                value={gerarForm.ciclo_inicial}
+                onChange={(e) => setGerarForm({ ...gerarForm, ciclo_inicial: e.target.value })}
+                required
+              >
+                <option value="">Selecione o ciclo inicial</option>
+                {Array.from({ length: cultosIgreja.length }, (_, i) => i + 1).map(ciclo => (
+                  <option key={ciclo} value={ciclo}>
+                    Ciclo {ciclo}
+                  </option>
+                ))}
+              </select>
+              <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+                Esta igreja tem {cultosIgreja.length} culto(s) cadastrado(s). Escolha de qual ciclo começar (1 a {cultosIgreja.length}).
+                <br />
+                <strong>Exemplo:</strong> Se escolher Ciclo 2, o rodízio começará invertendo os 2 primeiros organistas.
+              </small>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <button type="submit" className="btn btn-primary" disabled={loadingGerar}>
               {loadingGerar ? 'Gerando...' : 'Gerar Rodízio'}
