@@ -45,13 +45,9 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// Criar nova igreja (apenas admin)
+// Criar nova igreja (admin ou usuário comum)
 router.post('/', authenticate, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Apenas administradores podem criar igrejas' });
-    }
-    
     const { 
       nome, 
       endereco, 
@@ -63,6 +59,7 @@ router.post('/', authenticate, async (req, res) => {
     } = req.body;
     const pool = db.getDb();
     
+    // Criar igreja
     const [result] = await pool.execute(
       `INSERT INTO igrejas (
         nome, endereco, 
@@ -81,8 +78,18 @@ router.post('/', authenticate, async (req, res) => {
       ]
     );
     
+    const igrejaId = result.insertId;
+    
+    // Se for usuário comum, associar automaticamente a ele
+    if (req.user.role !== 'admin') {
+      await pool.execute(
+        'INSERT INTO usuario_igreja (usuario_id, igreja_id) VALUES (?, ?)',
+        [req.user.id, igrejaId]
+      );
+    }
+    
     res.json({ 
-      id: result.insertId, 
+      id: igrejaId, 
       nome, 
       endereco,
       encarregado_local_nome,

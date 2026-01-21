@@ -1,30 +1,57 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, getUserIgrejas } = require('../middleware/auth');
 
-// Listar todas as organistas (filtrado por igrejas do usuário)
+// Listar organistas (filtrado por igrejas do usuário)
 router.get('/', authenticate, async (req, res) => {
   try {
     const pool = db.getDb();
-    // Ordenar por ordem (quando preenchida) e depois por nome
+    
+    // Obter igrejas do usuário
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    const igrejaIds = igrejas.map(i => i.id);
+    
+    if (igrejaIds.length === 0) {
+      return res.json([]);
+    }
+    
+    // Buscar organistas associadas às igrejas do usuário
     const [rows] = await pool.execute(
-      'SELECT * FROM organistas ORDER BY (ordem IS NULL), ordem ASC, nome ASC'
+      `SELECT DISTINCT o.* 
+       FROM organistas o
+       INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
+       WHERE oi.igreja_id IN (${igrejaIds.map(() => '?').join(',')})
+       ORDER BY (o.ordem IS NULL), o.ordem ASC, o.nome ASC`,
+      igrejaIds
     );
+    
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Buscar organista por ID
+// Buscar organista por ID (com verificação de acesso)
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const pool = db.getDb();
-    const [rows] = await pool.execute('SELECT * FROM organistas WHERE id = ?', [req.params.id]);
+    
+    // Obter igrejas do usuário
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    const igrejaIds = igrejas.map(i => i.id);
+    
+    // Verificar se a organista está associada a alguma igreja do usuário
+    const [rows] = await pool.execute(
+      `SELECT o.* 
+       FROM organistas o
+       INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
+       WHERE o.id = ? AND oi.igreja_id IN (${igrejaIds.length > 0 ? igrejaIds.map(() => '?').join(',') : 'NULL'})`,
+      igrejaIds.length > 0 ? [req.params.id, ...igrejaIds] : [req.params.id]
+    );
     
     if (rows.length === 0) {
-      return res.status(404).json({ error: 'Organista não encontrada' });
+      return res.status(404).json({ error: 'Organista não encontrada ou acesso negado' });
     }
     
     res.json(rows[0]);
@@ -65,11 +92,33 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-// Atualizar organista
+// Atualizar organista (com verificação de acesso)
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
     const pool = db.getDb();
+    
+    // Obter igrejas do usuário
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    const igrejaIds = igrejas.map(i => i.id);
+    
+    // Verificar se a organista está associada a alguma igreja do usuário
+    if (igrejaIds.length > 0) {
+      const [check] = await pool.execute(
+        `SELECT o.id 
+         FROM organistas o
+         INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
+         WHERE o.id = ? AND oi.igreja_id IN (${igrejaIds.map(() => '?').join(',')})
+         LIMIT 1`,
+        [req.params.id, ...igrejaIds]
+      );
+      
+      if (check.length === 0) {
+        return res.status(403).json({ error: 'Acesso negado a esta organista' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Você não tem acesso a nenhuma igreja' });
+    }
     
     const [result] = await pool.execute(
       'UPDATE organistas SET ordem = ?, nome = ?, telefone = ?, email = ?, oficializada = ?, ativa = ? WHERE id = ?',
