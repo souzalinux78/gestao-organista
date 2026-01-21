@@ -314,13 +314,280 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
   const pool = db.getDb();
   
   try {
-    // 1. Buscar informações da igreja (incluindo se permite mesma organista para ambas funções)
+    // ============================================
+    // LÓGICA COMPLETAMENTE REESCRITA
+    // Contador global contínuo que nunca reinicia
+    // ============================================
+    
+    // 1. Buscar informações da igreja
     const [igrejas] = await pool.execute(
       'SELECT * FROM igrejas WHERE id = ?',
       [igrejaId]
     );
     
     if (igrejas.length === 0) {
+      throw new Error('Igreja não encontrada');
+    }
+    
+    const igreja = igrejas[0];
+    const permiteMesmaOrganista = igreja.mesma_organista_ambas_funcoes === 1;
+    
+    // 2. Buscar cultos ativos da igreja
+    const [cultos] = await pool.execute(
+      'SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1 ORDER BY dia_semana',
+      [igrejaId]
+    );
+    
+    if (cultos.length === 0) {
+      throw new Error('Nenhum culto ativo encontrado para esta igreja');
+    }
+    
+    // 3. Buscar organistas associadas da igreja (ativas) ordenadas por ordem
+    const [organistasRaw] = await pool.execute(
+      `SELECT o.*, 
+              oi.oficializada as associacao_oficializada,
+              oi.ordem as associacao_ordem
+       FROM organistas o
+       INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
+       WHERE oi.igreja_id = ?
+         AND o.ativa = 1
+       ORDER BY (oi.ordem IS NULL), oi.ordem ASC, oi.id ASC`,
+      [igrejaId]
+    );
+    
+    if (organistasRaw.length === 0) {
+      throw new Error('Nenhuma organista ativa associada a esta igreja');
+    }
+    
+    // 4. Preparar arrays simples
+    const diasCulto = cultos.map(c => c.dia_semana.toLowerCase());
+    const organistas = organistasRaw.map(o => ({
+      id: o.id,
+      nome: o.nome,
+      oficializada: o.associacao_oficializada === 1 || o.oficializada === 1
+    }));
+    
+    // 5. Buscar contador global persistido (ou iniciar em 0)
+    let contadorGlobal = Number(igreja.rodizio_ciclo || 0);
+    
+    console.log(`[DEBUG] Contador global inicial: ${contadorGlobal}`);
+    console.log(`[DEBUG] Dias de culto: ${diasCulto.join(', ')}`);
+    console.log(`[DEBUG] Organistas: ${organistas.map(o => o.nome).join(', ')}`);
+    
+    // 6. Calcular período de datas
+    const dataInicio = new Date();
+    const dataFim = adicionarMeses(dataInicio, periodoMeses);
+    
+    // 7. Coletar todas as datas de todos os cultos em ordem cronológica
+    const todasDatas = [];
+    for (const culto of cultos) {
+      let dataAtual = getProximaData(culto.dia_semana, dataInicio);
+      while (dataAtual <= dataFim) {
+        const dataFormatada = formatarData(dataAtual);
+        
+        // Verificar se já existe rodízio para esta data e culto
+        const [rodiziosExistentes] = await pool.execute(
+          `SELECT id FROM rodizios 
+           WHERE culto_id = ? AND data_culto = ?`,
+          [culto.id, dataFormatada]
+        );
+        
+        // Só adicionar se não existir rodízio para este culto nesta data
+        if (rodiziosExistentes.length === 0) {
+          todasDatas.push({
+            culto: culto,
+            data: new Date(dataAtual),
+            dataFormatada: dataFormatada
+          });
+        }
+        
+        dataAtual = new Date(dataAtual);
+        dataAtual.setDate(dataAtual.getDate() + 7);
+      }
+    }
+    
+    // Ordenar todas as datas em ordem cronológica
+    todasDatas.sort((a, b) => a.data - b.data);
+    
+    console.log(`[DEBUG] Total de cultos a gerar: ${todasDatas.length}`);
+    
+    // 8. Gerar rodízios usando contador global
+    const novosRodizios = [];
+    
+    for (const item of todasDatas) {
+      const { culto, dataFormatada } = item;
+      const diaCultoAtual = culto.dia_semana.toLowerCase();
+      
+      // Calcular organista e dia usando contador global
+      const indiceOrganista = contadorGlobal % organistas.length;
+      const indiceDia = contadorGlobal % diasCulto.length;
+      const diaCalculado = diasCulto[indiceDia];
+      
+      // Verificar se o dia calculado corresponde ao dia do culto atual
+      if (diaCalculado !== diaCultoAtual) {
+        // Se não corresponde, pular este culto (não gerar rodízio)
+        console.log(`[DEBUG] Pulando ${diaCultoAtual} - dia calculado (${diaCalculado}) não corresponde. Contador: ${contadorGlobal}`);
+        continue;
+      }
+      
+      // Selecionar organista
+      const organistaSelecionada = organistas[indiceOrganista];
+      
+      console.log(`[DEBUG] Contador: ${contadorGlobal} | Organista: ${organistaSelecionada.nome} (índice ${indiceOrganista}) | Dia: ${diaCalculado}`);
+      
+      // Incrementar contador ANTES de gerar os rodízios
+      contadorGlobal++;
+      
+      // Declarar variáveis para as organistas
+      let organistaMeiaHora, organistaTocarCulto;
+      
+      // Gerar rodízios (meia_hora e tocar_culto)
+      if (permiteMesmaOrganista) {
+        // Mesma organista para ambas funções
+        if (!organistaSelecionada.oficializada) {
+          // Se não é oficializada, buscar próxima oficializada
+          const proximaOficializada = organistas.find(o => o.oficializada);
+          if (!proximaOficializada) {
+            throw new Error('Não existe organista oficializada ativa associada.');
+          }
+          organistaMeiaHora = proximaOficializada;
+          organistaTocarCulto = proximaOficializada;
+        } else {
+          organistaMeiaHora = organistaSelecionada;
+          organistaTocarCulto = organistaSelecionada;
+        }
+      } else {
+        // Duas organistas diferentes
+        organistaMeiaHora = organistaSelecionada;
+        
+        // Para tocar_culto, buscar próxima organista oficializada
+        let organistaTocarCultoEncontrada = null;
+        for (let i = 1; i < organistas.length; i++) {
+          const idx = (indiceOrganista + i) % organistas.length;
+          const org = organistas[idx];
+          if (org.oficializada) {
+            organistaTocarCultoEncontrada = org;
+            break;
+          }
+        }
+        
+        if (!organistaTocarCultoEncontrada) {
+          // Último recurso: buscar qualquer organista oficializada
+          organistaTocarCultoEncontrada = organistas.find(o => o.oficializada);
+          if (!organistaTocarCultoEncontrada) {
+            throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
+          }
+        }
+        
+        organistaTocarCulto = organistaTocarCultoEncontrada;
+      }
+      
+      // Criar rodízios
+      const horaMeiaHora = calcularHoraMeiaHora(culto.hora);
+      
+      const rodizioMeiaHora = {
+        igreja_id: igrejaId,
+        culto_id: culto.id,
+        organista_id: organistaMeiaHora.id,
+        data_culto: dataFormatada,
+        hora_culto: horaMeiaHora,
+        dia_semana: culto.dia_semana,
+        funcao: 'meia_hora',
+        periodo_inicio: formatarData(dataInicio),
+        periodo_fim: formatarData(dataFim)
+      };
+      
+      const rodizioTocarCulto = {
+        igreja_id: igrejaId,
+        culto_id: culto.id,
+        organista_id: organistaTocarCulto.id,
+        data_culto: dataFormatada,
+        hora_culto: culto.hora,
+        dia_semana: culto.dia_semana,
+        funcao: 'tocar_culto',
+        periodo_inicio: formatarData(dataInicio),
+        periodo_fim: formatarData(dataFim)
+      };
+      
+      novosRodizios.push(rodizioMeiaHora);
+      novosRodizios.push(rodizioTocarCulto);
+    }
+    
+    // 9. Inserir rodízios no banco
+    if (novosRodizios.length > 0) {
+      await inserirRodizios(novosRodizios);
+      
+      // Atualizar contador global no banco (PERSISTÊNCIA)
+      await pool.execute(
+        'UPDATE igrejas SET rodizio_ciclo = ? WHERE id = ?',
+        [contadorGlobal, igrejaId]
+      );
+      
+      console.log(`[DEBUG] Contador global atualizado no banco: ${contadorGlobal}`);
+    }
+    
+    // 10. Buscar rodízios gerados com informações completas
+    const rodiziosCompletos = await buscarRodiziosCompletos(igrejaId, formatarData(dataInicio), formatarData(dataFim));
+    
+    return rodiziosCompletos;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const inserirRodizios = async (rodizios) => {
+  const pool = db.getDb();
+  
+  try {
+    const query = `INSERT INTO rodizios 
+     (igreja_id, culto_id, organista_id, data_culto, hora_culto, dia_semana, funcao, periodo_inicio, periodo_fim)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+    for (const rodizio of rodizios) {
+      await pool.execute(query, [
+        rodizio.igreja_id,
+        rodizio.culto_id,
+        rodizio.organista_id,
+        rodizio.data_culto,
+        rodizio.hora_culto,
+        rodizio.dia_semana,
+        rodizio.funcao,
+        rodizio.periodo_inicio,
+        rodizio.periodo_fim
+      ]);
+    }
+  } catch (error) {
+    throw error;
+  }
+};
+
+const buscarRodiziosCompletos = async (igrejaId, periodoInicio, periodoFim) => {
+  const pool = db.getDb();
+  
+  try {
+    const [rows] = await pool.execute(
+      `SELECT r.*, 
+              o.nome as organista_nome, o.telefone as organista_telefone, o.email as organista_email,
+              i.nome as igreja_nome,
+              c.dia_semana, c.hora as hora_culto
+       FROM rodizios r
+       INNER JOIN organistas o ON r.organista_id = o.id
+       INNER JOIN igrejas i ON r.igreja_id = i.id
+       INNER JOIN cultos c ON r.culto_id = c.id
+       WHERE r.igreja_id = ? AND r.data_culto >= ? AND r.data_culto <= ?
+       ORDER BY r.data_culto, r.hora_culto, r.funcao`,
+      [igrejaId, periodoInicio, periodoFim]
+    );
+    
+    return rows;
+  } catch (error) {
+    throw error;
+  }
+};
+
+module.exports = {
+  gerarRodizio
+};
       throw new Error('Igreja não encontrada');
     }
     
@@ -797,35 +1064,20 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       }
     }
     
-    // 6. Verificar distribuição antes de inserir
-    const organistasUsadas = new Set(novosRodizios.map(r => r.organista_id));
-    console.log(`[DEBUG] Total de organistas usadas: ${organistasUsadas.size} de ${organistasOrdenadas.length}`);
-    console.log(`[DEBUG] Organistas usadas:`, Array.from(organistasUsadas).map(id => {
-      const org = organistasOrdenadas.find(o => o.id === id);
-      return org ? org.nome : id;
-    }).join(', '));
-    
-    // Contar quantas vezes cada organista foi usada
-    const contadoresFinais = {};
-    novosRodizios.forEach(r => {
-      contadoresFinais[r.organista_id] = (contadoresFinais[r.organista_id] || 0) + 1;
-    });
-    console.log(`[DEBUG] Distribuição final:`, Object.entries(contadoresFinais).map(([id, count]) => {
-      const org = organistasOrdenadas.find(o => o.id === parseInt(id));
-      return `${org ? org.nome : id}: ${count} vezes`;
-    }).join(', '));
-    
-    // 7. Inserir rodízios no banco
+    // 9. Inserir rodízios no banco
     if (novosRodizios.length > 0) {
       await inserirRodizios(novosRodizios);
-      // Incrementar ciclo do rodízio da igreja a cada geração bem-sucedida
+      
+      // Atualizar contador global no banco (PERSISTÊNCIA)
       await pool.execute(
-        'UPDATE igrejas SET rodizio_ciclo = rodizio_ciclo + 1 WHERE id = ?',
-        [igrejaId]
+        'UPDATE igrejas SET rodizio_ciclo = ? WHERE id = ?',
+        [contadorGlobal, igrejaId]
       );
+      
+      console.log(`[DEBUG] Contador global atualizado no banco: ${contadorGlobal}`);
     }
     
-    // 8. Buscar rodízios gerados com informações completas
+    // 10. Buscar rodízios gerados com informações completas
     const rodiziosCompletos = await buscarRodiziosCompletos(igrejaId, formatarData(dataInicio), formatarData(dataFim));
     
     return rodiziosCompletos;
