@@ -81,11 +81,22 @@ echo -e "${GREEN}✅ Frontend buildado${NC}"
 
 # 5. Executar migrações (se houver)
 echo -e "${YELLOW}🔄 Verificando migrações...${NC}"
+
+# Migração: campo aprovado em usuarios
+if [ -f "server/scripts/migrate-usuarios-aprovado.js" ]; then
+    if node server/scripts/migrate-usuarios-aprovado.js 2>/dev/null; then
+        echo -e "${GREEN}✅ Migração usuarios-aprovado executada${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Migração usuarios-aprovado não executada ou já aplicada${NC}"
+    fi
+fi
+
+# Migração: campo funcao em rodizios
 if [ -f "server/scripts/migrate-rodizios-funcao.js" ]; then
     if node server/scripts/migrate-rodizios-funcao.js 2>/dev/null; then
-        echo -e "${GREEN}✅ Migração executada${NC}"
+        echo -e "${GREEN}✅ Migração rodizios-funcao executada${NC}"
     else
-        echo -e "${YELLOW}⚠️  Migração não executada ou já aplicada${NC}"
+        echo -e "${YELLOW}⚠️  Migração rodizios-funcao não executada ou já aplicada${NC}"
     fi
 fi
 

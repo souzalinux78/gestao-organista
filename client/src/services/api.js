@@ -37,10 +37,13 @@ api.interceptors.response.use(
 
 // Autenticação
 export const login = (email, senha) => api.post('/auth/login', { email, senha });
+export const register = (nome, email, senha) => api.post('/auth/register', { nome, email, senha });
 export const getMe = () => api.get('/auth/me');
 export const createUsuario = (data) => api.post('/auth/usuarios', data);
 export const getUsuarios = () => api.get('/auth/usuarios');
 export const updateUsuario = (id, data) => api.put(`/auth/usuarios/${id}`, data);
+export const aprovarUsuario = (id) => api.put(`/auth/usuarios/${id}/aprovar`);
+export const rejeitarUsuario = (id) => api.put(`/auth/usuarios/${id}/rejeitar`);
 export const deleteUsuario = (id) => api.delete(`/auth/usuarios/${id}`);
 
 // Organistas

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Organistas from './pages/Organistas';
 import Igrejas from './pages/Igrejas';
 import Cultos from './pages/Cultos';
@@ -35,6 +36,8 @@ function AppContent() {
       <div className="container">
         <Routes>
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+          <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
+          <Route path="/cadastro" element={!user ? <Register /> : <Navigate to="/" />} />
           <Route path="/" element={<PrivateRoute><Home user={user} /></PrivateRoute>} />
           <Route path="/organistas" element={<PrivateRoute><Organistas /></PrivateRoute>} />
           <Route path="/igrejas" element={<PrivateRoute><Igrejas user={user} /></PrivateRoute>} />
@@ -45,7 +48,7 @@ function AppContent() {
           )}
         </Routes>
       </div>
-      {location.pathname !== '/login' && <InstallPrompt />}
+      {location.pathname !== '/login' && location.pathname !== '/register' && location.pathname !== '/cadastro' && <InstallPrompt />}
     </div>
   );
 }

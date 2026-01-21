@@ -16,12 +16,19 @@ const authenticate = async (req, res, next) => {
     // Buscar usuário no banco
     const pool = db.getDb();
     const [users] = await pool.execute(
-      'SELECT id, nome, email, role, ativo FROM usuarios WHERE id = ?',
+      'SELECT id, nome, email, role, ativo, aprovado FROM usuarios WHERE id = ?',
       [decoded.userId]
     );
 
     if (users.length === 0 || !users[0].ativo) {
       return res.status(401).json({ error: 'Usuário inválido ou inativo' });
+    }
+
+    // Verificar se usuário está aprovado (exceto admin que sempre está aprovado)
+    if (users[0].role !== 'admin' && !users[0].aprovado) {
+      return res.status(403).json({ 
+        error: 'Sua conta ainda não foi aprovada pelo administrador. Aguarde a aprovação para acessar o sistema.' 
+      });
     }
 
     req.user = users[0];

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { login } from '../services/api';
 import './Login.css';
@@ -92,7 +92,14 @@ function Login() {
 
         <div className="login-info">
           <p><strong>Primeiro acesso?</strong></p>
-          <p>Entre em contato com o administrador para criar sua conta.</p>
+          <p>
+            <Link to="/cadastro" style={{ color: '#2E86AB', fontWeight: '600', textDecoration: 'underline' }}>
+              Clique aqui para se cadastrar
+            </Link>
+          </p>
+          <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '10px' }}>
+            Após o cadastro, aguarde a aprovação do administrador.
+          </p>
         </div>
       </div>
     </div>

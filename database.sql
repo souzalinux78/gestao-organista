@@ -133,11 +133,13 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
   `senha_hash` VARCHAR(255) NOT NULL,
   `role` ENUM('admin', 'usuario') DEFAULT 'usuario',
   `ativo` TINYINT(1) DEFAULT 1,
+  `aprovado` TINYINT(1) DEFAULT 0,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX `idx_usuarios_email` (`email`),
   INDEX `idx_usuarios_role` (`role`),
-  INDEX `idx_usuarios_ativo` (`ativo`)
+  INDEX `idx_usuarios_ativo` (`ativo`),
+  INDEX `idx_usuarios_aprovado` (`aprovado`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================

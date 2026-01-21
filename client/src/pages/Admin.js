@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from '../services/api';
+import { getUsuarios, createUsuario, updateUsuario, deleteUsuario, aprovarUsuario, rejeitarUsuario } from '../services/api';
 import { getIgrejas } from '../services/api';
 
 function Admin() {
@@ -14,8 +14,10 @@ function Admin() {
     senha: '',
     role: 'usuario',
     ativo: true,
+    aprovado: true,
     igreja_ids: []
   });
+  const [filtroAprovacao, setFiltroAprovacao] = useState('todos'); // 'todos', 'pendentes', 'aprovados'
   const [alert, setAlert] = useState(null);
 
   useEffect(() => {
@@ -72,9 +74,32 @@ function Admin() {
       senha: '',
       role: usuario.role,
       ativo: usuario.ativo === 1,
+      aprovado: usuario.aprovado === 1,
       igreja_ids: usuario.igrejas_ids || []
     });
     setShowForm(true);
+  };
+
+  const handleAprovar = async (id) => {
+    try {
+      await aprovarUsuario(id);
+      showAlert('Usuário aprovado com sucesso!');
+      loadData();
+    } catch (error) {
+      showAlert(error.response?.data?.error || 'Erro ao aprovar usuário', 'error');
+    }
+  };
+
+  const handleRejeitar = async (id) => {
+    if (window.confirm('Tem certeza que deseja rejeitar este usuário? Ele não poderá acessar o sistema.')) {
+      try {
+        await rejeitarUsuario(id);
+        showAlert('Usuário rejeitado');
+        loadData();
+      } catch (error) {
+        showAlert(error.response?.data?.error || 'Erro ao rejeitar usuário', 'error');
+      }
+    }
   };
 
   const handleDelete = async (id) => {
@@ -96,6 +121,7 @@ function Admin() {
       senha: '',
       role: 'usuario',
       ativo: true,
+      aprovado: true,
       igreja_ids: []
     });
     setEditing(null);
@@ -118,11 +144,22 @@ function Admin() {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <h2>Gerenciar Usuários</h2>
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'Cancelar' : '+ Novo Usuário'}
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <select
+              value={filtroAprovacao}
+              onChange={(e) => setFiltroAprovacao(e.target.value)}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+            >
+              <option value="todos">Todos</option>
+              <option value="pendentes">Pendentes de Aprovação</option>
+              <option value="aprovados">Aprovados</option>
+            </select>
+            <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+              {showForm ? 'Cancelar' : '+ Novo Usuário'}
+            </button>
+          </div>
         </div>
 
         {alert && (
@@ -181,6 +218,18 @@ function Admin() {
                 {' '}Ativo
               </label>
             </div>
+            {formData.role === 'usuario' && (
+              <div className="form-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={formData.aprovado}
+                    onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
+                  />
+                  {' '}Aprovado
+                </label>
+              </div>
+            )}
             
             {formData.role === 'usuario' && (
               <div className="form-group">
@@ -209,51 +258,105 @@ function Admin() {
           </form>
         )}
 
-        {usuarios.length === 0 ? (
-          <div className="empty">Nenhum usuário cadastrado</div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Perfil</th>
-                <th>Igrejas</th>
-                <th>Ativo</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map(usuario => (
-                <tr key={usuario.id}>
-                  <td>{usuario.nome}</td>
-                  <td>{usuario.email}</td>
-                  <td>{usuario.role === 'admin' ? 'Administrador' : 'Usuário'}</td>
-                  <td>{usuario.igrejas_nomes || '-'}</td>
-                  <td>{usuario.ativo === 1 ? 'Sim' : 'Não'}</td>
-                  <td>
-                    <div className="actions">
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => handleEdit(usuario)}
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => handleDelete(usuario.id)}
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        Deletar
-                      </button>
-                    </div>
-                  </td>
+        {(() => {
+          const usuariosFiltrados = usuarios.filter(usuario => {
+            if (filtroAprovacao === 'pendentes') return usuario.aprovado === 0;
+            if (filtroAprovacao === 'aprovados') return usuario.aprovado === 1;
+            return true;
+          });
+
+          return usuariosFiltrados.length === 0 ? (
+            <div className="empty">
+              {filtroAprovacao === 'pendentes' 
+                ? 'Nenhum usuário pendente de aprovação' 
+                : filtroAprovacao === 'aprovados'
+                ? 'Nenhum usuário aprovado'
+                : 'Nenhum usuário cadastrado'}
+            </div>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Email</th>
+                  <th>Perfil</th>
+                  <th>Igrejas</th>
+                  <th>Status</th>
+                  <th>Ativo</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {usuariosFiltrados.map(usuario => (
+                  <tr key={usuario.id} style={usuario.aprovado === 0 ? { backgroundColor: '#fff3cd' } : {}}>
+                    <td>{usuario.nome}</td>
+                    <td>{usuario.email}</td>
+                    <td>{usuario.role === 'admin' ? 'Administrador' : 'Usuário'}</td>
+                    <td>{usuario.igrejas_nomes || '-'}</td>
+                    <td>
+                      {usuario.role === 'admin' ? (
+                        <span style={{ color: '#28a745', fontWeight: '600' }}>Aprovado</span>
+                      ) : usuario.aprovado === 1 ? (
+                        <span style={{ color: '#28a745', fontWeight: '600' }}>✓ Aprovado</span>
+                      ) : (
+                        <span style={{ color: '#dc3545', fontWeight: '600' }}>⏳ Pendente</span>
+                      )}
+                    </td>
+                    <td>{usuario.ativo === 1 ? 'Sim' : 'Não'}</td>
+                    <td>
+                      <div className="actions" style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                        {usuario.role !== 'admin' && usuario.aprovado === 0 && (
+                          <>
+                            <button
+                              className="btn"
+                              onClick={() => handleAprovar(usuario.id)}
+                              style={{ 
+                                fontSize: '12px', 
+                                padding: '5px 10px',
+                                backgroundColor: '#28a745',
+                                color: 'white',
+                                border: 'none'
+                              }}
+                            >
+                              ✓ Aprovar
+                            </button>
+                            <button
+                              className="btn"
+                              onClick={() => handleRejeitar(usuario.id)}
+                              style={{ 
+                                fontSize: '12px', 
+                                padding: '5px 10px',
+                                backgroundColor: '#dc3545',
+                                color: 'white',
+                                border: 'none'
+                              }}
+                            >
+                              ✗ Rejeitar
+                            </button>
+                          </>
+                        )}
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => handleEdit(usuario)}
+                          style={{ fontSize: '12px', padding: '5px 10px' }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn btn-danger"
+                          onClick={() => handleDelete(usuario.id)}
+                          style={{ fontSize: '12px', padding: '5px 10px' }}
+                        >
+                          Deletar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          );
+        })()}
       </div>
     </div>
   );

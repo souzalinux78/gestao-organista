@@ -5,6 +5,50 @@ const jwt = require('jsonwebtoken');
 const db = require('../database/db');
 const { authenticate, isAdmin, getUserIgrejas } = require('../middleware/auth');
 
+// Cadastro público (sem autenticação)
+router.post('/register', async (req, res) => {
+  try {
+    const { nome, email, senha } = req.body;
+
+    if (!nome || !email || !senha) {
+      return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
+    }
+
+    if (senha.length < 6) {
+      return res.status(400).json({ error: 'A senha deve ter no mínimo 6 caracteres' });
+    }
+
+    const pool = db.getDb();
+
+    // Verificar se email já existe
+    const [existing] = await pool.execute(
+      'SELECT id FROM usuarios WHERE email = ?',
+      [email]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'Email já cadastrado' });
+    }
+
+    // Hash da senha
+    const senhaHash = await bcrypt.hash(senha, 10);
+
+    // Criar usuário (não aprovado por padrão)
+    const [result] = await pool.execute(
+      'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)',
+      [nome, email, senhaHash, 'usuario', 0]
+    );
+
+    res.status(201).json({
+      message: 'Cadastro realizado com sucesso! Aguarde a aprovação do administrador para acessar o sistema.',
+      id: result.insertId
+    });
+  } catch (error) {
+    console.error('Erro no cadastro:', error);
+    res.status(500).json({ error: 'Erro ao realizar cadastro' });
+  }
+});
+
 // Login
 router.post('/login', async (req, res) => {
   try {
@@ -28,6 +72,13 @@ router.post('/login', async (req, res) => {
 
     if (!user.ativo) {
       return res.status(401).json({ error: 'Usuário inativo' });
+    }
+
+    // Verificar se usuário está aprovado (exceto admin que sempre está aprovado)
+    if (user.role !== 'admin' && !user.aprovado) {
+      return res.status(403).json({ 
+        error: 'Sua conta ainda não foi aprovada pelo administrador. Aguarde a aprovação para acessar o sistema.' 
+      });
     }
 
     const senhaValida = await bcrypt.compare(senha, user.senha_hash);
@@ -108,10 +159,11 @@ router.post('/usuarios', authenticate, isAdmin, async (req, res) => {
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha, 10);
 
-    // Criar usuário
+    // Criar usuário (admin sempre aprova automaticamente)
+    const aprovado = role === 'admin' ? 1 : 1; // Admin sempre aprovado, usuários criados por admin também
     const [result] = await pool.execute(
-      'INSERT INTO usuarios (nome, email, senha_hash, role) VALUES (?, ?, ?, ?)',
-      [nome, email, senhaHash, role || 'usuario']
+      'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)',
+      [nome, email, senhaHash, role || 'usuario', aprovado]
     );
 
     const userId = result.insertId;
@@ -144,14 +196,14 @@ router.get('/usuarios', authenticate, isAdmin, async (req, res) => {
   try {
     const pool = db.getDb();
     const [users] = await pool.execute(
-      `SELECT u.id, u.nome, u.email, u.role, u.ativo, u.created_at,
+      `SELECT u.id, u.nome, u.email, u.role, u.ativo, u.aprovado, u.created_at,
               GROUP_CONCAT(i.nome) as igrejas_nomes,
               GROUP_CONCAT(ui.igreja_id) as igrejas_ids
        FROM usuarios u
        LEFT JOIN usuario_igreja ui ON u.id = ui.usuario_id
        LEFT JOIN igrejas i ON ui.igreja_id = i.id
        GROUP BY u.id
-       ORDER BY u.nome`
+       ORDER BY u.aprovado ASC, u.created_at DESC`
     );
 
     const usuarios = users.map(user => ({
@@ -215,6 +267,10 @@ router.put('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
       updates.push('ativo = ?');
       values.push(ativo ? 1 : 0);
     }
+    if (req.body.aprovado !== undefined) {
+      updates.push('aprovado = ?');
+      values.push(req.body.aprovado ? 1 : 0);
+    }
 
     if (updates.length > 0) {
       values.push(req.params.id);
@@ -241,6 +297,44 @@ router.put('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
     }
 
     res.json({ message: 'Usuário atualizado com sucesso' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Aprovar usuário (apenas admin)
+router.put('/usuarios/:id/aprovar', authenticate, isAdmin, async (req, res) => {
+  try {
+    const pool = db.getDb();
+    const [result] = await pool.execute(
+      'UPDATE usuarios SET aprovado = 1 WHERE id = ?',
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    res.json({ message: 'Usuário aprovado com sucesso' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Rejeitar usuário (apenas admin)
+router.put('/usuarios/:id/rejeitar', authenticate, isAdmin, async (req, res) => {
+  try {
+    const pool = db.getDb();
+    const [result] = await pool.execute(
+      'UPDATE usuarios SET aprovado = 0 WHERE id = ?',
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    res.json({ message: 'Usuário rejeitado' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
