@@ -688,6 +688,12 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       if (!existeMeiaHora && !existeTocarCulto) {
         let organistaMeiaHora, organistaTocarCulto;
         
+        // Calcular ciclo atual (necessário para ambos os casos: mesma organista ou diferentes)
+        const numeroCultosGeradosNestaExecucao = novosRodizios.length / 2;
+        const cicloAtual = cicloCalculado + Math.floor(numeroCultosGeradosNestaExecucao / numeroCultos);
+        const cicloAtualMod = cicloAtual % numeroCultos;
+        const indiceCulto = cultos.findIndex(c => c.id === culto.id);
+        
         // Verificar se a igreja permite mesma organista para ambas funções
         if (permiteMesmaOrganista) {
           // Mesma organista para ambas funções: usar rotação simples
@@ -715,20 +721,9 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
           // LÓGICA DE ROTAÇÃO FORÇADA: Cada organista toca em um dia diferente a cada ciclo
           // Se tocou segunda no ciclo anterior, toca quarta no próximo ciclo
           
-          // Contar quantos cultos já foram gerados NESTA EXECUÇÃO (não incluir os existentes)
-          // Os rodízios existentes já foram processados no histórico inicial
-          const numeroCultosGeradosNestaExecucao = novosRodizios.length / 2; // Cada culto tem 2 rodízios (meia_hora e tocar_culto)
-          
-          // Calcular qual ciclo estamos (baseado em quantos ciclos completos já foram nesta execução)
-          const cicloAtual = cicloCalculado + Math.floor(numeroCultosGeradosNestaExecucao / numeroCultos);
-          const cicloAtualMod = cicloAtual % numeroCultos;
-          
           // Recalcular a ordem das organistas para o ciclo atual
           const organistasBase = ordemBaseOrganistas(organistasRaw);
           const organistasOrdenadasCicloAtual = aplicarCicloOrdem(organistasBase, cicloAtualMod);
-          
-          // Encontrar o índice do culto atual (qual dia da semana é este culto)
-          const indiceCulto = cultos.findIndex(c => c.id === culto.id);
           
           // LÓGICA DE ROTAÇÃO FORÇADA POR CICLO:
           // Se uma organista tocou em um dia no ciclo anterior, ela NÃO pode tocar no mesmo dia no ciclo atual
@@ -909,8 +904,8 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
             }
           }
           
-          const cultoNoCiclo = numeroCulto % numeroCultos;
-          console.log(`[DEBUG] Rodízio ${numeroCulto + 1}: Ciclo ${cicloAtualMod + 1}, Culto ${cultoNoCiclo + 1}/${numeroCultos} do ciclo`);
+          const cultoNoCiclo = numeroCultosGeradosNestaExecucao % numeroCultos;
+          console.log(`[DEBUG] Rodízio ${numeroCultosGeradosNestaExecucao + 1}: Ciclo ${cicloAtualMod + 1}, Culto ${cultoNoCiclo + 1}/${numeroCultos} do ciclo`);
         }
         
         console.log(`[DEBUG] Organistas: Meia Hora=${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}), Tocar Culto=${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
