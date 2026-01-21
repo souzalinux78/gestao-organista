@@ -351,17 +351,14 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       throw new Error('Nenhuma organista ativa associada a esta igreja');
     }
     
-    const diasCulto = cultos.map(c => c.dia_semana.toLowerCase());
+    const dias = cultos.map(c => c.dia_semana.toLowerCase());
     const organistas = organistasRaw.map(o => ({
       id: o.id,
       nome: o.nome,
       oficializada: o.associacao_oficializada === 1 || o.oficializada === 1
     }));
     
-    const totalDias = diasCulto.length;
-    const totalOrganistas = organistas.length;
-    
-    let cicloAtual = Number(igreja.rodizio_ciclo || 0);
+    let ciclo = Number(igreja.rodizio_ciclo || 0);
     
     const dataInicio = new Date();
     const dataFim = adicionarMeses(dataInicio, periodoMeses);
@@ -391,27 +388,31 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
     todasDatas.sort((a, b) => a.data - b.data);
     
     const novosRodizios = [];
-    let indiceOrganista = 0;
+    let posicaoNoCiclo = 0;
     
     for (const item of todasDatas) {
       const { culto, dataFormatada } = item;
       const diaCultoAtual = culto.dia_semana.toLowerCase();
       
-      if (indiceOrganista >= totalOrganistas) {
-        cicloAtual++;
-        indiceOrganista = 0;
+      if (posicaoNoCiclo >= organistas.length) {
+        ciclo++;
+        posicaoNoCiclo = 0;
       }
       
-      const indiceOrganistaReal = (indiceOrganista + cicloAtual) % totalOrganistas;
-      const indiceDia = indiceOrganistaReal % totalDias;
-      const diaCalculado = diasCulto[indiceDia];
+      const inicio = ciclo % organistas.length;
+      const filaRotacionada = [
+        ...organistas.slice(inicio),
+        ...organistas.slice(0, inicio)
+      ];
+      
+      const organistaSelecionada = filaRotacionada[posicaoNoCiclo];
+      const diaCalculado = dias[posicaoNoCiclo % dias.length];
       
       if (diaCalculado !== diaCultoAtual) {
         continue;
       }
       
-      const organistaSelecionada = organistas[indiceOrganistaReal];
-      indiceOrganista++;
+      posicaoNoCiclo++;
       
       let organistaMeiaHora, organistaTocarCulto;
       
@@ -430,9 +431,10 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       } else {
         organistaMeiaHora = organistaSelecionada;
         let organistaTocarCultoEncontrada = null;
-        for (let i = 1; i < totalOrganistas; i++) {
-          const idx = (indiceOrganistaReal + i) % totalOrganistas;
-          const org = organistas[idx];
+        const indiceNaFilaRotacionada = posicaoNoCiclo - 1;
+        for (let i = 1; i < organistas.length; i++) {
+          const idx = (indiceNaFilaRotacionada + i) % organistas.length;
+          const org = filaRotacionada[idx];
           if (org.oficializada) {
             organistaTocarCultoEncontrada = org;
             break;
@@ -481,7 +483,7 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       await inserirRodizios(novosRodizios);
       await pool.execute(
         'UPDATE igrejas SET rodizio_ciclo = ? WHERE id = ?',
-        [cicloAtual, igrejaId]
+        [ciclo, igrejaId]
       );
     }
     
