@@ -169,11 +169,9 @@ function Igrejas({ user }) {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <h2>Igrejas</h2>
-          {user?.role === 'admin' && (
-            <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-              {showForm ? 'Cancelar' : '+ Nova Igreja'}
-            </button>
-          )}
+          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Cancelar' : (user?.role === 'admin' ? '+ Nova Igreja' : '+ Cadastrar minha igreja')}
+          </button>
         </div>
 
         {alert && (
@@ -258,7 +256,12 @@ function Igrejas({ user }) {
         )}
 
         {igrejas.length === 0 ? (
-          <div className="empty">Nenhuma igreja cadastrada</div>
+          <div className="empty">
+            <div style={{ marginBottom: '10px' }}>Nenhuma igreja cadastrada</div>
+            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+              {user?.role === 'admin' ? '+ Nova Igreja' : '+ Cadastrar minha igreja'}
+            </button>
+          </div>
         ) : (
           <div className="table-wrapper">
             <table className="table">
