@@ -105,7 +105,10 @@ const createTables = async () => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (organista_id) REFERENCES organistas(id) ON DELETE CASCADE,
       FOREIGN KEY (igreja_id) REFERENCES igrejas(id) ON DELETE CASCADE,
-      UNIQUE KEY unique_organista_igreja (organista_id, igreja_id)
+      UNIQUE KEY unique_organista_igreja (organista_id, igreja_id),
+      INDEX idx_organistas_igreja_organista (organista_id),
+      INDEX idx_organistas_igreja_igreja (igreja_id),
+      INDEX idx_organistas_igreja_oficializada (oficializada)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
     // Tabela de Rodízios
@@ -158,7 +161,9 @@ const createTables = async () => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
       FOREIGN KEY (igreja_id) REFERENCES igrejas(id) ON DELETE CASCADE,
-      UNIQUE KEY unique_usuario_igreja (usuario_id, igreja_id)
+      UNIQUE KEY unique_usuario_igreja (usuario_id, igreja_id),
+      INDEX idx_usuario_igreja_usuario (usuario_id),
+      INDEX idx_usuario_igreja_igreja (igreja_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   ];
 
