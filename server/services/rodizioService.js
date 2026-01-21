@@ -417,12 +417,13 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       }
     }
     
-    // 4. Buscar rodízios existentes
+    // 4. Buscar rodízios existentes (incluindo organista_id e dia_semana para rotação)
     const [rodiziosExistentes] = await pool.execute(
-      `SELECT culto_id, data_culto, funcao 
-       FROM rodizios 
-       WHERE igreja_id = ? 
-       ORDER BY data_culto DESC`,
+      `SELECT r.culto_id, r.data_culto, r.funcao, r.organista_id, c.dia_semana
+       FROM rodizios r
+       INNER JOIN cultos c ON r.culto_id = c.id
+       WHERE r.igreja_id = ? 
+       ORDER BY r.data_culto DESC, r.hora_culto DESC`,
       [igrejaId]
     );
     
@@ -432,7 +433,14 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
     
     // 6. Gerar rodízio
     const novosRodizios = [];
-    const rodiziosGerados = []; // Para controle de distribuição
+    // Inicializar rodiziosGerados com os existentes para ter histórico completo
+    const rodiziosGerados = rodiziosExistentes.map(r => ({
+      organista_id: r.organista_id,
+      data_culto: r.data_culto,
+      dia_semana: r.dia_semana,
+      funcao: r.funcao,
+      culto_id: r.culto_id
+    }));
     
     // Primeiro, coletar TODAS as datas de TODOS os cultos em ordem cronológica
     const todasDatas = [];
@@ -479,13 +487,23 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
     // Ordenar todas as datas em ordem cronológica
     todasDatas.sort((a, b) => a.data - b.data);
     
-    // Função auxiliar para verificar se uma organista já tocou neste dia da semana
-    // e contar quantas vezes, para forçar rotação
-    const organistaTocouNesteDia = (organistaId, diaSemana, rodiziosGerados) => {
-      return rodiziosGerados.filter(r => 
-        r.organista_id === organistaId && 
+    // Função auxiliar para encontrar qual foi a ÚLTIMA organista que tocou em cada dia da semana
+    // Isso é crítico para forçar rotação: nunca a mesma organista toca duas vezes seguidas no mesmo dia
+    const encontrarUltimaOrganistaPorDia = (diaSemana, rodiziosGerados) => {
+      // Filtrar rodízios deste dia da semana
+      const rodiziosDia = rodiziosGerados.filter(r => 
         r.dia_semana.toLowerCase() === diaSemana.toLowerCase()
       );
+      
+      if (rodiziosDia.length === 0) {
+        return null; // Nunca tocou neste dia
+      }
+      
+      // Ordenar por data (mais recente primeiro)
+      rodiziosDia.sort((a, b) => new Date(b.data_culto) - new Date(a.data_culto));
+      
+      // Pegar a organista do rodízio mais recente (pode ser meia_hora ou tocar_culto, não importa)
+      return rodiziosDia[0].organista_id;
     };
     
     // Função para contar quantas vezes cada organista tocou em cada dia da semana
@@ -494,7 +512,10 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       organistas.forEach(org => {
         contadores[org.id] = {};
         cultos.forEach(culto => {
-          const rodiziosDia = organistaTocouNesteDia(org.id, culto.dia_semana, rodiziosGerados);
+          const rodiziosDia = rodiziosGerados.filter(r => 
+            r.organista_id === org.id && 
+            r.dia_semana.toLowerCase() === culto.dia_semana.toLowerCase()
+          );
           contadores[org.id][culto.dia_semana] = rodiziosDia.length;
         });
       });
@@ -582,24 +603,44 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
           // Se tocou neste dia no ciclo anterior, FORÇAR rotação para outro dia
           // Exemplo: Se tocou segunda no ciclo 1, não pode tocar segunda no ciclo 2 (deve tocar quarta)
           
-          // LÓGICA DE ROTAÇÃO FORÇADA:
-          // Para cada organista, verificar quantas vezes já tocou em cada dia
-          // Priorizar organistas que tocaram MENOS vezes neste dia específico
-          // Isso força rotação: se tocou 2 vezes em segunda e 1 vez em quarta, prioriza quarta
+          // LÓGICA DE ROTAÇÃO FORÇADA DEFINITIVA:
+          // 1. Encontrar qual foi a ÚLTIMA organista que tocou neste dia da semana
+          // 2. EXCLUIR essa organista da lista de candidatas (forçar rotação)
+          // 3. Entre as restantes, priorizar quem tocou menos vezes neste dia
+          // Isso garante que NUNCA a mesma organista toque duas vezes seguidas no mesmo dia
           
+          const ultimaOrganistaDia = encontrarUltimaOrganistaPorDia(culto.dia_semana, rodiziosGerados);
           const contadoresPorDia = contarTocadasPorDia(organistasOrdenadasCicloAtual, rodiziosGerados);
           
-          // Encontrar o menor contador para este dia
-          const minContador = Math.min(...organistasOrdenadasCicloAtual.map(org => 
+          console.log(`[DEBUG] Última organista que tocou em ${culto.dia_semana}: ${ultimaOrganistaDia ? organistasOrdenadasCicloAtual.find(o => o.id === ultimaOrganistaDia)?.nome : 'Nenhuma'}`);
+          
+          // Filtrar: EXCLUIR a última organista que tocou neste dia (forçar rotação)
+          // E priorizar quem tocou menos vezes neste dia
+          const organistasCandidatas = organistasOrdenadasCicloAtual.filter(org => {
+            // REGRA 1: Se esta organista foi a última a tocar neste dia, EXCLUIR (forçar rotação)
+            if (ultimaOrganistaDia && org.id === ultimaOrganistaDia) {
+              console.log(`[DEBUG] Excluindo ${org.nome} - foi a última a tocar em ${culto.dia_semana}`);
+              return false;
+            }
+            return true;
+          });
+          
+          // Se não houver candidatas (todas já tocaram e a última foi excluída),
+          // usar todas exceto a última (forçar rotação mesmo assim)
+          let organistasParaFiltrar = organistasCandidatas.length > 0 
+            ? organistasCandidatas 
+            : organistasOrdenadasCicloAtual.filter(org => org.id !== ultimaOrganistaDia);
+          
+          // Encontrar o menor contador para este dia entre as candidatas
+          const minContador = Math.min(...organistasParaFiltrar.map(org => 
             contadoresPorDia[org.id][culto.dia_semana] || 0
           ));
-          const maxContador = Math.max(...organistasOrdenadasCicloAtual.map(org => 
+          const maxContador = Math.max(...organistasParaFiltrar.map(org => 
             contadoresPorDia[org.id][culto.dia_semana] || 0
           ));
           
           // Filtrar: priorizar apenas organistas que tocaram MENOS vezes neste dia
-          // Se todas tocaram igualmente, usar todas
-          const organistasCandidatas = organistasOrdenadasCicloAtual.filter(org => {
+          const organistasCandidatasFinais = organistasParaFiltrar.filter(org => {
             const contador = contadoresPorDia[org.id][culto.dia_semana] || 0;
             // Se há diferença, só permitir quem tocou menos vezes
             if (maxContador > minContador) {
@@ -609,8 +650,8 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
             return true;
           });
           
-          // Ordenar candidatas por: quem tocou menos vezes neste dia, depois por ordem do ciclo
-          const organistasOrdenadasPorMenosTocadas = [...organistasCandidatas].sort((a, b) => {
+          // Ordenar candidatas por: quem tocou menos vezes neste dia
+          const organistasOrdenadasPorMenosTocadas = [...organistasCandidatasFinais].sort((a, b) => {
             const contadorA = contadoresPorDia[a.id][culto.dia_semana] || 0;
             const contadorB = contadoresPorDia[b.id][culto.dia_semana] || 0;
             if (contadorA !== contadorB) {
@@ -620,50 +661,66 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
             return 0;
           });
           
-          console.log(`[DEBUG] Dia ${culto.dia_semana}: Min=${minContador}, Max=${maxContador}, Candidatas=${organistasCandidatas.length}`);
+          console.log(`[DEBUG] Dia ${culto.dia_semana}: Min=${minContador}, Max=${maxContador}, Candidatas=${organistasCandidatasFinais.length}`);
           organistasOrdenadasPorMenosTocadas.forEach((org, idx) => {
             const contador = contadoresPorDia[org.id][culto.dia_semana] || 0;
             console.log(`[DEBUG]   ${idx + 1}. ${org.nome}: ${contador} vez(es) neste dia`);
           });
           
           // Usar as organistas ordenadas por quem tocou menos vezes neste dia
-          // Se não houver candidatas (não deve acontecer), usar todas
+          // Se não houver candidatas (não deve acontecer), usar todas exceto a última
           let organistasParaDistribuir;
           if (organistasOrdenadasPorMenosTocadas.length > 0) {
             organistasParaDistribuir = organistasOrdenadasPorMenosTocadas;
           } else {
-            // Fallback: usar todas, mas a função distribuirOrganistas vai priorizar corretamente
-            organistasParaDistribuir = organistasOrdenadasCicloAtual;
+            // Fallback: usar todas exceto a última que tocou
+            organistasParaDistribuir = organistasOrdenadasCicloAtual.filter(org => org.id !== ultimaOrganistaDia);
+            console.log(`[DEBUG] Fallback: usando todas exceto a última organista`);
           }
           
           // Usar distribuição equilibrada, mas priorizando as candidatas (já ordenadas por quem tocou menos)
           organistaMeiaHora = distribuirOrganistas(organistasParaDistribuir, rodiziosGerados, item.data, 'meia_hora', culto.dia_semana);
           
+          console.log(`[DEBUG] Organista escolhida para meia_hora: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id})`);
+          
           console.log(`[DEBUG] Organista escolhida para meia_hora: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}) no dia ${indiceCulto} (${culto.dia_semana})`);
           
-          // Para tocar_culto, garantir que seja oficializada e não seja a mesma da meia_hora
+          // Para tocar_culto, aplicar a mesma lógica de rotação forçada
+          // Excluir a última organista que tocou neste dia E a organista escolhida para meia_hora
           const organistasParaCulto = organistasParaDistribuir.filter(o => 
             o.id !== organistaMeiaHora.id && 
-            isOficializadaParaCulto(o)
+            isOficializadaParaCulto(o) &&
+            o.id !== ultimaOrganistaDia // Também excluir a última que tocou neste dia
           );
           
           if (organistasParaCulto.length > 0) {
             organistaTocarCulto = distribuirOrganistas(organistasParaCulto, rodiziosGerados, item.data, 'tocar_culto', culto.dia_semana);
-            console.log(`[DEBUG] Organista escolhida para tocar_culto: ${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id}) no dia ${indiceCulto} (${culto.dia_semana})`);
+            console.log(`[DEBUG] Organista escolhida para tocar_culto: ${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
           } else {
-            // Se não houver organista oficializada nas candidatas, buscar em todas
+            // Se não houver organista oficializada nas candidatas, buscar em todas (exceto meia_hora e última)
             const organistasOficializadas = organistasOrdenadasCicloAtual.filter(o => 
               o.id !== organistaMeiaHora.id && 
+              o.id !== ultimaOrganistaDia &&
               isOficializadaParaCulto(o)
             );
             if (organistasOficializadas.length > 0) {
               organistaTocarCulto = distribuirOrganistas(organistasOficializadas, rodiziosGerados, item.data, 'tocar_culto', culto.dia_semana);
-              console.log(`[DEBUG] Organista escolhida para tocar_culto (fallback): ${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id}) no dia ${indiceCulto} (${culto.dia_semana})`);
+              console.log(`[DEBUG] Organista escolhida para tocar_culto (fallback): ${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
             } else {
-              throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
+              // Último recurso: buscar qualquer organista oficializada (exceto meia_hora)
+              const qualquerOficializada = organistasOrdenadasCicloAtual.find(o => 
+                o.id !== organistaMeiaHora.id && 
+                isOficializadaParaCulto(o)
+              );
+              if (qualquerOficializada) {
+                organistaTocarCulto = qualquerOficializada;
+                console.log(`[DEBUG] Organista escolhida para tocar_culto (último recurso): ${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
+              } else {
+                throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
+              }
             }
           }
-          
+
           // Regra: não-oficializada só pode ficar em meia_hora; tocar_culto precisa ser oficializada.
           // Se por algum motivo a organista escolhida para tocar_culto não for oficializada, buscar outra
           if (!isOficializadaParaCulto(organistaTocarCulto)) {
@@ -690,7 +747,7 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
                 );
                 if (qualquerOficializada) {
                   organistaTocarCulto = qualquerOficializada;
-                } else {
+            } else {
                   throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
                 }
               }
