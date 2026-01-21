@@ -64,11 +64,13 @@ router.get('/:id', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   const startTime = Date.now();
   let organistaId = null;
+  let ordemValue = undefined;
   
   try {
     console.log(`[DEBUG] Iniciando criação de organista - Usuário: ${req.user.id} (${req.user.role})`);
     
     const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
+    ordemValue = ordem;
     const pool = db.getDb();
     const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000); // Reduzido para 8s
     
@@ -175,7 +177,7 @@ router.post('/', authenticate, async (req, res) => {
     // Tratar erro de ordem duplicada
     if (error.code === 'ER_DUP_ENTRY' && error.message.includes('unique_organistas_ordem')) {
       return res.status(400).json({ 
-        error: `Já existe uma organista com a ordem ${ordem}. Escolha outra ordem ou deixe em branco.` 
+        error: `Já existe uma organista com a ordem ${ordemValue}. Escolha outra ordem ou deixe em branco.` 
       });
     }
     
