@@ -460,66 +460,18 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
     
     console.log(`[DEBUG] Organistas base (ordem):`, organistasBase.map((o, idx) => `${idx}: ${o.nome}`).join(', '));
     
-    // Inicializar histórico com rodízios existentes
-    // Agrupar rodízios por organista e por data para determinar o ciclo
-    const rodiziosPorOrganista = {};
-    rodiziosExistentes.forEach(r => {
-      if (!r.organista_id || !r.dia_semana) return;
-      
-      if (!rodiziosPorOrganista[r.organista_id]) {
-        rodiziosPorOrganista[r.organista_id] = [];
-      }
-      
-      const cultoEncontrado = cultos.find(c => c.id === r.culto_id);
-      if (!cultoEncontrado) return;
-      
-      const indiceCulto = cultos.findIndex(c => c.dia_semana.toLowerCase() === cultoEncontrado.dia_semana.toLowerCase());
-      if (indiceCulto === -1) return;
-      
-      rodiziosPorOrganista[r.organista_id].push({
-        data: new Date(r.data_culto),
-        indiceCulto: indiceCulto,
-        culto_id: r.culto_id
-      });
-    });
-    
-    // Para cada organista, ordenar rodízios por data e determinar o ciclo
-    Object.keys(rodiziosPorOrganista).forEach(organistaId => {
-      const rodizios = rodiziosPorOrganista[organistaId].sort((a, b) => a.data - b.data);
-      
-      if (!historicoDiasOrganistas[organistaId]) {
-        historicoDiasOrganistas[organistaId] = {};
-      }
-      
-      // Agrupar rodízios por semana/ciclo aproximado
-      // Assumir que cada ciclo tem numeroCultos cultos (um por dia)
-      let cicloAtual = 0;
-      let ultimoIndiceCulto = -1;
-      
-      rodizios.forEach((rodizio, idx) => {
-        // Se mudou de dia (índice do culto), pode ter mudado de ciclo
-        if (ultimoIndiceCulto !== -1 && rodizio.indiceCulto !== ultimoIndiceCulto) {
-          // Se voltou para um dia anterior (ex: quarta -> segunda), novo ciclo
-          if (rodizio.indiceCulto < ultimoIndiceCulto) {
-            cicloAtual++;
-          }
-        }
-        
-        ultimoIndiceCulto = rodizio.indiceCulto;
-        const cicloMod = cicloAtual % numeroCultos;
-        
-        // Registrar o dia que esta organista tocou neste ciclo
-        if (!historicoDiasOrganistas[organistaId][cicloMod] || 
-            historicoDiasOrganistas[organistaId][cicloMod].data < rodizio.data) {
-          historicoDiasOrganistas[organistaId][cicloMod] = {
-            indiceCulto: rodizio.indiceCulto,
-            data: rodizio.data
-          };
-        }
-      });
-    });
-    
-    console.log(`[DEBUG] Histórico inicializado para ${Object.keys(historicoDiasOrganistas).length} organista(s)`);
+    // Inicializar o contador de ciclos baseado nos rodízios existentes
+    // Se já existem rodízios, calcular quantos ciclos completos já foram gerados
+    if (rodiziosExistentes.length > 0) {
+      // Contar quantas organistas únicas já foram escaladas
+      const organistasEscaladas = new Set(rodiziosExistentes.map(r => r.organista_id));
+      // Estimar o número de ciclos baseado no número de rodízios existentes
+      // Cada ciclo completo tem: numeroOrganistas * numeroCultos * 2 (meia_hora + tocar_culto)
+      const rodiziosPorCiclo = organistasBase.length * numeroCultos * 2;
+      const ciclosEstimados = Math.floor(rodiziosExistentes.length / rodiziosPorCiclo);
+      numeroDoCiclo = ciclosEstimados;
+      console.log(`[DEBUG] Rodízios existentes detectados. Ciclo inicial estimado: ${numeroDoCiclo}`);
+    }
     
     // Primeiro, coletar TODAS as datas de TODOS os cultos em ordem cronológica
     const todasDatas = [];
@@ -565,89 +517,6 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
     
     // Ordenar todas as datas em ordem cronológica
     todasDatas.sort((a, b) => a.data - b.data);
-    
-    // Função auxiliar para encontrar qual foi a ÚLTIMA organista que tocou em cada dia da semana
-    // Agrupa por semana para garantir rotação correta
-    const encontrarUltimaOrganistaPorDia = (diaSemana, dataAtual, rodiziosGerados) => {
-      // Filtrar rodízios deste dia da semana
-      const rodiziosDia = rodiziosGerados.filter(r => 
-        r.dia_semana && r.dia_semana.toLowerCase() === diaSemana.toLowerCase()
-      );
-      
-      if (rodiziosDia.length === 0) {
-        return null; // Nunca tocou neste dia
-      }
-      
-      // Ordenar por data (mais recente primeiro)
-      rodiziosDia.sort((a, b) => {
-        const dataA = new Date(a.data_culto);
-        const dataB = new Date(b.data_culto);
-        return dataB - dataA;
-      });
-      
-      // Pegar a organista do rodízio mais recente ANTES da data atual
-      // (não considerar rodízios da mesma data que está sendo processada)
-      const dataAtualDate = new Date(dataAtual);
-      const rodizioAnterior = rodiziosDia.find(r => {
-        const dataRodizio = new Date(r.data_culto);
-        return dataRodizio < dataAtualDate;
-      });
-      
-      if (rodizioAnterior) {
-        return rodizioAnterior.organista_id;
-      }
-      
-      // Se não encontrou anterior, pegar o mais recente (pode ser da mesma data se já foi processado)
-      return rodiziosDia[0].organista_id;
-    };
-    
-    // Função para encontrar todas as organistas que já tocaram neste dia, ordenadas por data
-    // Considera apenas rodízios ANTES da data atual (não os que estão sendo gerados agora)
-    const encontrarOrganistasQueTocaramNesteDia = (diaSemana, dataAtual, rodiziosGerados, organistasOrdenadasCicloAtual = []) => {
-      const dataAtualDate = new Date(dataAtual);
-      dataAtualDate.setHours(0, 0, 0, 0); // Normalizar para início do dia
-      
-      const rodiziosDia = rodiziosGerados.filter(r => {
-        if (!r.dia_semana || r.dia_semana.toLowerCase() !== diaSemana.toLowerCase()) {
-          return false;
-        }
-        
-        const dataRodizio = new Date(r.data_culto);
-        dataRodizio.setHours(0, 0, 0, 0);
-        
-        // Apenas rodízios ANTES da data atual (não incluir o mesmo dia)
-        return dataRodizio < dataAtualDate;
-      });
-      
-      if (rodiziosDia.length === 0) {
-        return [];
-      }
-      
-      // Agrupar por organista e pegar a data mais recente de cada uma
-      const organistasPorData = {};
-      rodiziosDia.forEach(r => {
-        const dataRodizio = new Date(r.data_culto);
-        dataRodizio.setHours(0, 0, 0, 0);
-        
-        if (!organistasPorData[r.organista_id] || organistasPorData[r.organista_id] < dataRodizio) {
-          organistasPorData[r.organista_id] = dataRodizio;
-        }
-      });
-      
-      // Ordenar por data (mais recente primeiro)
-      const organistasOrdenadas = Object.entries(organistasPorData)
-        .sort((a, b) => b[1] - a[1])
-        .map(([organistaId]) => parseInt(organistaId));
-      
-      if (organistasOrdenadasCicloAtual.length > 0) {
-        console.log(`[DEBUG] Organistas que tocaram em ${diaSemana} antes de ${dataAtual}:`, organistasOrdenadas.map(id => {
-          const org = organistasOrdenadasCicloAtual.find(o => o.id === id);
-          return org ? org.nome : id;
-        }).join(', '));
-      }
-      
-      return organistasOrdenadas;
-    };
     
     // Função para contar quantas vezes cada organista tocou em cada dia da semana
     const contarTocadasPorDia = (organistas, rodiziosGerados) => {
