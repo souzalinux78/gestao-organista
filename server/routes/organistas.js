@@ -65,6 +65,7 @@ router.post('/', authenticate, async (req, res) => {
   try {
     const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
     const pool = db.getDb();
+    const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 10000);
     
     // Validar nome obrigatório
     if (!nome || nome.trim() === '') {
@@ -81,32 +82,34 @@ router.post('/', authenticate, async (req, res) => {
     }
     
     // Criar organista
-    const [result] = await pool.execute(
-      'INSERT INTO organistas (ordem, nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?, ?)',
-      [
+    const [result] = await pool.execute({
+      sql: 'INSERT INTO organistas (ordem, nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?, ?)',
+      values: [
         ordem !== undefined && ordem !== '' ? Number(ordem) : null,
         nome.trim(),
         telefone || null,
         email || null,
         oficializada ? 1 : 0,
         ativa !== undefined ? (ativa ? 1 : 0) : 1
-      ]
-    );
+      ],
+      timeout: dbTimeout
+    });
     
     const organistaId = result.insertId;
     
-    // Associar organista automaticamente às igrejas do usuário
-    for (const igrejaId of igrejaIds) {
-      try {
-        await pool.execute(
-          'INSERT IGNORE INTO organistas_igreja (organista_id, igreja_id, oficializada) VALUES (?, ?, ?)',
-          [organistaId, igrejaId, oficializada ? 1 : 0]
-        );
-      } catch (assocError) {
-        // Log do erro mas continua com as outras associações
-        console.error(`[DEBUG] Erro ao associar organista ${organistaId} à igreja ${igrejaId}:`, assocError.message);
+    // Associar organista automaticamente às igrejas do usuário (em lote, 1 query)
+    // Isso reduz N roundtrips ao banco e evita pendurar por saturação do pool/DB.
+    const oficializadaInt = oficializada ? 1 : 0;
+    const placeholders = igrejaIds.map(() => '(?, ?, ?)').join(', ');
+    const params = igrejaIds.flatMap((igrejaId) => [organistaId, igrejaId, oficializadaInt]);
+
+    await pool.execute(
+      {
+        sql: `INSERT IGNORE INTO organistas_igreja (organista_id, igreja_id, oficializada) VALUES ${placeholders}`,
+        values: params,
+        timeout: dbTimeout
       }
-    }
+    );
     
     res.json({ 
       id: organistaId, 
@@ -120,6 +123,11 @@ router.post('/', authenticate, async (req, res) => {
   } catch (error) {
     console.error('[DEBUG] Erro ao criar organista:', error);
     
+    // Se o MySQL travar/demorar demais, evitar 504 do proxy e responder com erro claro
+    if (error.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || error.code === 'ETIMEDOUT') {
+      return res.status(503).json({ error: 'Banco de dados demorou para responder. Tente novamente em instantes.' });
+    }
+
     // Tratar erro de ordem duplicada
     if (error.code === 'ER_DUP_ENTRY' && error.message.includes('unique_organistas_ordem')) {
       return res.status(400).json({ 

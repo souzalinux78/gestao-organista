@@ -14,6 +14,8 @@ const init = async () => {
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || 'FLoc25GD!',
       database: process.env.DB_NAME || 'gestao_organista',
+      // Evita ficar pendurado esperando conexão com MySQL (importante em produção atrás de proxy)
+      connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT_MS || 10000),
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0
@@ -43,6 +45,7 @@ const createDatabaseIfNotExists = async () => {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'FLoc25GD!',
+    connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT_MS || 10000),
     waitForConnections: true,
     connectionLimit: 1
   });

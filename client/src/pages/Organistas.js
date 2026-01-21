@@ -53,7 +53,9 @@ function Organistas() {
       loadOrganistas();
     } catch (error) {
       // Mostrar a mensagem real vinda do backend (se existir)
-      const errorMessage =
+      const errorMessage = (error?.code === 'ECONNABORTED')
+        ? 'Tempo limite ao salvar. O servidor demorou para responder (15s). Tente novamente.'
+        :
         error?.response?.data?.error ||
         error?.response?.data?.message ||
         error?.message ||

@@ -15,10 +15,11 @@ const authenticate = async (req, res, next) => {
     
     // Buscar usuário no banco
     const pool = db.getDb();
-    const [users] = await pool.execute(
-      'SELECT id, nome, email, role, ativo, aprovado FROM usuarios WHERE id = ?',
-      [decoded.userId]
-    );
+    const [users] = await pool.execute({
+      sql: 'SELECT id, nome, email, role, ativo, aprovado FROM usuarios WHERE id = ?',
+      values: [decoded.userId],
+      timeout: Number(process.env.DB_QUERY_TIMEOUT_MS || 10000)
+    });
 
     if (users.length === 0 || !users[0].ativo) {
       return res.status(401).json({ error: 'Usuário inválido ou inativo' });
@@ -82,16 +83,20 @@ const getUserIgrejas = async (userId, isAdmin) => {
   const pool = db.getDb();
   
   if (isAdmin) {
-    const [igrejas] = await pool.execute('SELECT * FROM igrejas ORDER BY nome');
+    const [igrejas] = await pool.execute({
+      sql: 'SELECT * FROM igrejas ORDER BY nome',
+      timeout: Number(process.env.DB_QUERY_TIMEOUT_MS || 10000)
+    });
     return igrejas;
   } else {
-    const [igrejas] = await pool.execute(
-      `SELECT i.* FROM igrejas i
+    const [igrejas] = await pool.execute({
+      sql: `SELECT i.* FROM igrejas i
        INNER JOIN usuario_igreja ui ON i.id = ui.igreja_id
        WHERE ui.usuario_id = ?
        ORDER BY i.nome`,
-      [userId]
-    );
+      values: [userId],
+      timeout: Number(process.env.DB_QUERY_TIMEOUT_MS || 10000)
+    });
     return igrejas;
   }
 };

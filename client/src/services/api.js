@@ -2,6 +2,8 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: '/api',
+  // Evita “ficar salvando para sempre” quando o backend/proxy não responde.
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
   }
