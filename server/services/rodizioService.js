@@ -509,15 +509,24 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
           console.log(`[DEBUG] Igreja permite mesma organista: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}) faz ambas funções`);
         } else {
           // Duas organistas diferentes: distribuir baseado na ordem do ciclo
-          // Garantir que cada organista toque em um culto diferente em cada ciclo
+          // IMPORTANTE: Rotacionar os ciclos ao longo do período gerado
+          // Garantir que cada organista toque em dias diferentes, não sempre no mesmo dia da semana
           
           // Contar quantos cultos já foram gerados neste período
           const numeroCulto = rodiziosGerados.length / 2; // Cada culto tem 2 rodízios (meia_hora e tocar_culto)
           
+          // Calcular qual ciclo estamos (baseado em quantos ciclos completos já foram)
+          // Ciclo começa do ciclo inicial escolhido e vai rotacionando
+          const cicloAtual = cicloCalculado + Math.floor(numeroCulto / numeroCultos);
+          const cicloAtualMod = cicloAtual % numeroCultos;
+          
+          // Recalcular a ordem das organistas para o ciclo atual
+          const organistasBase = ordemBaseOrganistas(organistasRaw);
+          const organistasOrdenadasCicloAtual = aplicarCicloOrdem(organistasBase, cicloAtualMod);
+          
           // Calcular qual culto do ciclo atual (0 a numeroCultos-1)
           const cultoNoCiclo = numeroCulto % numeroCultos;
           
-          // Usar a ordem das organistas já calculada pelo ciclo
           // Distribuir sequencialmente: cada culto do ciclo usa um par diferente de organistas
           // Par 0: organistas[0] e organistas[1]
           // Par 1: organistas[2] e organistas[3]
@@ -525,16 +534,56 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
           // E assim por diante...
           
           const indicePar = cultoNoCiclo;
-          const indiceOrganista1 = (indicePar * 2) % organistasOrdenadas.length;
-          const indiceOrganista2 = (indiceOrganista1 + 1) % organistasOrdenadas.length;
+          const indiceOrganista1 = (indicePar * 2) % organistasOrdenadasCicloAtual.length;
+          const indiceOrganista2 = (indiceOrganista1 + 1) % organistasOrdenadasCicloAtual.length;
           
-          const organista1 = organistasOrdenadas[indiceOrganista1];
-          const organista2 = organistasOrdenadas[indiceOrganista2];
+          const organista1 = organistasOrdenadasCicloAtual[indiceOrganista1];
+          const organista2 = organistasOrdenadasCicloAtual[indiceOrganista2];
           
-          // Determinar qual organista faz qual função baseado na ordem do ciclo
-          // No ciclo atual, a primeira organista do par faz meia_hora, a segunda faz tocar_culto
-          organistaMeiaHora = organista1;
-          organistaTocarCulto = organista2;
+          // Verificar se essas organistas já tocaram muito recentemente ou no mesmo dia da semana
+          // Se sim, usar distribuição equilibrada ao invés de sequencial
+          const organista1TocouProximo = organistaTocouMuitoProximo(organista1.id, item.data, rodiziosGerados, 7);
+          const organista2TocouProximo = organistaTocouMuitoProximo(organista2.id, item.data, rodiziosGerados, 7);
+          const organista1MesmoDia = organistaTocouNoMesmoDiaSemana(organista1.id, culto.dia_semana, rodiziosGerados);
+          const organista2MesmoDia = organistaTocouNoMesmoDiaSemana(organista2.id, culto.dia_semana, rodiziosGerados);
+          
+          // Sempre usar distribuição equilibrada para garantir que não fique sempre no mesmo dia
+          // Mas priorizar a ordem do ciclo quando possível
+          let usarDistribuicaoEquilibrada = organista1TocouProximo || organista2TocouProximo || organista1MesmoDia || organista2MesmoDia;
+          
+          // Verificar também se há muitas organistas que tocaram no mesmo dia da semana
+          // Se mais de 50% das organistas já tocaram neste dia, usar distribuição equilibrada
+          const organistasQueTocaramNoDia = organistasOrdenadasCicloAtual.filter(o => 
+            organistaTocouNoMesmoDiaSemana(o.id, culto.dia_semana, rodiziosGerados)
+          ).length;
+          
+          if (organistasQueTocaramNoDia > organistasOrdenadasCicloAtual.length / 2) {
+            usarDistribuicaoEquilibrada = true;
+          }
+          
+          if (usarDistribuicaoEquilibrada) {
+            // Usar distribuição equilibrada baseada em quem menos tocou e não tocou no mesmo dia
+            organistaMeiaHora = distribuirOrganistas(organistasOrdenadasCicloAtual, rodiziosGerados, item.data, 'meia_hora', culto.dia_semana);
+            organistaTocarCulto = distribuirOrganistas(organistasOrdenadasCicloAtual, rodiziosGerados, item.data, 'tocar_culto', culto.dia_semana);
+            
+            // Garantir que não sejam a mesma organista
+            if (organistaMeiaHora.id === organistaTocarCulto.id) {
+              // Se forem a mesma, buscar próxima organista disponível
+              const proximaOrganista = organistasOrdenadasCicloAtual.find(o => 
+                o.id !== organistaMeiaHora.id && 
+                isOficializadaParaCulto(o) &&
+                !organistaTocouNoMesmoDiaSemana(o.id, culto.dia_semana, rodiziosGerados)
+              );
+              if (proximaOrganista) {
+                organistaTocarCulto = proximaOrganista;
+              }
+            }
+          } else {
+            // Determinar qual organista faz qual função baseado na ordem do ciclo
+            // No ciclo atual, a primeira organista do par faz meia_hora, a segunda faz tocar_culto
+            organistaMeiaHora = organista1;
+            organistaTocarCulto = organista2;
+          }
           
           // Regra: não-oficializada só pode ficar em meia_hora; tocar_culto precisa ser oficializada.
           // Se cair uma não-oficializada no culto, tentar inverter (se a outra for oficializada) ou buscar outro par.
@@ -546,9 +595,9 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
             } else {
               // Buscar próximo par válido com organista oficializada
               let parEncontrado = false;
-              for (let i = 0; i < organistasOrdenadas.length; i += 2) {
-                const org1 = organistasOrdenadas[i];
-                const org2 = organistasOrdenadas[(i + 1) % organistasOrdenadas.length];
+              for (let i = 0; i < organistasOrdenadasCicloAtual.length; i += 2) {
+                const org1 = organistasOrdenadasCicloAtual[i];
+                const org2 = organistasOrdenadasCicloAtual[(i + 1) % organistasOrdenadasCicloAtual.length];
                 
                 if (isOficializadaParaCulto(org1) || isOficializadaParaCulto(org2)) {
                   if (isOficializadaParaCulto(org2)) {
@@ -569,7 +618,7 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
             }
           }
           
-          console.log(`[DEBUG] Rodízio ${numeroCulto + 1}: Culto ${cultoNoCiclo + 1}/${numeroCultos} do ciclo, Par ${indicePar + 1}`);
+          console.log(`[DEBUG] Rodízio ${numeroCulto + 1}: Ciclo ${cicloAtualMod + 1}, Culto ${cultoNoCiclo + 1}/${numeroCultos} do ciclo, Par ${indicePar + 1}`);
         }
         
         console.log(`[DEBUG] Organistas: Meia Hora=${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}), Tocar Culto=${organistaTocarCulto.nome} (ID:${organistaTocarCulto.id})`);
