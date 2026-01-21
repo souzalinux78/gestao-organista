@@ -7,6 +7,7 @@ const { authenticate, getUserIgrejas } = require('../middleware/auth');
 router.get('/', authenticate, async (req, res) => {
   try {
     const pool = db.getDb();
+    const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000);
     
     // Obter igrejas do usuário
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
@@ -16,23 +17,61 @@ router.get('/', authenticate, async (req, res) => {
       return res.json([]);
     }
     
-    // Buscar organistas associadas às igrejas do usuário (com ordem por igreja)
-    // Se o usuário tiver múltiplas igrejas, mostrará a organista múltiplas vezes (uma por igreja)
-    // Para evitar duplicatas, agrupamos por organista_id e pegamos a primeira ordem encontrada
-    const [rows] = await pool.execute(
-      `SELECT DISTINCT o.*, 
-              MIN(oi.ordem) as ordem,
-              GROUP_CONCAT(DISTINCT oi.igreja_id) as igrejas_ids
-       FROM organistas o
-       INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
-       WHERE oi.igreja_id IN (${igrejaIds.map(() => '?').join(',')})
-       GROUP BY o.id
-       ORDER BY (MIN(oi.ordem) IS NULL), MIN(oi.ordem) ASC, o.nome ASC`,
-      igrejaIds
-    );
+    // Verificar se a coluna ordem existe em organistas_igreja
+    let ordemColumnExists = false;
+    try {
+      const [columns] = await pool.execute({
+        sql: `
+          SELECT COLUMN_NAME
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'organistas_igreja'
+            AND COLUMN_NAME = 'ordem'
+        `,
+        timeout: dbTimeout
+      });
+      ordemColumnExists = columns.length > 0;
+    } catch (checkError) {
+      // Se falhar ao verificar, assumir que não existe
+      ordemColumnExists = false;
+    }
+    
+    // Buscar organistas associadas às igrejas do usuário
+    // Query compatível: funciona mesmo se a coluna ordem ainda não existir
+    let rows;
+    if (ordemColumnExists) {
+      // Se coluna ordem existe, usar ordem de organistas_igreja
+      [rows] = await pool.execute({
+        sql: `SELECT DISTINCT o.*, 
+                    MIN(oi.ordem) as ordem,
+                    GROUP_CONCAT(DISTINCT oi.igreja_id) as igrejas_ids
+             FROM organistas o
+             INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
+             WHERE oi.igreja_id IN (${igrejaIds.map(() => '?').join(',')})
+             GROUP BY o.id
+             ORDER BY (MIN(oi.ordem) IS NULL), MIN(oi.ordem) ASC, o.nome ASC`,
+        values: igrejaIds,
+        timeout: dbTimeout
+      });
+    } else {
+      // Se coluna ordem não existe, usar ordem de organistas (compatibilidade)
+      [rows] = await pool.execute({
+        sql: `SELECT DISTINCT o.*, 
+                    o.ordem,
+                    GROUP_CONCAT(DISTINCT oi.igreja_id) as igrejas_ids
+             FROM organistas o
+             INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
+             WHERE oi.igreja_id IN (${igrejaIds.map(() => '?').join(',')})
+             GROUP BY o.id, o.ordem
+             ORDER BY (o.ordem IS NULL), o.ordem ASC, o.nome ASC`,
+        values: igrejaIds,
+        timeout: dbTimeout
+      });
+    }
     
     res.json(rows);
   } catch (error) {
+    console.error('[DEBUG] Erro ao listar organistas:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -103,15 +142,34 @@ router.post('/', authenticate, async (req, res) => {
       igrejaIds = [];
     }
     
-    // Validar: usuário precisa ter pelo menos uma igreja para definir ordem
+    // Validar: usuário precisa ter pelo menos uma igreja para criar organista
     if (igrejaIds.length === 0) {
       return res.status(400).json({ 
         error: 'Você precisa ter pelo menos uma igreja cadastrada para criar organistas. Crie uma igreja primeiro.' 
       });
     }
 
-    // Se ordem fornecida, validar que não está duplicada para cada igreja
-    if (ordem !== undefined && ordem !== '' && Number(ordem) > 0) {
+    // Verificar se a coluna ordem existe em organistas_igreja (para compatibilidade)
+    let ordemColumnExists = false;
+    try {
+      const [columns] = await pool.execute({
+        sql: `
+          SELECT COLUMN_NAME
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'organistas_igreja'
+            AND COLUMN_NAME = 'ordem'
+        `,
+        timeout: dbTimeout
+      });
+      ordemColumnExists = columns.length > 0;
+      console.log(`[DEBUG] Coluna ordem em organistas_igreja: ${ordemColumnExists ? 'existe' : 'não existe'}`);
+    } catch (checkError) {
+      console.log('[DEBUG] Erro ao verificar coluna ordem, assumindo que não existe:', checkError.message);
+    }
+
+    // Se ordem fornecida e coluna existe, validar que não está duplicada para cada igreja
+    if (ordemColumnExists && ordem !== undefined && ordem !== '' && Number(ordem) > 0) {
       const ordemNum = Number(ordem);
       for (const igrejaId of igrejaIds) {
         const [existing] = await pool.execute({
@@ -128,7 +186,7 @@ router.post('/', authenticate, async (req, res) => {
       }
     }
     
-    // Criar organista (sem ordem - ordem fica em organistas_igreja)
+    // Criar organista
     console.log(`[DEBUG] Criando organista no banco...`);
     const insertStart = Date.now();
     
@@ -147,33 +205,52 @@ router.post('/', authenticate, async (req, res) => {
     organistaId = result.insertId;
     console.log(`[DEBUG] Organista criada (${Date.now() - insertStart}ms) - ID: ${organistaId}`);
     
-    // Associar organista às igrejas do usuário COM ORDEM (ordem por igreja)
+    // Associar organista às igrejas do usuário
     try {
-      console.log(`[DEBUG] Associando organista ${organistaId} às ${igrejaIds.length} igreja(s) com ordem...`);
+      console.log(`[DEBUG] Associando organista ${organistaId} às ${igrejaIds.length} igreja(s)...`);
       const assocStart = Date.now();
       
       const oficializadaInt = oficializada ? 1 : 0;
       const ordemValue = ordem !== undefined && ordem !== '' ? Number(ordem) : null;
       
-      // Inserir associação com ordem para cada igreja
-      for (const igrejaId of igrejaIds) {
-        await pool.execute({
-          sql: `INSERT INTO organistas_igreja (organista_id, igreja_id, oficializada, ordem) 
-                VALUES (?, ?, ?, ?)`,
-          values: [organistaId, igrejaId, oficializadaInt, ordemValue],
-          timeout: dbTimeout
-        });
+      // Inserir associação (com ou sem ordem, dependendo se a coluna existe)
+      if (ordemColumnExists) {
+        // Se coluna ordem existe, inserir com ordem
+        for (const igrejaId of igrejaIds) {
+          await pool.execute({
+            sql: `INSERT INTO organistas_igreja (organista_id, igreja_id, oficializada, ordem) 
+                  VALUES (?, ?, ?, ?)`,
+            values: [organistaId, igrejaId, oficializadaInt, ordemValue],
+            timeout: dbTimeout
+          });
+        }
+        console.log(`[DEBUG] Organista associada (${Date.now() - assocStart}ms) às igrejas: [${igrejaIds.join(', ')}] com ordem: ${ordemValue || 'NULL'}`);
+      } else {
+        // Se coluna ordem não existe, inserir sem ordem (compatibilidade)
+        for (const igrejaId of igrejaIds) {
+          await pool.execute({
+            sql: `INSERT INTO organistas_igreja (organista_id, igreja_id, oficializada) 
+                  VALUES (?, ?, ?)`,
+            values: [organistaId, igrejaId, oficializadaInt],
+            timeout: dbTimeout
+          });
+        }
+        console.log(`[DEBUG] Organista associada (${Date.now() - assocStart}ms) às igrejas: [${igrejaIds.join(', ')}] (sem coluna ordem ainda)`);
       }
-      
-      console.log(`[DEBUG] Organista associada (${Date.now() - assocStart}ms) às igrejas: [${igrejaIds.join(', ')}] com ordem: ${ordemValue || 'NULL'}`);
     } catch (assocError) {
       console.error(`[DEBUG] Erro ao associar organista às igrejas:`, assocError);
       
       // Se for erro de ordem duplicada, dar mensagem específica
-      if (assocError.code === 'ER_DUP_ENTRY' && assocError.message.includes('unique_organistas_igreja_ordem')) {
-        return res.status(400).json({ 
-          error: `Já existe uma organista com a ordem ${ordem} em uma das suas igrejas. Escolha outra ordem ou deixe em branco.` 
-        });
+      if (assocError.code === 'ER_DUP_ENTRY') {
+        if (assocError.message.includes('unique_organistas_igreja_ordem')) {
+          return res.status(400).json({ 
+            error: `Já existe uma organista com a ordem ${ordem} em uma das suas igrejas. Escolha outra ordem ou deixe em branco.` 
+          });
+        } else if (assocError.message.includes('unique_organista_igreja')) {
+          return res.status(400).json({ 
+            error: 'Esta organista já está associada a uma das suas igrejas.' 
+          });
+        }
       }
       
       // Outros erros de associação
