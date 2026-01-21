@@ -66,11 +66,26 @@ router.post('/', authenticate, async (req, res) => {
     const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
     const pool = db.getDb();
     
+    // Validar nome obrigatório
+    if (!nome || nome.trim() === '') {
+      return res.status(400).json({ error: 'O nome da organista é obrigatório' });
+    }
+    
+    // Obter igrejas do usuário
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    const igrejaIds = igrejas.map(i => i.id);
+    
+    // Se o usuário não tem acesso a nenhuma igreja, não pode criar organista
+    if (igrejaIds.length === 0) {
+      return res.status(403).json({ error: 'Você não tem acesso a nenhuma igreja. Crie uma igreja primeiro.' });
+    }
+    
+    // Criar organista
     const [result] = await pool.execute(
       'INSERT INTO organistas (ordem, nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?, ?)',
       [
         ordem !== undefined && ordem !== '' ? Number(ordem) : null,
-        nome,
+        nome.trim(),
         telefone || null,
         email || null,
         oficializada ? 1 : 0,
@@ -78,16 +93,47 @@ router.post('/', authenticate, async (req, res) => {
       ]
     );
     
+    const organistaId = result.insertId;
+    
+    // Associar organista automaticamente às igrejas do usuário
+    for (const igrejaId of igrejaIds) {
+      try {
+        await pool.execute(
+          'INSERT IGNORE INTO organistas_igreja (organista_id, igreja_id, oficializada) VALUES (?, ?, ?)',
+          [organistaId, igrejaId, oficializada ? 1 : 0]
+        );
+      } catch (assocError) {
+        // Log do erro mas continua com as outras associações
+        console.error(`[DEBUG] Erro ao associar organista ${organistaId} à igreja ${igrejaId}:`, assocError.message);
+      }
+    }
+    
     res.json({ 
-      id: result.insertId, 
+      id: organistaId, 
       ordem: ordem !== undefined && ordem !== '' ? Number(ordem) : null,
-      nome, 
+      nome: nome.trim(), 
       telefone, 
       email, 
       oficializada, 
       ativa 
     });
   } catch (error) {
+    console.error('[DEBUG] Erro ao criar organista:', error);
+    
+    // Tratar erro de ordem duplicada
+    if (error.code === 'ER_DUP_ENTRY' && error.message.includes('unique_organistas_ordem')) {
+      return res.status(400).json({ 
+        error: `Já existe uma organista com a ordem ${ordem}. Escolha outra ordem ou deixe em branco.` 
+      });
+    }
+    
+    // Tratar outros erros de constraint
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ 
+        error: 'Já existe uma organista com esses dados. Verifique os campos únicos.' 
+      });
+    }
+    
     res.status(500).json({ error: error.message });
   }
 });
