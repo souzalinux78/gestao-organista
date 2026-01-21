@@ -478,15 +478,12 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
     // Ordenar todas as datas em ordem cronológica
     todasDatas.sort((a, b) => a.data - b.data);
     
-    // Criar mapeamento de organista para índice de rotação de dias
-    // Cada organista terá um índice que rotaciona a cada ciclo para tocar em dias diferentes
-    const organistasBase = ordemBaseOrganistas(organistasRaw);
-    const organistasOrdenadasInicial = aplicarCicloOrdem(organistasBase, cicloCalculado);
-    
-    // Mapear cada organista para um índice inicial baseado na ordem
-    const indiceOrganistaPorId = {};
-    organistasOrdenadasInicial.forEach((org, idx) => {
-      indiceOrganistaPorId[org.id] = idx;
+    // Criar mapeamento para rastrear qual dia cada organista tocou em cada ciclo
+    // Estrutura: { organistaId: { ciclo: diaIndex } }
+    // Isso garante que cada organista toque em um dia diferente a cada ciclo
+    const historicoDiasOrganistas = {};
+    organistasRaw.forEach(org => {
+      historicoDiasOrganistas[org.id] = {}; // { ciclo: diaIndex }
     });
     
     // Processar cada data em ordem cronológica
@@ -548,8 +545,8 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
           console.log(`[DEBUG] Igreja permite mesma organista: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}) faz ambas funções`);
         } else {
           // Duas organistas diferentes: distribuir baseado na ordem do ciclo
-          // NOVA LÓGICA: Cada organista toca em um dia diferente em cada ciclo
-          // Exemplo: Ciclo 1 = segunda, Ciclo 2 = quarta, Ciclo 3 = segunda novamente
+          // LÓGICA DE ROTAÇÃO FORÇADA: Cada organista toca em um dia diferente a cada ciclo
+          // Se tocou segunda no ciclo anterior, toca quarta no próximo ciclo
           
           // Contar quantos cultos já foram gerados neste período
           const numeroCulto = rodiziosGerados.length / 2; // Cada culto tem 2 rodízios (meia_hora e tocar_culto)
@@ -565,21 +562,37 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
           // Encontrar o índice do culto atual (qual dia da semana é este culto)
           const indiceCulto = cultos.findIndex(c => c.id === culto.id);
           
-          // LÓGICA DE ROTAÇÃO POR CICLO:
-          // Para cada organista, calcular em qual dia ela deve tocar neste ciclo
-          // Fórmula: (indiceOrganista + cicloAtualMod) % numeroCultos
-          // Isso garante que cada organista toque em um dia diferente a cada ciclo
+          // LÓGICA DE ROTAÇÃO FORÇADA:
+          // Para cada organista, verificar qual foi o último dia que tocou no ciclo anterior
+          // Se tocou neste dia no ciclo anterior, FORÇAR rotação para outro dia
+          // Exemplo: Se tocou segunda no ciclo 1, não pode tocar segunda no ciclo 2 (deve tocar quarta)
           
-          // Criar lista de organistas candidatas para este culto específico
-          // Uma organista é candidata se: (indiceOrganista + cicloAtualMod) % numeroCultos === indiceCulto
+          // Verificar qual foi o último ciclo completo que esta organista tocou
+          // Se estamos no ciclo 0, o ciclo anterior é o último (numeroCultos - 1)
+          // Se estamos no ciclo 1, o ciclo anterior é 0, etc.
+          const cicloAnterior = cicloAtualMod === 0 ? numeroCultos - 1 : cicloAtualMod - 1;
+          
           const organistasCandidatas = organistasOrdenadasCicloAtual.filter(org => {
-            const indiceOrg = indiceOrganistaPorId[org.id] || 0;
-            const diaCalculado = (indiceOrg + cicloAtualMod) % numeroCultos;
-            return diaCalculado === indiceCulto;
+            const historico = historicoDiasOrganistas[org.id];
+            
+            // Verificar se tocou neste dia no ciclo anterior (último ciclo completo)
+            // Se sim, NÃO pode tocar neste dia novamente (forçar rotação)
+            if (historico[cicloAnterior] !== undefined && historico[cicloAnterior] === indiceCulto) {
+              return false; // Forçar rotação: deve tocar em outro dia
+            }
+            
+            // Verificar também se já tocou neste dia no ciclo atual
+            // (pode acontecer se a mesma organista tocar em múltiplos cultos do mesmo dia)
+            if (historico[cicloAtualMod] === indiceCulto) {
+              return false; // Já tocou neste dia neste ciclo
+            }
+            
+            // Caso contrário, pode tocar
+            return true;
           });
           
-          // Se não houver candidatas exatas (pode acontecer se número de organistas != número de cultos),
-          // usar todas as organistas mas priorizar quem deve tocar neste dia
+          // Se não houver candidatas (todas já tocaram neste dia no ciclo anterior),
+          // usar todas mas priorizar quem tocou menos vezes neste dia
           let organistasParaDistribuir;
           if (organistasCandidatas.length > 0) {
             organistasParaDistribuir = organistasCandidatas;
@@ -591,6 +604,9 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
           // Usar distribuição equilibrada, mas priorizando as candidatas do ciclo
           organistaMeiaHora = distribuirOrganistas(organistasParaDistribuir, rodiziosGerados, item.data, 'meia_hora', culto.dia_semana);
           
+          // Atualizar histórico: esta organista tocou neste dia neste ciclo
+          historicoDiasOrganistas[organistaMeiaHora.id][cicloAtualMod] = indiceCulto;
+          
           // Para tocar_culto, garantir que seja oficializada e não seja a mesma da meia_hora
           const organistasParaCulto = organistasParaDistribuir.filter(o => 
             o.id !== organistaMeiaHora.id && 
@@ -599,6 +615,9 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
           
           if (organistasParaCulto.length > 0) {
             organistaTocarCulto = distribuirOrganistas(organistasParaCulto, rodiziosGerados, item.data, 'tocar_culto', culto.dia_semana);
+            
+            // Atualizar histórico: esta organista tocou neste dia neste ciclo
+            historicoDiasOrganistas[organistaTocarCulto.id][cicloAtualMod] = indiceCulto;
           } else {
             // Se não houver organista oficializada nas candidatas, buscar em todas
             const organistasOficializadas = organistasOrdenadasCicloAtual.filter(o => 
@@ -607,6 +626,9 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
             );
             if (organistasOficializadas.length > 0) {
               organistaTocarCulto = distribuirOrganistas(organistasOficializadas, rodiziosGerados, item.data, 'tocar_culto', culto.dia_semana);
+              
+              // Atualizar histórico
+              historicoDiasOrganistas[organistaTocarCulto.id][cicloAtualMod] = indiceCulto;
             } else {
               throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
             }
