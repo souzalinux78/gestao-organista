@@ -121,9 +121,9 @@ function Cultos({ user }) {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2>Cultos</h2>
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, flex: '1 1 auto', minWidth: '200px' }}>Cultos</h2>
+          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)} style={{ whiteSpace: 'nowrap' }}>
             {showForm ? 'Cancelar' : '+ Novo Culto'}
           </button>
         </div>
@@ -206,45 +206,47 @@ function Cultos({ user }) {
         {cultos.length === 0 ? (
           <div className="empty">Nenhum culto cadastrado</div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Igreja</th>
-                <th>Dia da Semana</th>
-                <th>Hora</th>
-                <th>Ativo</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cultos.map(culto => (
-                <tr key={culto.id}>
-                  <td>{culto.igreja_nome}</td>
-                  <td>{culto.dia_semana}</td>
-                  <td>{culto.hora}</td>
-                  <td>{culto.ativo === 1 ? 'Sim' : 'Não'}</td>
-                  <td>
-                    <div className="actions">
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => handleEdit(culto)}
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => handleDelete(culto.id)}
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        Deletar
-                      </button>
-                    </div>
-                  </td>
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Igreja</th>
+                  <th>Dia da Semana</th>
+                  <th>Hora</th>
+                  <th>Ativo</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {cultos.map(culto => (
+                  <tr key={culto.id}>
+                    <td style={{ wordBreak: 'break-word' }}>{culto.igreja_nome}</td>
+                    <td>{culto.dia_semana}</td>
+                    <td>{culto.hora}</td>
+                    <td>{culto.ativo === 1 ? 'Sim' : 'Não'}</td>
+                    <td>
+                      <div className="actions">
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => handleEdit(culto)}
+                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn btn-danger"
+                          onClick={() => handleDelete(culto.id)}
+                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
+                        >
+                          Deletar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

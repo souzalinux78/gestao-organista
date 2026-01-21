@@ -389,7 +389,7 @@ function Rodizios({ user }) {
             </div>
           )}
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button type="submit" className="btn btn-primary" disabled={loadingGerar}>
+            <button type="submit" className="btn btn-primary" disabled={loadingGerar} style={{ flex: '1 1 auto', minWidth: '150px' }}>
               {loadingGerar ? 'Gerando...' : 'Gerar Rodízio'}
             </button>
             {gerarForm.igreja_id && (
@@ -399,7 +399,7 @@ function Rodizios({ user }) {
                   className="btn btn-secondary" 
                   onClick={handleLimparERefazer}
                   disabled={loadingGerar}
-                  style={{ background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)', color: 'white' }}
+                  style={{ background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)', color: 'white', flex: '1 1 auto', minWidth: '150px' }}
                 >
                   {loadingGerar ? 'Processando...' : '🗑️ Limpar e Refazer'}
                 </button>
@@ -408,6 +408,7 @@ function Rodizios({ user }) {
                   className="btn btn-danger" 
                   onClick={handleLimparRodizios}
                   disabled={loadingGerar}
+                  style={{ flex: '1 1 auto', minWidth: '150px' }}
                 >
                   {loadingGerar ? 'Limpando...' : '🗑️ Limpar Rodízios'}
                 </button>
@@ -418,7 +419,7 @@ function Rodizios({ user }) {
               className="btn btn-primary" 
               onClick={handleTestarWebhook}
               disabled={loadingWebhook || loadingGerar}
-              style={{ background: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)', color: 'white' }}
+              style={{ background: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)', color: 'white', flex: '1 1 auto', minWidth: '150px' }}
             >
               {loadingWebhook ? 'Testando...' : '🔔 Testar Webhook'}
             </button>
@@ -431,11 +432,12 @@ function Rodizios({ user }) {
         
         <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           {user?.role === 'admin' ? (
-            <div className="form-group" style={{ flex: '1', minWidth: '200px' }}>
+            <div className="form-group" style={{ flex: '1 1 auto', minWidth: '200px' }}>
               <label>Filtrar por Igreja</label>
               <select
                 value={filtros.igreja_id}
                 onChange={(e) => setFiltros({ ...filtros, igreja_id: e.target.value })}
+                style={{ fontSize: '16px' }}
               >
                 <option value="">Todas as igrejas</option>
                 {igrejas.map(igreja => (
@@ -446,24 +448,26 @@ function Rodizios({ user }) {
               </select>
             </div>
           ) : null}
-          <div className="form-group" style={{ flex: '1', minWidth: '150px' }}>
+          <div className="form-group" style={{ flex: '1 1 auto', minWidth: '150px' }}>
             <label>Período Início</label>
             <input
               type="date"
               value={filtros.periodo_inicio}
               onChange={(e) => setFiltros({ ...filtros, periodo_inicio: e.target.value })}
+              style={{ fontSize: '16px' }}
             />
           </div>
-          <div className="form-group" style={{ flex: '1', minWidth: '150px' }}>
+          <div className="form-group" style={{ flex: '1 1 auto', minWidth: '150px' }}>
             <label>Período Fim</label>
             <input
               type="date"
               value={filtros.periodo_fim}
               onChange={(e) => setFiltros({ ...filtros, periodo_fim: e.target.value })}
+              style={{ fontSize: '16px' }}
             />
           </div>
           {filtros.igreja_id && (
-            <button className="btn btn-success" onClick={handleGerarPDF}>
+            <button className="btn btn-success" onClick={handleGerarPDF} style={{ whiteSpace: 'nowrap' }}>
               📄 Gerar PDF
             </button>
           )}
@@ -502,12 +506,13 @@ function Rodizios({ user }) {
                           ? 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)' 
                           : 'linear-gradient(135deg, #2E86AB 0%, #4A90E2 100%)',
                         color: 'white',
-                        display: 'inline-block'
+                        display: 'inline-block',
+                        whiteSpace: 'nowrap'
                       }}>
                         {rodizio.funcao === 'meia_hora' ? '🎵 Meia Hora' : '🎹 Tocar no Culto'}
                       </span>
                     </td>
-                    <td>{rodizio.organista_nome}</td>
+                    <td style={{ wordBreak: 'break-word' }}>{rodizio.organista_nome}</td>
                     <td>{rodizio.organista_telefone || '-'}</td>
                   </tr>
                 ))}

@@ -265,7 +265,7 @@ code {
 }
 
 .table td:last-child {
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .table th {
@@ -335,6 +335,8 @@ code {
 @media (max-width: 768px) {
   .mobile-menu-toggle {
     display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
   }
 
   .nav {
@@ -385,6 +387,7 @@ code {
   .card h2 {
     font-size: 1.4rem;
     padding-bottom: 10px;
+    margin-bottom: 15px;
   }
 
   .form-group {
@@ -401,17 +404,20 @@ code {
   .btn {
     padding: 12px 20px;
     font-size: 14px;
-    width: 100%;
-    margin-bottom: 10px;
+    min-height: 44px;
   }
 
-  .btn:last-child {
-    margin-bottom: 0;
+  /* Botões em linha devem ter largura automática em mobile */
+  .actions .btn {
+    flex: 1 1 auto;
+    min-width: 80px;
+    margin-bottom: 5px;
   }
 
   .table-wrapper {
     margin: 15px -15px;
     padding: 0 15px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .table {
@@ -437,18 +443,40 @@ code {
     padding: 0 25px 25px;
   }
 
-  .actions {
-    flex-direction: column;
+  @media (max-width: 768px) {
+    .card .table-wrapper {
+      margin: 15px -15px 0;
+      padding: 0 15px 15px;
+    }
   }
 
-  .actions .btn {
-    width: 100%;
-    margin-bottom: 5px;
+  .actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: flex-start;
   }
 
   .alert {
     padding: 12px 15px;
     font-size: 14px;
+    word-break: break-word;
+  }
+
+  /* Formulários em mobile */
+  form .btn {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  form .btn:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Selects e inputs em mobile */
+  select, input[type="date"], input[type="time"] {
+    font-size: 16px !important;
+    min-height: 44px;
   }
 }
 
@@ -462,6 +490,7 @@ code {
     font-size: 12px;
     padding: 8px 10px;
     min-width: 100%;
+    min-height: 44px;
   }
 
   .card {
@@ -470,6 +499,7 @@ code {
 
   .card h2 {
     font-size: 1.2rem;
+    margin-bottom: 15px;
   }
 
   .card .table-wrapper {
@@ -487,9 +517,21 @@ code {
     padding: 8px 6px;
   }
 
+  .actions {
+    flex-direction: column;
+  }
+
   .actions .btn {
     font-size: 11px;
     padding: 8px 12px;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* Botões em formulários */
+  form .btn {
+    width: 100%;
+    margin-bottom: 10px;
   }
 }
 

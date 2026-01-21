@@ -144,19 +144,19 @@ function Admin() {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <h2>Gerenciar Usuários</h2>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, flex: '1 1 auto', minWidth: '200px' }}>Gerenciar Usuários</h2>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', flex: '0 1 auto' }}>
             <select
               value={filtroAprovacao}
               onChange={(e) => setFiltroAprovacao(e.target.value)}
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '16px', minWidth: '150px' }}
             >
               <option value="todos">Todos</option>
               <option value="pendentes">Pendentes de Aprovação</option>
               <option value="aprovados">Aprovados</option>
             </select>
-            <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+            <button className="btn btn-primary" onClick={() => setShowForm(!showForm)} style={{ whiteSpace: 'nowrap' }}>
               {showForm ? 'Cancelar' : '+ Novo Usuário'}
             </button>
           </div>
@@ -274,87 +274,91 @@ function Admin() {
                 : 'Nenhum usuário cadastrado'}
             </div>
           ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Email</th>
-                  <th>Perfil</th>
-                  <th>Igrejas</th>
-                  <th>Status</th>
-                  <th>Ativo</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usuariosFiltrados.map(usuario => (
-                  <tr key={usuario.id} style={usuario.aprovado === 0 ? { backgroundColor: '#fff3cd' } : {}}>
-                    <td>{usuario.nome}</td>
-                    <td>{usuario.email}</td>
-                    <td>{usuario.role === 'admin' ? 'Administrador' : 'Usuário'}</td>
-                    <td>{usuario.igrejas_nomes || '-'}</td>
-                    <td>
-                      {usuario.role === 'admin' ? (
-                        <span style={{ color: '#28a745', fontWeight: '600' }}>Aprovado</span>
-                      ) : usuario.aprovado === 1 ? (
-                        <span style={{ color: '#28a745', fontWeight: '600' }}>✓ Aprovado</span>
-                      ) : (
-                        <span style={{ color: '#dc3545', fontWeight: '600' }}>⏳ Pendente</span>
-                      )}
-                    </td>
-                    <td>{usuario.ativo === 1 ? 'Sim' : 'Não'}</td>
-                    <td>
-                      <div className="actions" style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                        {usuario.role !== 'admin' && usuario.aprovado === 0 && (
-                          <>
-                            <button
-                              className="btn"
-                              onClick={() => handleAprovar(usuario.id)}
-                              style={{ 
-                                fontSize: '12px', 
-                                padding: '5px 10px',
-                                backgroundColor: '#28a745',
-                                color: 'white',
-                                border: 'none'
-                              }}
-                            >
-                              ✓ Aprovar
-                            </button>
-                            <button
-                              className="btn"
-                              onClick={() => handleRejeitar(usuario.id)}
-                              style={{ 
-                                fontSize: '12px', 
-                                padding: '5px 10px',
-                                backgroundColor: '#dc3545',
-                                color: 'white',
-                                border: 'none'
-                              }}
-                            >
-                              ✗ Rejeitar
-                            </button>
-                          </>
-                        )}
-                        <button
-                          className="btn btn-secondary"
-                          onClick={() => handleEdit(usuario)}
-                          style={{ fontSize: '12px', padding: '5px 10px' }}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleDelete(usuario.id)}
-                          style={{ fontSize: '12px', padding: '5px 10px' }}
-                        >
-                          Deletar
-                        </button>
-                      </div>
-                    </td>
+            <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Perfil</th>
+                    <th>Igrejas</th>
+                    <th>Status</th>
+                    <th>Ativo</th>
+                    <th>Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {usuariosFiltrados.map(usuario => (
+                    <tr key={usuario.id} style={usuario.aprovado === 0 ? { backgroundColor: '#fff3cd' } : {}}>
+                      <td style={{ wordBreak: 'break-word' }}>{usuario.nome}</td>
+                      <td style={{ wordBreak: 'break-word' }}>{usuario.email}</td>
+                      <td>{usuario.role === 'admin' ? 'Administrador' : 'Usuário'}</td>
+                      <td style={{ wordBreak: 'break-word', maxWidth: '200px' }}>{usuario.igrejas_nomes || '-'}</td>
+                      <td>
+                        {usuario.role === 'admin' ? (
+                          <span style={{ color: '#28a745', fontWeight: '600' }}>Aprovado</span>
+                        ) : usuario.aprovado === 1 ? (
+                          <span style={{ color: '#28a745', fontWeight: '600' }}>✓ Aprovado</span>
+                        ) : (
+                          <span style={{ color: '#dc3545', fontWeight: '600' }}>⏳ Pendente</span>
+                        )}
+                      </td>
+                      <td>{usuario.ativo === 1 ? 'Sim' : 'Não'}</td>
+                      <td>
+                        <div className="actions" style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                          {usuario.role !== 'admin' && usuario.aprovado === 0 && (
+                            <>
+                              <button
+                                className="btn"
+                                onClick={() => handleAprovar(usuario.id)}
+                                style={{ 
+                                  fontSize: '12px', 
+                                  padding: '5px 10px',
+                                  backgroundColor: '#28a745',
+                                  color: 'white',
+                                  border: 'none',
+                                  minWidth: '80px'
+                                }}
+                              >
+                                ✓ Aprovar
+                              </button>
+                              <button
+                                className="btn"
+                                onClick={() => handleRejeitar(usuario.id)}
+                                style={{ 
+                                  fontSize: '12px', 
+                                  padding: '5px 10px',
+                                  backgroundColor: '#dc3545',
+                                  color: 'white',
+                                  border: 'none',
+                                  minWidth: '80px'
+                                }}
+                              >
+                                ✗ Rejeitar
+                              </button>
+                            </>
+                          )}
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() => handleEdit(usuario)}
+                            style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            className="btn btn-danger"
+                            onClick={() => handleDelete(usuario.id)}
+                            style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
+                          >
+                            Deletar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           );
         })()}
       </div>

@@ -113,9 +113,9 @@ function Organistas() {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2>Organistas</h2>
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, flex: '1 1 auto', minWidth: '200px' }}>Organistas</h2>
+          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)} style={{ whiteSpace: 'nowrap' }}>
             {showForm ? 'Cancelar' : '+ Nova Organista'}
           </button>
         </div>
@@ -196,49 +196,51 @@ function Organistas() {
         {organistas.length === 0 ? (
           <div className="empty">Nenhuma organista cadastrada</div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Nº</th>
-                <th>Nome</th>
-                <th>Telefone</th>
-                <th>Email</th>
-                <th>Oficializada</th>
-                <th>Ativa</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {organistas.map(organista => (
-                <tr key={organista.id}>
-                  <td style={{ fontWeight: '600' }}>{organista.ordem ?? '-'}</td>
-                  <td>{organista.nome}</td>
-                  <td>{organista.telefone || '-'}</td>
-                  <td>{organista.email || '-'}</td>
-                  <td>{organista.oficializada === 1 ? 'Sim' : 'Não'}</td>
-                  <td>{organista.ativa === 1 ? 'Sim' : 'Não'}</td>
-                  <td>
-                    <div className="actions">
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => handleEdit(organista)}
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => handleDelete(organista.id)}
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        Deletar
-                      </button>
-                    </div>
-                  </td>
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Nº</th>
+                  <th>Nome</th>
+                  <th>Telefone</th>
+                  <th>Email</th>
+                  <th>Oficializada</th>
+                  <th>Ativa</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {organistas.map(organista => (
+                  <tr key={organista.id}>
+                    <td style={{ fontWeight: '600' }}>{organista.ordem ?? '-'}</td>
+                    <td style={{ wordBreak: 'break-word' }}>{organista.nome}</td>
+                    <td>{organista.telefone || '-'}</td>
+                    <td style={{ wordBreak: 'break-word' }}>{organista.email || '-'}</td>
+                    <td>{organista.oficializada === 1 ? 'Sim' : 'Não'}</td>
+                    <td>{organista.ativa === 1 ? 'Sim' : 'Não'}</td>
+                    <td>
+                      <div className="actions">
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => handleEdit(organista)}
+                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn btn-danger"
+                          onClick={() => handleDelete(organista.id)}
+                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
+                        >
+                          Deletar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

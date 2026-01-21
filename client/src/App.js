@@ -107,7 +107,8 @@ function Header({ user, onLogout }) {
         <button 
           className="btn btn-secondary mobile-menu-toggle"
           onClick={() => setMenuOpen(!menuOpen)}
-          style={{ display: 'none' }}
+          style={{ display: 'none', minWidth: '44px', minHeight: '44px' }}
+          aria-label="Toggle menu"
         >
           {menuOpen ? '✕' : '☰'}
         </button>

@@ -380,7 +380,8 @@ function Igrejas({ user }) {
           zIndex: 1000,
           padding: '15px',
           boxSizing: 'border-box',
-          overflow: 'auto'
+          overflow: 'auto',
+          WebkitOverflowScrolling: 'touch'
         }}>
           <div className="card" style={{ 
             maxWidth: '600px', 
