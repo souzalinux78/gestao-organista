@@ -8,18 +8,25 @@ const init = async () => {
     // Criar banco de dados se não existir (antes de criar o pool)
     await createDatabaseIfNotExists();
     
-    // Criar pool de conexões
+    // Criar pool de conexões com configurações otimizadas
+    const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT_MS || 10000);
     pool = mysql.createPool({
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || 'FLoc25GD!',
       database: process.env.DB_NAME || 'gestao_organista',
       // Evita ficar pendurado esperando conexão com MySQL (importante em produção atrás de proxy)
-      connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT_MS || 10000),
+      connectTimeout: connectTimeout,
       waitForConnections: true,
       connectionLimit: 10,
-      queueLimit: 0
+      queueLimit: 0,
+      // Configurações adicionais para evitar timeouts
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0
     });
+    
+    // Armazenar pool globalmente como fallback
+    global.pool = pool;
 
     // Testar conexão
     const connection = await pool.getConnection();
@@ -248,6 +255,10 @@ const migrateRodiziosFuncao = async () => {
 
 const getDb = () => {
   if (!pool) {
+    // Tentar usar pool global se existir
+    if (global.pool) {
+      return global.pool;
+    }
     throw new Error('Banco de dados não inicializado');
   }
   return pool;

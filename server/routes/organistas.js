@@ -62,21 +62,44 @@ router.get('/:id', authenticate, async (req, res) => {
 
 // Criar nova organista
 router.post('/', authenticate, async (req, res) => {
+  const startTime = Date.now();
+  let organistaId = null;
+  
   try {
+    console.log(`[DEBUG] Iniciando criação de organista - Usuário: ${req.user.id} (${req.user.role})`);
+    
     const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
     const pool = db.getDb();
-    const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 10000);
+    const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000); // Reduzido para 8s
     
     // Validar nome obrigatório
     if (!nome || nome.trim() === '') {
       return res.status(400).json({ error: 'O nome da organista é obrigatório' });
     }
     
-    // Obter igrejas do usuário
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
-    const igrejaIds = igrejas.map(i => i.id);
+    console.log(`[DEBUG] Validação OK - Nome: ${nome.trim()}`);
     
-    // Criar organista (permitir mesmo sem igrejas - será associada quando criar igreja)
+    // Obter igrejas do usuário (com timeout e tratamento de erro)
+    let igrejas = [];
+    let igrejaIds = [];
+    
+    try {
+      console.log(`[DEBUG] Buscando igrejas do usuário ${req.user.id}...`);
+      const getUserIgrejasStart = Date.now();
+      igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+      igrejaIds = igrejas.map(i => i.id);
+      console.log(`[DEBUG] Igrejas encontradas (${Date.now() - getUserIgrejasStart}ms): ${igrejaIds.length} igreja(s) - IDs: [${igrejaIds.join(', ')}]`);
+    } catch (getUserIgrejasError) {
+      console.error(`[DEBUG] Erro ao buscar igrejas do usuário:`, getUserIgrejasError);
+      // Continuar mesmo se falhar - usuário pode não ter igreja ainda
+      igrejas = [];
+      igrejaIds = [];
+    }
+    
+    // Criar organista (sempre criar, mesmo sem igrejas)
+    console.log(`[DEBUG] Criando organista no banco...`);
+    const insertStart = Date.now();
+    
     const [result] = await pool.execute({
       sql: 'INSERT INTO organistas (ordem, nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?, ?)',
       values: [
@@ -90,24 +113,36 @@ router.post('/', authenticate, async (req, res) => {
       timeout: dbTimeout
     });
     
-    const organistaId = result.insertId;
+    organistaId = result.insertId;
+    console.log(`[DEBUG] Organista criada (${Date.now() - insertStart}ms) - ID: ${organistaId}`);
     
     // Associar organista automaticamente às igrejas do usuário (se tiver igrejas)
-    // Se não tiver igrejas, a organista será criada mas não associada ainda
-    // Quando o usuário criar uma igreja, poderá associar manualmente ou podemos criar lógica para associar automaticamente
     if (igrejaIds.length > 0) {
-      const oficializadaInt = oficializada ? 1 : 0;
-      const placeholders = igrejaIds.map(() => '(?, ?, ?)').join(', ');
-      const params = igrejaIds.flatMap((igrejaId) => [organistaId, igrejaId, oficializadaInt]);
+      try {
+        console.log(`[DEBUG] Associando organista ${organistaId} às ${igrejaIds.length} igreja(s)...`);
+        const assocStart = Date.now();
+        
+        const oficializadaInt = oficializada ? 1 : 0;
+        const placeholders = igrejaIds.map(() => '(?, ?, ?)').join(', ');
+        const params = igrejaIds.flatMap((igrejaId) => [organistaId, igrejaId, oficializadaInt]);
 
-      await pool.execute(
-        {
+        await pool.execute({
           sql: `INSERT IGNORE INTO organistas_igreja (organista_id, igreja_id, oficializada) VALUES ${placeholders}`,
           values: params,
           timeout: dbTimeout
-        }
-      );
+        });
+        
+        console.log(`[DEBUG] Organista associada (${Date.now() - assocStart}ms) às igrejas: [${igrejaIds.join(', ')}]`);
+      } catch (assocError) {
+        console.error(`[DEBUG] Erro ao associar organista às igrejas (continuando):`, assocError.message);
+        // Não falhar a criação se a associação falhar - organista já foi criada
+      }
+    } else {
+      console.log(`[DEBUG] Usuário não tem igrejas - organista criada mas não associada (será associada quando criar igreja)`);
     }
+    
+    const totalTime = Date.now() - startTime;
+    console.log(`[DEBUG] Organista criada com sucesso em ${totalTime}ms - ID: ${organistaId}`);
     
     res.json({ 
       id: organistaId, 
@@ -119,11 +154,22 @@ router.post('/', authenticate, async (req, res) => {
       ativa 
     });
   } catch (error) {
-    console.error('[DEBUG] Erro ao criar organista:', error);
+    const totalTime = Date.now() - startTime;
+    console.error(`[DEBUG] Erro ao criar organista (${totalTime}ms):`, {
+      message: error.message,
+      code: error.code,
+      errno: error.errno,
+      sqlState: error.sqlState,
+      sqlMessage: error.sqlMessage,
+      stack: error.stack
+    });
     
     // Se o MySQL travar/demorar demais, evitar 504 do proxy e responder com erro claro
-    if (error.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || error.code === 'ETIMEDOUT') {
-      return res.status(503).json({ error: 'Banco de dados demorou para responder. Tente novamente em instantes.' });
+    if (error.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') {
+      return res.status(503).json({ 
+        error: 'Banco de dados demorou para responder. Tente novamente em instantes.',
+        details: `Timeout após ${totalTime}ms`
+      });
     }
 
     // Tratar erro de ordem duplicada
@@ -140,7 +186,17 @@ router.post('/', authenticate, async (req, res) => {
       });
     }
     
-    res.status(500).json({ error: error.message });
+    // Tratar erro de conexão
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      return res.status(503).json({ 
+        error: 'Não foi possível conectar ao banco de dados. Tente novamente em instantes.' 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Erro ao criar organista',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

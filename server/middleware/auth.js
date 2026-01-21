@@ -81,23 +81,33 @@ const checkIgrejaAccess = async (req, res, next) => {
 // Função auxiliar para obter igrejas do usuário
 const getUserIgrejas = async (userId, isAdmin) => {
   const pool = db.getDb();
+  const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000); // Reduzido para 8s
   
-  if (isAdmin) {
-    const [igrejas] = await pool.execute({
-      sql: 'SELECT * FROM igrejas ORDER BY nome',
-      timeout: Number(process.env.DB_QUERY_TIMEOUT_MS || 10000)
-    });
-    return igrejas;
-  } else {
-    const [igrejas] = await pool.execute({
-      sql: `SELECT i.* FROM igrejas i
-       INNER JOIN usuario_igreja ui ON i.id = ui.igreja_id
-       WHERE ui.usuario_id = ?
-       ORDER BY i.nome`,
-      values: [userId],
-      timeout: Number(process.env.DB_QUERY_TIMEOUT_MS || 10000)
-    });
-    return igrejas;
+  try {
+    if (isAdmin) {
+      const [igrejas] = await pool.execute({
+        sql: 'SELECT * FROM igrejas ORDER BY nome',
+        timeout: dbTimeout
+      });
+      return igrejas || [];
+    } else {
+      // Query otimizada com índice em usuario_igreja.usuario_id
+      const [igrejas] = await pool.execute({
+        sql: `SELECT i.* 
+              FROM igrejas i
+              INNER JOIN usuario_igreja ui ON i.id = ui.igreja_id
+              WHERE ui.usuario_id = ?
+              ORDER BY i.nome
+              LIMIT 100`,
+        values: [userId],
+        timeout: dbTimeout
+      });
+      return igrejas || [];
+    }
+  } catch (error) {
+    console.error(`[DEBUG] Erro em getUserIgrejas para usuário ${userId}:`, error.message);
+    // Retornar array vazio em caso de erro para não quebrar o fluxo
+    return [];
   }
 };
 
