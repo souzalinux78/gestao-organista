@@ -8,10 +8,14 @@ const { authenticate, isAdmin, getUserIgrejas } = require('../middleware/auth');
 // Cadastro público (sem autenticação)
 router.post('/register', async (req, res) => {
   try {
-    const { nome, email, senha } = req.body;
+    const { nome, email, senha, igreja } = req.body;
 
     if (!nome || !email || !senha) {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
+    }
+
+    if (!igreja || igreja.trim() === '') {
+      return res.status(400).json({ error: 'O campo Igreja/Comum é obrigatório' });
     }
 
     if (senha.length < 6) {
@@ -19,6 +23,7 @@ router.post('/register', async (req, res) => {
     }
 
     const pool = db.getDb();
+    const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 10000);
 
     // Verificar se email já existe
     const [existing] = await pool.execute(
@@ -34,17 +39,56 @@ router.post('/register', async (req, res) => {
     const senhaHash = await bcrypt.hash(senha, 10);
 
     // Criar usuário (não aprovado por padrão)
-    const [result] = await pool.execute(
-      'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)',
-      [nome, email, senhaHash, 'usuario', 0]
-    );
+    const [result] = await pool.execute({
+      sql: 'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)',
+      values: [nome, email, senhaHash, 'usuario', 0],
+      timeout: dbTimeout
+    });
+
+    const userId = result.insertId;
+
+    // Criar igreja automaticamente com o nome fornecido
+    const [igrejaResult] = await pool.execute({
+      sql: `INSERT INTO igrejas (
+        nome, endereco, 
+        encarregado_local_nome, encarregado_local_telefone,
+        encarregado_regional_nome, encarregado_regional_telefone,
+        mesma_organista_ambas_funcoes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      values: [
+        igreja.trim(),
+        null,
+        null,
+        null,
+        null,
+        null,
+        0
+      ],
+      timeout: dbTimeout
+    });
+
+    const igrejaId = igrejaResult.insertId;
+
+    // Associar usuário à igreja criada
+    await pool.execute({
+      sql: 'INSERT INTO usuario_igreja (usuario_id, igreja_id) VALUES (?, ?)',
+      values: [userId, igrejaId],
+      timeout: dbTimeout
+    });
 
     res.status(201).json({
       message: 'Cadastro realizado com sucesso! Aguarde a aprovação do administrador para acessar o sistema.',
-      id: result.insertId
+      id: userId,
+      igreja_id: igrejaId
     });
   } catch (error) {
     console.error('Erro no cadastro:', error);
+    
+    // Tratar timeout do banco
+    if (error.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || error.code === 'ETIMEDOUT') {
+      return res.status(503).json({ error: 'Banco de dados demorou para responder. Tente novamente em instantes.' });
+    }
+    
     res.status(500).json({ error: 'Erro ao realizar cadastro' });
   }
 });
@@ -345,13 +389,134 @@ router.delete('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
   try {
     const pool = db.getDb();
     const [result] = await pool.execute('DELETE FROM usuarios WHERE id = ?', [req.params.id]);
-
+    
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
-
+    
     res.json({ message: 'Usuário deletado com sucesso' });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Migração: associar usuários sem igreja a uma igreja padrão (apenas admin)
+router.post('/migrate/usuarios-igrejas', authenticate, isAdmin, async (req, res) => {
+  try {
+    const pool = db.getDb();
+    const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 10000);
+
+    // Identificar usuários que não têm igrejas associadas (exceto admin)
+    const [usuariosSemIgreja] = await pool.execute({
+      sql: `
+        SELECT u.id, u.nome, u.email, u.role
+        FROM usuarios u
+        WHERE u.role != 'admin'
+        AND u.id NOT IN (
+          SELECT DISTINCT usuario_id 
+          FROM usuario_igreja
+        )
+        ORDER BY u.id
+      `,
+      timeout: dbTimeout
+    });
+
+    if (usuariosSemIgreja.length === 0) {
+      return res.json({ 
+        message: 'Todos os usuários já têm igrejas associadas.',
+        usuariosCorrigidos: 0,
+        organistasAssociadas: 0
+      });
+    }
+
+    let usuariosCorrigidos = 0;
+    let organistasAssociadas = 0;
+    const resultados = [];
+
+    // Para cada usuário sem igreja, criar uma igreja padrão e associar
+    for (const usuario of usuariosSemIgreja) {
+      try {
+        // Criar igreja padrão com nome baseado no usuário
+        const nomeIgreja = `${usuario.nome} - Igreja`;
+        
+        const [igrejaResult] = await pool.execute({
+          sql: `INSERT INTO igrejas (
+            nome, endereco, 
+            encarregado_local_nome, encarregado_local_telefone,
+            encarregado_regional_nome, encarregado_regional_telefone,
+            mesma_organista_ambas_funcoes
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          values: [
+            nomeIgreja,
+            null,
+            null,
+            null,
+            null,
+            null,
+            0
+          ],
+          timeout: dbTimeout
+        });
+
+        const igrejaId = igrejaResult.insertId;
+
+        // Associar usuário à igreja
+        await pool.execute({
+          sql: 'INSERT INTO usuario_igreja (usuario_id, igreja_id) VALUES (?, ?)',
+          values: [usuario.id, igrejaId],
+          timeout: dbTimeout
+        });
+
+        // Associar organistas "órfãs" à igreja criada
+        const [organistasOrfas] = await pool.execute({
+          sql: `
+            SELECT o.id, o.oficializada
+            FROM organistas o
+            WHERE o.id NOT IN (SELECT DISTINCT organista_id FROM organistas_igreja)
+            ORDER BY o.id DESC
+            LIMIT 100
+          `,
+          timeout: dbTimeout
+        });
+
+        let organistasAssociadasUsuario = 0;
+        if (organistasOrfas.length > 0) {
+          const placeholders = organistasOrfas.map(() => '(?, ?, ?)').join(', ');
+          const params = organistasOrfas.flatMap((org) => [org.id, igrejaId, org.oficializada]);
+
+          await pool.execute({
+            sql: `INSERT IGNORE INTO organistas_igreja (organista_id, igreja_id, oficializada) VALUES ${placeholders}`,
+            values: params,
+            timeout: dbTimeout
+          });
+
+          organistasAssociadasUsuario = organistasOrfas.length;
+          organistasAssociadas += organistasAssociadasUsuario;
+        }
+
+        usuariosCorrigidos++;
+        resultados.push({
+          usuario: usuario.nome,
+          igreja: nomeIgreja,
+          organistasAssociadas: organistasAssociadasUsuario
+        });
+
+      } catch (error) {
+        resultados.push({
+          usuario: usuario.nome,
+          erro: error.message
+        });
+      }
+    }
+
+    res.json({
+      message: `Migração concluída: ${usuariosCorrigidos} usuário(s) corrigido(s)`,
+      usuariosCorrigidos,
+      organistasAssociadas,
+      resultados
+    });
+  } catch (error) {
+    console.error('Erro na migração:', error);
     res.status(500).json({ error: error.message });
   }
 });

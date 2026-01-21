@@ -114,6 +114,27 @@ router.post('/', authenticate, async (req, res) => {
         'INSERT INTO usuario_igreja (usuario_id, igreja_id) VALUES (?, ?)',
         [req.user.id, igrejaId]
       );
+      
+      // Associar automaticamente todas as organistas que não estão associadas a nenhuma igreja
+      // Isso resolve o problema de usuários que criaram organistas antes de criar uma igreja
+      // Quando criam a primeira igreja, todas as organistas "órfãs" são associadas automaticamente
+      const [organistasOrfas] = await pool.execute(
+        `SELECT o.id, o.oficializada
+         FROM organistas o
+         WHERE o.id NOT IN (SELECT DISTINCT organista_id FROM organistas_igreja)
+         ORDER BY o.id DESC
+         LIMIT 100`
+      );
+      
+      if (organistasOrfas.length > 0) {
+        const placeholders = organistasOrfas.map(() => '(?, ?, ?)').join(', ');
+        const params = organistasOrfas.flatMap((org) => [org.id, igrejaId, org.oficializada]);
+        
+        await pool.execute(
+          `INSERT IGNORE INTO organistas_igreja (organista_id, igreja_id, oficializada) VALUES ${placeholders}`,
+          params
+        );
+      }
     }
     
     res.json({ 

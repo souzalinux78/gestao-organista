@@ -10,7 +10,8 @@
     "build": "cd client && npm run build",
     "install-all": "npm install && cd client && npm install",
     "create-admin": "node server/scripts/createAdmin.js",
-    "migrate-rodizios": "node server/scripts/migrate-rodizios-funcao.js"
+    "migrate-rodizios": "node server/scripts/migrate-rodizios-funcao.js",
+    "migrate-usuarios-igrejas": "node server/scripts/migrate-usuarios-igrejas.js"
   },
   "keywords": ["organista", "igreja", "gestão"],
   "author": "",

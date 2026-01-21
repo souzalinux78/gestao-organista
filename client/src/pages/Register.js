@@ -8,6 +8,7 @@ function Register() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [igreja, setIgreja] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,8 +44,14 @@ function Register() {
       return;
     }
 
+    if (!igreja || igreja.trim() === '') {
+      setError('O campo Igreja/Comum é obrigatório');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await register(nome, email, senha);
+      const response = await register(nome, email, senha, igreja.trim());
       setSuccess(response.data.message || 'Cadastro realizado com sucesso! Aguarde a aprovação do administrador.');
       
       // Limpar formulário
@@ -52,6 +59,7 @@ function Register() {
       setEmail('');
       setSenha('');
       setConfirmarSenha('');
+      setIgreja('');
       
       // Redirecionar para login após 3 segundos
       setTimeout(() => {
@@ -133,6 +141,20 @@ function Register() {
               minLength={6}
               placeholder="Digite a senha novamente"
             />
+          </div>
+
+          <div className="form-group">
+            <label>Igreja/Comum *</label>
+            <input
+              type="text"
+              value={igreja}
+              onChange={(e) => setIgreja(e.target.value)}
+              required
+              placeholder="Ex: Bairro do Cruzeiro"
+            />
+            <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+              Nome da igreja ou comum que você representa
+            </small>
           </div>
 
           <button type="submit" className="btn btn-primary" disabled={loading}>

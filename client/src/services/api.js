@@ -39,7 +39,7 @@ api.interceptors.response.use(
 
 // Autenticação
 export const login = (email, senha) => api.post('/auth/login', { email, senha });
-export const register = (nome, email, senha) => api.post('/auth/register', { nome, email, senha });
+export const register = (nome, email, senha, igreja) => api.post('/auth/register', { nome, email, senha, igreja });
 export const getMe = () => api.get('/auth/me');
 export const createUsuario = (data) => api.post('/auth/usuarios', data);
 export const getUsuarios = () => api.get('/auth/usuarios');

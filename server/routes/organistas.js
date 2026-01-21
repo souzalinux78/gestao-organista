@@ -76,12 +76,7 @@ router.post('/', authenticate, async (req, res) => {
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
     const igrejaIds = igrejas.map(i => i.id);
     
-    // Se o usuário não tem acesso a nenhuma igreja, não pode criar organista
-    if (igrejaIds.length === 0) {
-      return res.status(403).json({ error: 'Você não tem acesso a nenhuma igreja. Crie uma igreja primeiro.' });
-    }
-    
-    // Criar organista
+    // Criar organista (permitir mesmo sem igrejas - será associada quando criar igreja)
     const [result] = await pool.execute({
       sql: 'INSERT INTO organistas (ordem, nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?, ?)',
       values: [
@@ -97,19 +92,22 @@ router.post('/', authenticate, async (req, res) => {
     
     const organistaId = result.insertId;
     
-    // Associar organista automaticamente às igrejas do usuário (em lote, 1 query)
-    // Isso reduz N roundtrips ao banco e evita pendurar por saturação do pool/DB.
-    const oficializadaInt = oficializada ? 1 : 0;
-    const placeholders = igrejaIds.map(() => '(?, ?, ?)').join(', ');
-    const params = igrejaIds.flatMap((igrejaId) => [organistaId, igrejaId, oficializadaInt]);
+    // Associar organista automaticamente às igrejas do usuário (se tiver igrejas)
+    // Se não tiver igrejas, a organista será criada mas não associada ainda
+    // Quando o usuário criar uma igreja, poderá associar manualmente ou podemos criar lógica para associar automaticamente
+    if (igrejaIds.length > 0) {
+      const oficializadaInt = oficializada ? 1 : 0;
+      const placeholders = igrejaIds.map(() => '(?, ?, ?)').join(', ');
+      const params = igrejaIds.flatMap((igrejaId) => [organistaId, igrejaId, oficializadaInt]);
 
-    await pool.execute(
-      {
-        sql: `INSERT IGNORE INTO organistas_igreja (organista_id, igreja_id, oficializada) VALUES ${placeholders}`,
-        values: params,
-        timeout: dbTimeout
-      }
-    );
+      await pool.execute(
+        {
+          sql: `INSERT IGNORE INTO organistas_igreja (organista_id, igreja_id, oficializada) VALUES ${placeholders}`,
+          values: params,
+          timeout: dbTimeout
+        }
+      );
+    }
     
     res.json({ 
       id: organistaId, 
