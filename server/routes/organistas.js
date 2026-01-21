@@ -275,4 +275,18 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
+// Endpoint de teste rápido (sem autenticação para debug)
+router.post('/test', async (req, res) => {
+  try {
+    const pool = db.getDb();
+    const [result] = await pool.execute({
+      sql: 'SELECT 1 as test',
+      timeout: 5000
+    });
+    res.json({ status: 'ok', test: result[0].test, timestamp: new Date().toISOString() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

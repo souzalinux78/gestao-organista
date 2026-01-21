@@ -3,39 +3,86 @@ const db = require('../database/db');
 
 // Middleware de autenticação
 const authenticate = async (req, res, next) => {
+  const authStart = Date.now();
+  const path = req.path || req.url;
+  
   try {
+    // Log da requisição
+    if (path.includes('organistas') && req.method === 'POST') {
+      console.log(`[AUTH] Iniciando autenticação para POST ${path}`);
+    }
+    
     const token = req.headers.authorization?.replace('Bearer ', '') || 
                   req.session?.token;
 
     if (!token) {
+      console.log(`[AUTH] Token não fornecido para ${req.method} ${path}`);
       return res.status(401).json({ error: 'Token não fornecido' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'sua-chave-secreta-aqui');
     
-    // Buscar usuário no banco
+    if (path.includes('organistas') && req.method === 'POST') {
+      console.log(`[AUTH] Token válido - UserId: ${decoded.userId}`);
+    }
+    
+    // Buscar usuário no banco (com timeout reduzido)
     const pool = db.getDb();
+    const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000);
+    
+    const queryStart = Date.now();
     const [users] = await pool.execute({
-      sql: 'SELECT id, nome, email, role, ativo, aprovado FROM usuarios WHERE id = ?',
+      sql: 'SELECT id, nome, email, role, ativo, aprovado FROM usuarios WHERE id = ? LIMIT 1',
       values: [decoded.userId],
-      timeout: Number(process.env.DB_QUERY_TIMEOUT_MS || 10000)
+      timeout: dbTimeout
     });
+    
+    if (path.includes('organistas') && req.method === 'POST') {
+      console.log(`[AUTH] Query usuário executada em ${Date.now() - queryStart}ms`);
+    }
 
     if (users.length === 0 || !users[0].ativo) {
+      console.log(`[AUTH] Usuário inválido ou inativo - UserId: ${decoded.userId}`);
       return res.status(401).json({ error: 'Usuário inválido ou inativo' });
     }
 
     // Verificar se usuário está aprovado (exceto admin que sempre está aprovado)
     if (users[0].role !== 'admin' && !users[0].aprovado) {
+      console.log(`[AUTH] Usuário não aprovado - UserId: ${decoded.userId}`);
       return res.status(403).json({ 
         error: 'Sua conta ainda não foi aprovada pelo administrador. Aguarde a aprovação para acessar o sistema.' 
       });
     }
 
     req.user = users[0];
+    
+    if (path.includes('organistas') && req.method === 'POST') {
+      console.log(`[AUTH] Autenticação concluída em ${Date.now() - authStart}ms - Usuário: ${users[0].nome} (${users[0].role})`);
+    }
+    
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Token inválido' });
+    const authTime = Date.now() - authStart;
+    console.error(`[AUTH] Erro na autenticação (${authTime}ms) para ${req.method} ${path}:`, {
+      message: error.message,
+      code: error.code,
+      name: error.name
+    });
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expirado' });
+    }
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
+    
+    // Se for timeout do banco
+    if (error.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || error.code === 'ETIMEDOUT') {
+      return res.status(503).json({ error: 'Banco de dados demorou para responder durante autenticação' });
+    }
+    
+    return res.status(401).json({ error: 'Erro na autenticação' });
   }
 };
 

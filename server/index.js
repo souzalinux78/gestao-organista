@@ -7,13 +7,21 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Middleware de log de requisições (apenas para debug)
+app.use((req, res, next) => {
+  if (req.path.includes('organistas') && req.method === 'POST') {
+    console.log(`[REQUEST] ${req.method} ${req.path} - ${new Date().toISOString()}`);
+  }
+  next();
+});
+
 // Middlewares
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'sua-chave-secreta-session',
   resave: false,
