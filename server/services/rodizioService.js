@@ -242,13 +242,25 @@ const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, di
 };
 
 const ordemBaseOrganistas = (organistas) => {
-  // Preferir a numeração (ordem). Se não tiver, cair no ID (mais antigo primeiro).
+  // Preferir a numeração (ordem de organistas_igreja). Se não tiver, cair no ID (mais antigo primeiro).
+  // A ordem agora vem de organistas_igreja, não de organistas
   const comOrdem = organistas
-    .filter(o => o.ordem !== null && o.ordem !== undefined)
-    .sort((a, b) => a.ordem - b.ordem);
+    .filter(o => {
+      // Ordem pode vir como ordem ou associacao_ordem (dependendo da query)
+      const ordem = o.ordem !== undefined ? o.ordem : (o.associacao_ordem !== undefined ? o.associacao_ordem : null);
+      return ordem !== null && ordem !== undefined;
+    })
+    .sort((a, b) => {
+      const ordemA = a.ordem !== undefined ? a.ordem : (a.associacao_ordem !== undefined ? a.associacao_ordem : null);
+      const ordemB = b.ordem !== undefined ? b.ordem : (b.associacao_ordem !== undefined ? b.associacao_ordem : null);
+      return ordemA - ordemB;
+    });
 
   const semOrdem = organistas
-    .filter(o => o.ordem === null || o.ordem === undefined)
+    .filter(o => {
+      const ordem = o.ordem !== undefined ? o.ordem : (o.associacao_ordem !== undefined ? o.associacao_ordem : null);
+      return ordem === null || ordem === undefined;
+    })
     .sort((a, b) => a.id - b.id);
 
   return [...comOrdem, ...semOrdem];
@@ -297,15 +309,18 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
       throw new Error('Nenhum culto ativo encontrado para esta igreja');
     }
     
-    // 3. Buscar organistas associadas da igreja (ativas). A regra de “não-oficializada só meia_hora”
+    // 3. Buscar organistas associadas da igreja (ativas). A regra de "não-oficializada só meia_hora"
     // será aplicada na seleção das funções.
+    // Ordem agora vem de organistas_igreja.ordem (ordem por igreja)
     const [organistasRaw] = await pool.execute(
-      `SELECT o.*, oi.oficializada as associacao_oficializada
+      `SELECT o.*, 
+              oi.oficializada as associacao_oficializada,
+              oi.ordem as associacao_ordem
        FROM organistas o
        INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
        WHERE oi.igreja_id = ?
          AND o.ativa = 1
-       ORDER BY oi.id ASC, oi.created_at ASC`,
+       ORDER BY (oi.ordem IS NULL), oi.ordem ASC, oi.id ASC, oi.created_at ASC`,
       [igrejaId]
     );
     
