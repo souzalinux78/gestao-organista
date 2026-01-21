@@ -21,11 +21,22 @@ Você precisa criar ícones nos seguintes tamanhos:
 - `favicon-16x16.png` (16x16px)
 - `favicon-32x32.png` (32x32px)
 
+**⚠️ IMPORTANTE - Fundo Sólido:**
+- Os ícones **DEVEM ter fundo sólido** (não transparente)
+- Se o ícone tiver fundo transparente, aparecerá com fundo preto no celular
+- Use a cor de fundo: `#2E86AB` (azul) ou cor dourada que combine com o logo
+
 **Ferramenta recomendada:**
 - https://www.pwabuilder.com/imageGenerator
 - Faça upload do seu logo.png
+- **Configure:**
+  - Background color: `#2E86AB` ou cor dourada
+  - Padding: 20-30%
+  - Safe zone: Habilitado
 - Baixe o pacote gerado
 - Copie para `client/public/`
+
+**📖 Guia completo:** Veja `COMO_CORRIGIR_ICONE_PWA.md` para mais detalhes
 
 ### 2. Atualizar manifest.json
 
