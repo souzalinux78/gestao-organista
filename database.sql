@@ -16,12 +16,14 @@ USE `gestao_organista`;
 -- ============================================
 CREATE TABLE IF NOT EXISTS `organistas` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `ordem` INT,
   `nome` VARCHAR(255) NOT NULL,
   `telefone` VARCHAR(20),
   `email` VARCHAR(255),
   `oficializada` TINYINT(1) DEFAULT 0,
   `ativa` TINYINT(1) DEFAULT 1,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `unique_organistas_ordem` (`ordem`),
   INDEX `idx_organistas_ativa` (`ativa`),
   INDEX `idx_organistas_oficializada` (`oficializada`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -38,6 +40,7 @@ CREATE TABLE IF NOT EXISTS `igrejas` (
   `encarregado_regional_nome` VARCHAR(255),
   `encarregado_regional_telefone` VARCHAR(20),
   `mesma_organista_ambas_funcoes` TINYINT(1) DEFAULT 0,
+  `rodizio_ciclo` INT NOT NULL DEFAULT 0,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_igrejas_nome` (`nome`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

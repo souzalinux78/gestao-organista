@@ -241,6 +241,34 @@ const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, di
   return organistasDisponiveis[0];
 };
 
+const ordemBaseOrganistas = (organistas) => {
+  // Preferir a numeração (ordem). Se não tiver, cair no ID (mais antigo primeiro).
+  const comOrdem = organistas
+    .filter(o => o.ordem !== null && o.ordem !== undefined)
+    .sort((a, b) => a.ordem - b.ordem);
+
+  const semOrdem = organistas
+    .filter(o => o.ordem === null || o.ordem === undefined)
+    .sort((a, b) => a.id - b.id);
+
+  return [...comOrdem, ...semOrdem];
+};
+
+// Regra pedida: ciclo 0 = [1..N], ciclo 1 = reverse(2 primeiros), ciclo 2 = reverse(3 primeiros), ...
+const aplicarCicloOrdem = (lista, ciclo) => {
+  const n = lista.length;
+  if (n <= 1) return lista;
+  const k = (ciclo % n) + 1; // 1..n
+  const prefixo = lista.slice(0, k).reverse();
+  return [...prefixo, ...lista.slice(k)];
+};
+
+const isOficializadaParaCulto = (o) => {
+  // “Oficializada” precisa estar true na organista.
+  // (Se no futuro quiser usar a associação, dá pra incluir associacao_oficializada aqui.)
+  return o.oficializada === 1 || o.oficializada === true;
+};
+
 const gerarRodizio = async (igrejaId, periodoMeses) => {
   const pool = db.getDb();
   
@@ -257,6 +285,7 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
     
     const igreja = igrejas[0];
     const permiteMesmaOrganista = igreja.mesma_organista_ambas_funcoes === 1;
+    const rodizioCiclo = Number(igreja.rodizio_ciclo || 0);
     
     // 2. Buscar cultos ativos da igreja
     const [cultos] = await pool.execute(
@@ -268,22 +297,25 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
       throw new Error('Nenhum culto ativo encontrado para esta igreja');
     }
     
-    // 3. Buscar organistas oficializadas da igreja ordenadas por ordem de associação (mais antiga primeiro)
-    const [organistas] = await pool.execute(
-      `SELECT o.* FROM organistas o
+    // 3. Buscar organistas associadas da igreja (ativas). A regra de “não-oficializada só meia_hora”
+    // será aplicada na seleção das funções.
+    const [organistasRaw] = await pool.execute(
+      `SELECT o.*, oi.oficializada as associacao_oficializada
+       FROM organistas o
        INNER JOIN organistas_igreja oi ON o.id = oi.organista_id
-       WHERE oi.igreja_id = ? 
-         AND oi.oficializada = 1 
-         AND o.oficializada = 1 
+       WHERE oi.igreja_id = ?
          AND o.ativa = 1
        ORDER BY oi.id ASC, oi.created_at ASC`,
       [igrejaId]
     );
     
-    console.log(`[DEBUG] Organistas oficializadas encontradas:`, organistas.length);
-    console.log(`[DEBUG] Organistas:`, organistas.map(o => ({ id: o.id, nome: o.nome })));
+    const organistasOrdenadas = aplicarCicloOrdem(ordemBaseOrganistas(organistasRaw), rodizioCiclo);
     
-    if (organistas.length === 0) {
+    console.log(`[DEBUG] Organistas associadas encontradas:`, organistasOrdenadas.length);
+    console.log(`[DEBUG] Ciclo do rodízio (igreja):`, rodizioCiclo);
+    console.log(`[DEBUG] Ordem aplicada:`, organistasOrdenadas.map(o => ({ id: o.id, ordem: o.ordem ?? null, nome: o.nome })));
+    
+    if (organistasOrdenadas.length === 0) {
       const [organistasOficializadas] = await pool.execute(
         `SELECT COUNT(*) as total FROM organistas WHERE oficializada = 1 AND ativa = 1`
       );
@@ -413,20 +445,29 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
         // Verificar se a igreja permite mesma organista para ambas funções
         if (permiteMesmaOrganista) {
           // Mesma organista para ambas funções: usar rotação simples
-          const organistasOrdenadasPorId = [...organistas].sort((a, b) => a.id - b.id);
+          const organistasOrdenadasPorId = organistasOrdenadas;
           // Contar quantos cultos já foram gerados (cada culto tem 2 rodízios quando mesma organista)
           const numeroCulto = rodiziosGerados.filter(r => r.funcao === 'meia_hora').length;
           const indiceOrganista = numeroCulto % organistasOrdenadasPorId.length;
           const organistaEscolhida = organistasOrdenadasPorId[indiceOrganista];
           
-          organistaMeiaHora = organistaEscolhida;
-          organistaTocarCulto = organistaEscolhida; // Mesma organista para ambas
-          
-          console.log(`[DEBUG] Igreja permite mesma organista: ${organistaEscolhida.nome} (ID:${organistaEscolhida.id}) faz ambas funções`);
+          if (!isOficializadaParaCulto(organistaEscolhida)) {
+            const proximaOficializada = organistasOrdenadasPorId.find(o => isOficializadaParaCulto(o));
+            if (!proximaOficializada) {
+              throw new Error('Esta igreja está configurada para a mesma organista fazer meia hora e culto, mas não existe organista oficializada ativa associada.');
+            }
+            organistaMeiaHora = proximaOficializada;
+            organistaTocarCulto = proximaOficializada;
+          } else {
+            organistaMeiaHora = organistaEscolhida;
+            organistaTocarCulto = organistaEscolhida; // Mesma organista para ambas
+          }
+
+          console.log(`[DEBUG] Igreja permite mesma organista: ${organistaMeiaHora.nome} (ID:${organistaMeiaHora.id}) faz ambas funções`);
         } else {
           // Duas organistas diferentes: usar rotação em pares
           // Ordenar organistas por ID (ordem de cadastro)
-          const organistasOrdenadasPorId = [...organistas].sort((a, b) => a.id - b.id);
+          const organistasOrdenadasPorId = organistasOrdenadas;
           
           // Criar pares de organistas (1-2, 3-4, 5-6, etc.)
           const pares = [];
@@ -457,6 +498,36 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
             // Par normal: primeira organista faz meia_hora, segunda faz tocar_culto
             organistaMeiaHora = parAtual[0];
             organistaTocarCulto = parAtual[1];
+          }
+
+          // Regra: não-oficializada só pode ficar em meia_hora; tocar_culto precisa ser oficializada.
+          // Se cair uma não-oficializada no culto, tentar inverter (se a outra for oficializada) ou buscar outro par.
+          if (!isOficializadaParaCulto(organistaTocarCulto)) {
+            if (isOficializadaParaCulto(organistaMeiaHora)) {
+              const tmp = organistaMeiaHora;
+              organistaMeiaHora = organistaTocarCulto;
+              organistaTocarCulto = tmp;
+            } else {
+              // Buscar um par onde a posição de culto seja oficializada
+              const parValido = pares.find(par => {
+                const a = par[0];
+                const b = par[1];
+                // Preferir b no culto por padrão do par normal
+                return isOficializadaParaCulto(a) || isOficializadaParaCulto(b);
+              });
+              if (!parValido) {
+                throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
+              }
+              // Forçar uma oficializada para o culto
+              const [a, b] = parValido;
+              if (isOficializadaParaCulto(b)) {
+                organistaMeiaHora = a;
+                organistaTocarCulto = b;
+              } else {
+                organistaMeiaHora = b;
+                organistaTocarCulto = a;
+              }
+            }
           }
           
           // Verificar se as organistas escolhidas tocaram muito recentemente
@@ -597,9 +668,9 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
     
     // 6. Verificar distribuição antes de inserir
     const organistasUsadas = new Set(novosRodizios.map(r => r.organista_id));
-    console.log(`[DEBUG] Total de organistas usadas: ${organistasUsadas.size} de ${organistas.length}`);
+    console.log(`[DEBUG] Total de organistas usadas: ${organistasUsadas.size} de ${organistasOrdenadas.length}`);
     console.log(`[DEBUG] Organistas usadas:`, Array.from(organistasUsadas).map(id => {
-      const org = organistas.find(o => o.id === id);
+      const org = organistasOrdenadas.find(o => o.id === id);
       return org ? org.nome : id;
     }).join(', '));
     
@@ -609,13 +680,18 @@ const gerarRodizio = async (igrejaId, periodoMeses) => {
       contadoresFinais[r.organista_id] = (contadoresFinais[r.organista_id] || 0) + 1;
     });
     console.log(`[DEBUG] Distribuição final:`, Object.entries(contadoresFinais).map(([id, count]) => {
-      const org = organistas.find(o => o.id === parseInt(id));
+      const org = organistasOrdenadas.find(o => o.id === parseInt(id));
       return `${org ? org.nome : id}: ${count} vezes`;
     }).join(', '));
     
     // 7. Inserir rodízios no banco
     if (novosRodizios.length > 0) {
       await inserirRodizios(novosRodizios);
+      // Incrementar ciclo do rodízio da igreja a cada geração bem-sucedida
+      await pool.execute(
+        'UPDATE igrejas SET rodizio_ciclo = rodizio_ciclo + 1 WHERE id = ?',
+        [igrejaId]
+      );
     }
     
     // 8. Buscar rodízios gerados com informações completas

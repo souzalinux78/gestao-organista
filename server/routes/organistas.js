@@ -7,7 +7,10 @@ const { authenticate } = require('../middleware/auth');
 router.get('/', authenticate, async (req, res) => {
   try {
     const pool = db.getDb();
-    const [rows] = await pool.execute('SELECT * FROM organistas ORDER BY nome');
+    // Ordenar por ordem (quando preenchida) e depois por nome
+    const [rows] = await pool.execute(
+      'SELECT * FROM organistas ORDER BY (ordem IS NULL), ordem ASC, nome ASC'
+    );
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -33,16 +36,24 @@ router.get('/:id', authenticate, async (req, res) => {
 // Criar nova organista
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { nome, telefone, email, oficializada, ativa } = req.body;
+    const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
     const pool = db.getDb();
     
     const [result] = await pool.execute(
-      'INSERT INTO organistas (nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?)',
-      [nome, telefone || null, email || null, oficializada ? 1 : 0, ativa !== undefined ? (ativa ? 1 : 0) : 1]
+      'INSERT INTO organistas (ordem, nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?, ?)',
+      [
+        ordem !== undefined && ordem !== '' ? Number(ordem) : null,
+        nome,
+        telefone || null,
+        email || null,
+        oficializada ? 1 : 0,
+        ativa !== undefined ? (ativa ? 1 : 0) : 1
+      ]
     );
     
     res.json({ 
       id: result.insertId, 
+      ordem: ordem !== undefined && ordem !== '' ? Number(ordem) : null,
       nome, 
       telefone, 
       email, 
@@ -57,12 +68,20 @@ router.post('/', authenticate, async (req, res) => {
 // Atualizar organista
 router.put('/:id', authenticate, async (req, res) => {
   try {
-    const { nome, telefone, email, oficializada, ativa } = req.body;
+    const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
     const pool = db.getDb();
     
     const [result] = await pool.execute(
-      'UPDATE organistas SET nome = ?, telefone = ?, email = ?, oficializada = ?, ativa = ? WHERE id = ?',
-      [nome, telefone || null, email || null, oficializada ? 1 : 0, ativa ? 1 : 0, req.params.id]
+      'UPDATE organistas SET ordem = ?, nome = ?, telefone = ?, email = ?, oficializada = ?, ativa = ? WHERE id = ?',
+      [
+        ordem !== undefined && ordem !== '' ? Number(ordem) : null,
+        nome,
+        telefone || null,
+        email || null,
+        oficializada ? 1 : 0,
+        ativa ? 1 : 0,
+        req.params.id
+      ]
     );
     
     if (result.affectedRows === 0) {
@@ -71,6 +90,7 @@ router.put('/:id', authenticate, async (req, res) => {
     
     res.json({ 
       id: req.params.id, 
+      ordem: ordem !== undefined && ordem !== '' ? Number(ordem) : null,
       nome, 
       telefone, 
       email, 

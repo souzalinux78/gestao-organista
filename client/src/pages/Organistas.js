@@ -7,6 +7,7 @@ function Organistas() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState({
+    ordem: '',
     nome: '',
     telefone: '',
     email: '',
@@ -55,6 +56,7 @@ function Organistas() {
   const handleEdit = (organista) => {
     setEditing(organista);
     setFormData({
+      ordem: organista.ordem ?? '',
       nome: organista.nome,
       telefone: organista.telefone || '',
       email: organista.email || '',
@@ -78,6 +80,7 @@ function Organistas() {
 
   const resetForm = () => {
     setFormData({
+      ordem: '',
       nome: '',
       telefone: '',
       email: '',
@@ -110,6 +113,19 @@ function Organistas() {
 
         {showForm && (
           <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+            <div className="form-group">
+              <label>Numeração (ordem do rodízio)</label>
+              <input
+                type="number"
+                value={formData.ordem}
+                onChange={(e) => setFormData({ ...formData, ordem: e.target.value })}
+                placeholder="Ex: 1"
+                min="1"
+              />
+              <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+                Use 1,2,3... para definir a ordem do rodízio. Se deixar vazio, a organista fica sem numeração.
+              </small>
+            </div>
             <div className="form-group">
               <label>Nome *</label>
               <input
@@ -168,6 +184,7 @@ function Organistas() {
           <table className="table">
             <thead>
               <tr>
+                <th>Nº</th>
                 <th>Nome</th>
                 <th>Telefone</th>
                 <th>Email</th>
@@ -179,6 +196,7 @@ function Organistas() {
             <tbody>
               {organistas.map(organista => (
                 <tr key={organista.id}>
+                  <td style={{ fontWeight: '600' }}>{organista.ordem ?? '-'}</td>
                   <td>{organista.nome}</td>
                   <td>{organista.telefone || '-'}</td>
                   <td>{organista.email || '-'}</td>
