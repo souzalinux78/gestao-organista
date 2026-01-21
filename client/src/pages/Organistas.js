@@ -4,6 +4,7 @@ import { getOrganistas, createOrganista, updateOrganista, deleteOrganista } from
 function Organistas() {
   const [organistas, setOrganistas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState({
@@ -38,7 +39,9 @@ function Organistas() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving) return;
     try {
+      setSaving(true);
       if (editing) {
         await updateOrganista(editing.id, formData);
         showAlert('Organista atualizada com sucesso!');
@@ -49,7 +52,17 @@ function Organistas() {
       resetForm();
       loadOrganistas();
     } catch (error) {
-      showAlert('Erro ao salvar organista', 'error');
+      // Mostrar a mensagem real vinda do backend (se existir)
+      const errorMessage =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Erro ao salvar organista';
+
+      console.error('[DEBUG] Erro ao salvar organista:', error);
+      showAlert(errorMessage, 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -173,7 +186,7 @@ function Organistas() {
               </label>
             </div>
             <button type="submit" className="btn btn-primary">
-              {editing ? 'Atualizar' : 'Salvar'}
+              {saving ? 'Salvando...' : (editing ? 'Atualizar' : 'Salvar')}
             </button>
           </form>
         )}
