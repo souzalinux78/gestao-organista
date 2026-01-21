@@ -84,20 +84,36 @@ async function migrate() {
       // Primeiro, remover ordens duplicadas por igreja (manter apenas a primeira)
       console.log('   Limpando ordens duplicadas por igreja...');
       
-      await pool.execute({
+      // MySQL não permite UPDATE com subquery na mesma tabela, então usamos uma abordagem diferente
+      // Encontrar IDs que devem ter ordem = NULL (duplicados, mantendo o menor ID)
+      const [duplicados] = await pool.execute({
         sql: `
-          UPDATE organistas_igreja oi1
-          SET ordem = NULL
-          WHERE ordem IS NOT NULL
-          AND EXISTS (
-            SELECT 1 FROM organistas_igreja oi2
-            WHERE oi2.igreja_id = oi1.igreja_id
+          SELECT oi1.id
+          FROM organistas_igreja oi1
+          INNER JOIN organistas_igreja oi2 ON (
+            oi2.igreja_id = oi1.igreja_id
             AND oi2.ordem = oi1.ordem
             AND oi2.id < oi1.id
           )
+          WHERE oi1.ordem IS NOT NULL
         `,
         timeout: dbTimeout
       });
+      
+      if (duplicados.length > 0) {
+        const idsParaLimpar = duplicados.map(d => d.id);
+        const placeholders = idsParaLimpar.map(() => '?').join(',');
+        
+        await pool.execute({
+          sql: `UPDATE organistas_igreja SET ordem = NULL WHERE id IN (${placeholders})`,
+          values: idsParaLimpar,
+          timeout: dbTimeout
+        });
+        
+        console.log(`   ✅ ${duplicados.length} ordem(ns) duplicada(s) removida(s)`);
+      } else {
+        console.log('   ℹ️ Nenhuma ordem duplicada encontrada');
+      }
 
       // Criar índice único composto
       await pool.execute({
