@@ -1,63 +1,60 @@
-const CACHE_NAME = 'gestao-organistas-v1';
-const urlsToCache = [
-  '/',
-  '/static/css/main.css',
-  '/static/js/main.js',
-  '/logo.png',
-  '/favicon.ico'
-];
+// Service Worker - Network First Strategy (Sempre atualizado)
+const CACHE_VERSION = Date.now().toString();
+const CACHE_NAME = `gestao-organistas-${CACHE_VERSION}`;
 
 // Instalar Service Worker
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Cache aberto');
-        return cache.addAll(urlsToCache);
-      })
-  );
+  console.log('[SW] Instalando Service Worker - Versão:', CACHE_VERSION);
+  self.skipWaiting(); // Ativar imediatamente
 });
 
 // Ativar Service Worker
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Ativando Service Worker - Versão:', CACHE_VERSION);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
+          // Remover todos os caches antigos
           if (cacheName !== CACHE_NAME) {
-            console.log('Removendo cache antigo:', cacheName);
+            console.log('[SW] Removendo cache antigo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      return self.clients.claim(); // Controlar todas as páginas imediatamente
     })
   );
 });
 
-// Interceptar requisições
+// Interceptar requisições - Network First (Sempre buscar versão atual)
 self.addEventListener('fetch', (event) => {
+  // Ignorar requisições que não são GET
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Cache hit - retornar resposta
-        if (response) {
+        // Se a requisição foi bem-sucedida, retornar resposta da rede
+        if (response && response.status === 200) {
           return response;
         }
-        return fetch(event.request).then(
-          (response) => {
-            // Verificar se resposta válida
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            // Clonar resposta
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-            return response;
+        throw new Error('Network response was not ok');
+      })
+      .catch(() => {
+        // Se a rede falhar, tentar buscar do cache como fallback
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
           }
-        );
+          // Se não houver cache, retornar página offline básica
+          if (event.request.destination === 'document') {
+            return caches.match('/');
+          }
+        });
       })
   );
 });

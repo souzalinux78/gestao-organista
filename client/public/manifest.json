@@ -36,11 +36,27 @@
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#2E86AB",
-  "background_color": "#2E86AB",
-  "orientation": "portrait-primary",
+  "background_color": "#D4E8F0",
+  "orientation": "any",
   "scope": "/",
   "categories": ["productivity", "utilities"],
   "lang": "pt-BR",
   "dir": "ltr",
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Organistas",
+      "short_name": "Organistas",
+      "description": "Gerenciar organistas",
+      "url": "/organistas",
+      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Rodízios",
+      "short_name": "Rodízios",
+      "description": "Gerar rodízios",
+      "url": "/rodizios",
+      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
 }

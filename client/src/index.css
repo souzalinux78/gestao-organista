@@ -65,6 +65,53 @@
   box-sizing: border-box;
 }
 
+/* Imagens e vídeos responsivos */
+img, video, iframe, embed, object {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+video {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+iframe, embed, object {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+/* Logo responsivo */
+.header img,
+.login-logo img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Garantir que elementos não ultrapassem a largura da tela */
+* {
+  max-width: 100%;
+}
+
+/* Exceções para elementos que precisam de largura específica */
+.table,
+.table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -74,10 +121,15 @@ body {
   background: linear-gradient(135deg, var(--blue-pastel) 0%, var(--gray-50) 50%, var(--blue-pastel) 100%);
   background-attachment: fixed;
   min-height: 100vh;
+  min-height: -webkit-fill-available; /* iOS Safari */
   margin: 0;
   padding: 0;
   overflow-x: hidden;
   color: var(--text-dark);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 code {
@@ -90,6 +142,15 @@ code {
   margin: 0 auto;
   padding: 20px;
   width: 100%;
+  box-sizing: border-box;
+}
+
+/* Garantir que container não ultrapasse a largura da viewport */
+@media (max-width: 1200px) {
+  .container {
+    max-width: 100%;
+    padding: 16px;
+  }
 }
 
 .header {
@@ -512,63 +573,105 @@ code {
   }
 }
 
-/* Responsividade Mobile */
+/* Responsividade Mobile - Telas pequenas (até 768px) */
 @media (max-width: 768px) {
+  /* Container e espaçamento */
   .container {
-    padding: 10px;
+    padding: 12px;
+    max-width: 100%;
   }
 
+  /* Header mobile */
   .header {
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 0;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 12px;
   }
 
   .header h1 {
     font-size: clamp(1.1rem, 5vw, 1.5rem);
     line-height: 1.3;
+    margin-bottom: 8px;
   }
 
+  /* Cards mobile */
   .card {
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
   }
 
   .card h2 {
-    font-size: 1.4rem;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
+    font-size: clamp(1.2rem, 4vw, 1.4rem);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    line-height: 1.4;
   }
 
+  /* Formulários mobile */
   .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    font-size: 14px;
+    margin-bottom: 6px;
+    font-weight: 600;
   }
 
   .form-group input,
   .form-group select,
   .form-group textarea {
-    padding: 10px;
-    font-size: 16px; /* Evita zoom no iOS */
+    padding: 12px 14px;
+    font-size: 16px; /* Evita zoom automático no iOS */
+    min-height: 48px;
+    border-radius: 10px;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
+  .form-group small {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* Botões mobile */
   .btn {
-    padding: 12px 20px;
+    padding: 14px 20px;
+    font-size: 16px;
+    min-height: 48px;
+    min-width: 48px;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  /* Botões em ações */
+  .actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .actions .btn {
+    flex: 1 1 auto;
+    min-width: 100px;
+    margin-bottom: 0;
     font-size: 14px;
+    padding: 10px 14px;
     min-height: 44px;
   }
 
-  /* Botões em linha devem ter largura automática em mobile */
-  .actions .btn {
-    flex: 1 1 auto;
-    min-width: 80px;
-    margin-bottom: 5px;
-  }
-
+  /* Tabelas mobile */
   .table-wrapper {
-    margin: 15px -15px;
-    padding: 0 15px;
+    margin: 16px -16px 0;
+    padding: 0 16px 16px;
     -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overflow-y: visible;
   }
 
   .table {
@@ -580,82 +683,113 @@ code {
 
   .table th,
   .table td {
-    padding: 10px 8px;
+    padding: 12px 10px;
     font-size: 13px;
+    line-height: 1.5;
   }
 
   .table th {
     font-size: 12px;
+    padding: 10px 8px;
   }
 
   /* Cards com tabelas */
   .card .table-wrapper {
-    margin: 20px -25px 0;
-    padding: 0 25px 25px;
+    margin: 16px -16px 0;
+    padding: 0 16px 16px;
   }
 
-  @media (max-width: 768px) {
-    .card .table-wrapper {
-      margin: 15px -15px 0;
-      padding: 0 15px 15px;
-    }
-  }
-
-  .actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 5px;
-    justify-content: flex-start;
-  }
-
+  /* Alertas mobile */
   .alert {
-    padding: 12px 15px;
+    padding: 14px 16px;
     font-size: 14px;
     word-break: break-word;
+    line-height: 1.6;
+    border-radius: 10px;
   }
 
   /* Formulários em mobile */
+  form {
+    margin-top: 16px;
+  }
+
   form .btn {
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+    min-height: 48px;
   }
 
   form .btn:last-child {
     margin-bottom: 0;
   }
 
-  /* Selects e inputs em mobile */
-  select, input[type="date"], input[type="time"] {
+  /* Selects e inputs especiais em mobile */
+  select, 
+  input[type="date"], 
+  input[type="time"],
+  input[type="datetime-local"] {
     font-size: 16px !important;
-    min-height: 44px;
+    min-height: 48px;
+    padding: 12px 14px;
+  }
+
+  /* Texto legível */
+  body {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  p, li, span {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* Espaçamento entre elementos */
+  .form-group + .form-group {
+    margin-top: 16px;
   }
 }
 
+/* Responsividade Mobile - Telas muito pequenas (até 480px) */
 @media (max-width: 480px) {
+  .container {
+    padding: 10px;
+  }
+
+  .header {
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+
   .header h1 {
     font-size: clamp(1rem, 6vw, 1.25rem);
     line-height: 1.3;
+    margin-bottom: 6px;
   }
 
   .nav a {
-    font-size: 12px;
-    padding: 8px 10px;
+    font-size: 14px;
+    padding: 12px 14px;
     min-width: 100%;
-    min-height: 44px;
+    min-height: 48px;
+    border-radius: 8px;
   }
 
   .card {
-    padding: 12px;
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 14px;
   }
 
   .card h2 {
-    font-size: 1.2rem;
-    margin-bottom: 15px;
+    font-size: clamp(1.1rem, 5vw, 1.2rem);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
   }
 
   .card .table-wrapper {
-    margin: 15px -12px 0;
-    padding: 0 12px 12px;
+    margin: 14px -14px 0;
+    padding: 0 14px 14px;
   }
 
   .table {
@@ -665,24 +799,82 @@ code {
 
   .table th,
   .table td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .table th {
+    font-size: 11px;
     padding: 8px 6px;
   }
 
   .actions {
     flex-direction: column;
+    gap: 8px;
   }
 
   .actions .btn {
-    font-size: 11px;
-    padding: 8px 12px;
+    font-size: 14px;
+    padding: 12px 16px;
     width: 100%;
-    min-height: 44px;
+    min-height: 48px;
+    margin-bottom: 0;
   }
 
-  /* Botões em formulários */
+  .btn {
+    padding: 14px 18px;
+    font-size: 15px;
+    min-height: 48px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 12px;
+    font-size: 16px;
+    min-height: 48px;
+  }
+
+  .alert {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
   form .btn {
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+    min-height: 48px;
+  }
+}
+
+/* Responsividade Mobile - Telas extra pequenas (até 360px) */
+@media (max-width: 360px) {
+  .container {
+    padding: 8px;
+  }
+
+  .header {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .table {
+    font-size: 11px;
+    min-width: 450px;
+  }
+
+  .table th,
+  .table td {
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  .btn {
+    padding: 12px 16px;
+    font-size: 14px;
   }
 }
 
@@ -706,9 +898,41 @@ code {
   input[type="number"],
   input[type="tel"],
   input[type="time"],
+  input[type="date"],
+  input[type="datetime-local"],
   select,
   textarea {
     font-size: 16px !important;
+  }
+}
+
+/* PWA - Melhorias de toque e interação */
+@media (hover: none) and (pointer: coarse) {
+  /* Área de toque mínima de 44x44px (padrão Apple/Google) */
+  .btn,
+  .nav a,
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  select,
+  label {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Remover highlight de toque no iOS */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Melhor feedback visual em toque */
+  .btn:active,
+  .nav a:active,
+  button:active {
+    transform: scale(0.98);
+    opacity: 0.9;
   }
 }
 
