@@ -1046,7 +1046,7 @@ code {
   }
 
   .table .actions .btn {
-    flex: 1 !important;
+    flex: none !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -1063,6 +1063,7 @@ code {
     justify-content: center !important;
     text-align: center !important;
     margin: 0 0 8px 0 !important;
+    overflow: hidden !important;
   }
   
   .table .actions .btn:last-child {
@@ -1072,6 +1073,23 @@ code {
   .table .actions .btn * {
     text-align: center !important;
     margin: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* FORÇAR que células com ações não ultrapassem a largura */
+  .table td:has(.actions),
+  .table td:last-child {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    padding: 8px 0 !important;
+  }
+  
+  .table td:has(.actions) .actions,
+  .table td:last-child .actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   /* Alertas mobile */
@@ -1786,16 +1804,40 @@ textarea:disabled {
     flex-direction: column !important;
     gap: 8px !important;
     width: 100% !important;
+    max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    box-sizing: border-box !important;
   }
   
   .table-wrapper table.table tbody tr td .actions .btn {
     width: 100% !important;
+    max-width: 100% !important;
     margin: 0 0 8px 0 !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    flex: none !important;
   }
   
   .table-wrapper table.table tbody tr td .actions .btn:last-child {
     margin-bottom: 0 !important;
+  }
+  
+  /* GARANTIR que botões dentro de .actions nunca saiam da tela */
+  .table td .actions,
+  .table td .actions * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  
+  .table td .actions .btn {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
+    padding: 10px 12px !important;
+    font-size: 13px !important;
   }
 }
