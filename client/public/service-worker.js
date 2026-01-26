@@ -1,6 +1,7 @@
 // Service Worker - Network First Strategy (Sempre atualizado)
-// Versão baseada em timestamp para forçar atualização
-const CACHE_VERSION = new Date().getTime().toString();
+// Versão fixa para evitar loops de reload no mobile
+// A versão será atualizada apenas quando houver novo deploy
+const CACHE_VERSION = 'v1.0.0';
 const CACHE_NAME = `gestao-organistas-${CACHE_VERSION}`;
 
 const OFFLINE_URL = '/offline.html';
@@ -20,7 +21,8 @@ self.addEventListener('install', (event) => {
     }).then(async () => {
       const cache = await caches.open(CACHE_NAME);
       await cache.addAll([OFFLINE_URL, '/']);
-      return self.skipWaiting();
+      // Não forçar ativação imediata - evitar reloads desnecessários
+      // return self.skipWaiting();
     })
   );
 });
@@ -40,7 +42,9 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => {
-      return self.clients.claim(); // Controlar todas as páginas imediatamente
+      // Não forçar claim imediato - evitar reloads desnecessários
+      // return self.clients.claim();
+      return Promise.resolve();
     })
   );
 });
