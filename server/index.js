@@ -1,11 +1,18 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const path = require('path');
 require('dotenv').config();
+
+// Dependências opcionais (segurança) - não quebram se não estiverem instaladas
+let helmet, rateLimit;
+try {
+  helmet = require('helmet');
+  rateLimit = require('express-rate-limit');
+} catch (e) {
+  console.warn('[WARN] Dependências de segurança não instaladas. Execute: npm install helmet express-rate-limit');
+}
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -18,31 +25,40 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middlewares
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:"],
-      fontSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"]
-    }
-  },
-  crossOriginEmbedderPolicy: false
-}));
+// Middlewares de segurança (opcionais)
+if (helmet) {
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:"],
+        fontSrc: ["'self'", "data:"],
+        connectSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"]
+      }
+    },
+    crossOriginEmbedderPolicy: false
+  }));
+  console.log('[INFO] Helmet (segurança) ativado');
+} else {
+  console.warn('[WARN] Helmet não disponível - execute: npm install helmet');
+}
 
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-app.use('/api', apiLimiter);
+if (rateLimit) {
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+  app.use('/api', apiLimiter);
+  console.log('[INFO] Rate limiting ativado');
+} else {
+  console.warn('[WARN] Rate limiting não disponível - execute: npm install express-rate-limit');
+}
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
@@ -130,6 +146,22 @@ db.init().catch(err => {
 const scheduler = require('./services/scheduler');
 scheduler.init();
 
+// Iniciar servidor com tratamento de erros
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`✅ Servidor rodando na porta ${PORT}`);
+  console.log(`✅ Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  if (!helmet) {
+    console.warn('⚠️  Helmet não disponível - segurança reduzida');
+  }
+  if (!rateLimit) {
+    console.warn('⚠️  Rate limiting não disponível - execute: npm install express-rate-limit');
+  }
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Erro: Porta ${PORT} já está em uso!`);
+    console.error('   Solução: Pare o processo que está usando a porta ou mude a porta no .env');
+  } else {
+    console.error('❌ Erro ao iniciar servidor:', err);
+  }
+  process.exit(1);
 });
