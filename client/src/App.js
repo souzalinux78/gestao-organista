@@ -43,7 +43,7 @@ function AppContent() {
             <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
             <Route path="/cadastro" element={!user ? <Register /> : <Navigate to="/" />} />
             <Route path="/" element={<PrivateRoute><Home user={user} /></PrivateRoute>} />
-            <Route path="/organistas" element={<PrivateRoute><Organistas /></PrivateRoute>} />
+            <Route path="/organistas" element={<PrivateRoute><Organistas user={user} /></PrivateRoute>} />
             <Route path="/igrejas" element={<PrivateRoute><Igrejas user={user} /></PrivateRoute>} />
             <Route path="/cultos" element={<PrivateRoute><Cultos user={user} /></PrivateRoute>} />
             <Route path="/rodizios" element={<PrivateRoute><Rodizios user={user} /></PrivateRoute>} />

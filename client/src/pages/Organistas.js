@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { getOrganistas, createOrganista, updateOrganista, deleteOrganista } from '../services/api';
+import { getOrganistas, createOrganista, updateOrganista, deleteOrganista, getIgrejas, getOrganistasIgreja } from '../services/api';
 
-function Organistas() {
+function Organistas({ user }) {
   const [organistas, setOrganistas] = useState([]);
+  const [organistasFiltradas, setOrganistasFiltradas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [filtroIgreja, setFiltroIgreja] = useState('');
+  const [igrejas, setIgrejas] = useState([]);
   const [formData, setFormData] = useState({
     ordem: '',
     nome: '',
@@ -19,12 +22,28 @@ function Organistas() {
 
   useEffect(() => {
     loadOrganistas();
-  }, []);
+    if (user?.role === 'admin') {
+      loadIgrejas();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    // Só aplicar filtro se já tiver carregado as organistas inicialmente
+    if (organistas.length > 0 || filtroIgreja) {
+      if (filtroIgreja) {
+        loadOrganistasPorIgreja(filtroIgreja);
+      } else {
+        setOrganistasFiltradas(organistas);
+      }
+    }
+  }, [filtroIgreja]);
 
   const loadOrganistas = async () => {
     try {
+      setLoading(true);
       const response = await getOrganistas();
       setOrganistas(response.data);
+      setOrganistasFiltradas(response.data);
     } catch (error) {
       // Mensagem de erro mais específica
       let errorMessage = 'Erro ao carregar organistas';
@@ -50,6 +69,28 @@ function Organistas() {
     }
   };
 
+  const loadOrganistasPorIgreja = async (igrejaId) => {
+    try {
+      setLoading(true);
+      const response = await getOrganistasIgreja(igrejaId);
+      setOrganistasFiltradas(response.data);
+    } catch (error) {
+      console.error('[Organistas] Erro ao carregar organistas da igreja:', error);
+      showAlert('Erro ao carregar organistas da igreja', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadIgrejas = async () => {
+    try {
+      const response = await getIgrejas();
+      setIgrejas(response.data);
+    } catch (error) {
+      console.error('[Organistas] Erro ao carregar igrejas:', error);
+    }
+  };
+
   const showAlert = (message, type = 'success') => {
     setAlert({ message, type });
     setTimeout(() => setAlert(null), 5000);
@@ -68,7 +109,11 @@ function Organistas() {
         showAlert('Organista cadastrada com sucesso!');
       }
       resetForm();
-      loadOrganistas();
+      if (filtroIgreja) {
+        loadOrganistasPorIgreja(filtroIgreja);
+      } else {
+        loadOrganistas();
+      }
     } catch (error) {
       // Mostrar a mensagem real vinda do backend (se existir)
       const errorMessage = (error?.code === 'ECONNABORTED')
@@ -104,7 +149,11 @@ function Organistas() {
       try {
         await deleteOrganista(id);
         showAlert('Organista deletada com sucesso!');
-        loadOrganistas();
+        if (filtroIgreja) {
+          loadOrganistasPorIgreja(filtroIgreja);
+        } else {
+          loadOrganistas();
+        }
       } catch (error) {
         showAlert('Erro ao deletar organista', 'error');
       }
@@ -186,35 +235,39 @@ function Organistas() {
               />
             </div>
             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
-                <input
-                  type="checkbox"
-                  checked={formData.oficializada}
-                  onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
-                  style={{ 
-                    width: '20px', 
-                    height: '20px', 
-                    cursor: 'pointer',
-                    margin: 0
-                  }}
-                />
-                <span style={{ fontSize: '16px', fontWeight: '500' }}>Oficializada</span>
+              <input
+                type="checkbox"
+                id="oficializada"
+                checked={formData.oficializada}
+                onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
+                style={{ 
+                  width: '20px', 
+                  height: '20px', 
+                  cursor: 'pointer',
+                  margin: 0,
+                  flexShrink: 0
+                }}
+              />
+              <label htmlFor="oficializada" style={{ cursor: 'pointer', margin: 0, fontSize: '16px', fontWeight: '500', userSelect: 'none' }}>
+                Oficializada
               </label>
             </div>
             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
-                <input
-                  type="checkbox"
-                  checked={formData.ativa}
-                  onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
-                  style={{ 
-                    width: '20px', 
-                    height: '20px', 
-                    cursor: 'pointer',
-                    margin: 0
-                  }}
-                />
-                <span style={{ fontSize: '16px', fontWeight: '500' }}>Ativa</span>
+              <input
+                type="checkbox"
+                id="ativa"
+                checked={formData.ativa}
+                onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
+                style={{ 
+                  width: '20px', 
+                  height: '20px', 
+                  cursor: 'pointer',
+                  margin: 0,
+                  flexShrink: 0
+                }}
+              />
+              <label htmlFor="ativa" style={{ cursor: 'pointer', margin: 0, fontSize: '16px', fontWeight: '500', userSelect: 'none' }}>
+                Ativa
               </label>
             </div>
             <button type="submit" className="btn btn-primary">
@@ -223,8 +276,26 @@ function Organistas() {
           </form>
         )}
 
-        {organistas.length === 0 ? (
-          <div className="empty">Nenhuma organista cadastrada</div>
+        {user?.role === 'admin' && (
+          <div className="form-group" style={{ marginTop: '20px', marginBottom: '20px' }}>
+            <label>Filtrar por Igreja</label>
+            <select
+              value={filtroIgreja}
+              onChange={(e) => setFiltroIgreja(e.target.value)}
+              style={{ fontSize: '16px', width: '100%', maxWidth: '400px' }}
+            >
+              <option value="">Todas as igrejas</option>
+              {igrejas.map(igreja => (
+                <option key={igreja.id} value={igreja.id}>
+                  {igreja.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {organistasFiltradas.length === 0 ? (
+          <div className="empty">Nenhuma organista {filtroIgreja ? 'nesta igreja' : 'cadastrada'}</div>
         ) : (
           <div className="table-wrapper">
             <table className="table">
@@ -240,7 +311,7 @@ function Organistas() {
                 </tr>
               </thead>
               <tbody>
-                {organistas.map(organista => (
+                {organistasFiltradas.map(organista => (
                   <tr key={organista.id}>
                     <td data-label="Nº" style={{ fontWeight: '600' }}>{organista.ordem ?? '-'}</td>
                     <td data-label="Nome" style={{ wordBreak: 'break-word' }}>{organista.nome}</td>
