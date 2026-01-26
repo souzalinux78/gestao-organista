@@ -32,7 +32,7 @@ const authenticate = async (req, res, next) => {
     
     const queryStart = Date.now();
     const [users] = await pool.execute({
-      sql: 'SELECT id, nome, email, role, ativo, aprovado FROM usuarios WHERE id = ? LIMIT 1',
+      sql: 'SELECT id, nome, email, role, tipo_usuario, ativo, aprovado FROM usuarios WHERE id = ? LIMIT 1',
       values: [decoded.userId],
       timeout: dbTimeout
     });

@@ -8,7 +8,7 @@ const { authenticate, isAdmin, getUserIgrejas } = require('../middleware/auth');
 // Cadastro público (sem autenticação)
 router.post('/register', async (req, res) => {
   try {
-    const { nome, email, senha, igreja } = req.body;
+    const { nome, email, senha, igreja, tipo_usuario } = req.body;
 
     if (!nome || !email || !senha) {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
@@ -39,9 +39,15 @@ router.post('/register', async (req, res) => {
     const senhaHash = await bcrypt.hash(senha, 10);
 
     // Criar usuário (não aprovado por padrão)
+    // Validar tipo_usuario se fornecido
+    let tipoUsuarioValido = null;
+    if (tipo_usuario && (tipo_usuario === 'encarregado' || tipo_usuario === 'examinadora')) {
+      tipoUsuarioValido = tipo_usuario;
+    }
+    
     const [result] = await pool.execute({
-      sql: 'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)',
-      values: [nome, email, senhaHash, 'usuario', 0],
+      sql: 'INSERT INTO usuarios (nome, email, senha_hash, role, tipo_usuario, aprovado) VALUES (?, ?, ?, ?, ?, ?)',
+      values: [nome, email, senhaHash, 'usuario', tipoUsuarioValido, 0],
       timeout: dbTimeout
     });
 
@@ -136,7 +142,7 @@ router.post('/login', async (req, res) => {
 
     // Gerar token
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
+      { userId: user.id, email: user.email, role: user.role, tipo_usuario: user.tipo_usuario },
       process.env.JWT_SECRET || 'sua-chave-secreta-aqui',
       { expiresIn: '7d' }
     );
@@ -150,7 +156,8 @@ router.post('/login', async (req, res) => {
         id: user.id,
         nome: user.nome,
         email: user.email,
-        role: user.role
+        role: user.role,
+        tipo_usuario: user.tipo_usuario
       },
       igrejas
     });

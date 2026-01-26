@@ -9,6 +9,7 @@ function Register() {
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [igreja, setIgreja] = useState('');
+  const [tipoUsuario, setTipoUsuario] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,7 +52,7 @@ function Register() {
     }
 
     try {
-      const response = await register(nome, email, senha, igreja.trim());
+      const response = await register(nome, email, senha, igreja.trim(), tipoUsuario || null);
       setSuccess(response.data.message || 'Cadastro realizado com sucesso! Aguarde a aprovação do administrador.');
       
       // Limpar formulário
@@ -60,6 +61,7 @@ function Register() {
       setSenha('');
       setConfirmarSenha('');
       setIgreja('');
+      setTipoUsuario('');
       
       // Redirecionar para login após 3 segundos
       setTimeout(() => {
@@ -154,6 +156,22 @@ function Register() {
             />
             <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
               Nome da igreja ou comum que você representa
+            </small>
+          </div>
+
+          <div className="form-group">
+            <label>Tipo de Usuário</label>
+            <select
+              value={tipoUsuario}
+              onChange={(e) => setTipoUsuario(e.target.value)}
+              style={{ fontSize: '16px' }}
+            >
+              <option value="">Selecione (opcional)</option>
+              <option value="encarregado">Encarregado</option>
+              <option value="examinadora">Examinadora</option>
+            </select>
+            <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+              Selecione se você é encarregado ou examinadora (opcional)
             </small>
           </div>
 
