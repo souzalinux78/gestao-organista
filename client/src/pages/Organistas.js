@@ -26,7 +26,25 @@ function Organistas() {
       const response = await getOrganistas();
       setOrganistas(response.data);
     } catch (error) {
-      showAlert('Erro ao carregar organistas', 'error');
+      // Mensagem de erro mais específica
+      let errorMessage = 'Erro ao carregar organistas';
+      
+      if (error.isServerError) {
+        errorMessage = 'Servidor temporariamente indisponível. Verifique se o backend está rodando.';
+      } else if (error.isTimeout) {
+        errorMessage = 'Tempo limite excedido. Tente novamente.';
+      } else if (error.isNetworkError) {
+        errorMessage = 'Erro de conexão. Verifique sua internet.';
+      } else if (error.response?.status === 502 || error.response?.status === 503) {
+        errorMessage = 'Servidor indisponível (502). Verifique se o backend está rodando na porta 5001.';
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      console.error('[Organistas] Erro ao carregar:', error);
+      showAlert(errorMessage, 'error');
     } finally {
       setLoading(false);
     }

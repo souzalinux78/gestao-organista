@@ -23,16 +23,48 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor para tratar erros de autenticação
+// Interceptor para tratar erros de autenticação e servidor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Erro de autenticação
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('igrejas');
       window.location.href = '/login';
+      return Promise.reject(error);
     }
+    
+    // Erro 502/503 - Servidor indisponível
+    if (error.response?.status === 502 || error.response?.status === 503) {
+      console.error('[API] Servidor indisponível (502/503). Verifique se o backend está rodando.');
+      // Não fazer reload automático - apenas mostrar erro
+      return Promise.reject({
+        ...error,
+        message: 'Servidor temporariamente indisponível. Tente novamente em alguns instantes.',
+        isServerError: true
+      });
+    }
+    
+    // Erro de timeout
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      return Promise.reject({
+        ...error,
+        message: 'Tempo limite excedido. O servidor demorou para responder.',
+        isTimeout: true
+      });
+    }
+    
+    // Erro de rede
+    if (!error.response) {
+      return Promise.reject({
+        ...error,
+        message: 'Erro de conexão. Verifique sua internet e tente novamente.',
+        isNetworkError: true
+      });
+    }
+    
     return Promise.reject(error);
   }
 );
