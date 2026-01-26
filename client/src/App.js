@@ -3,13 +3,14 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate, us
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import InstallPrompt from './components/InstallPrompt';
+import './App.css';
+
 const Organistas = lazy(() => import('./pages/Organistas'));
 const Igrejas = lazy(() => import('./pages/Igrejas'));
 const Cultos = lazy(() => import('./pages/Cultos'));
 const Rodizios = lazy(() => import('./pages/Rodizios'));
 const Admin = lazy(() => import('./pages/Admin'));
-import InstallPrompt from './components/InstallPrompt';
-import './App.css';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
