@@ -310,7 +310,7 @@ const isOficializadaParaCulto = (o) => {
   return o.oficializada === 1 || o.oficializada === true;
 };
 
-const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
+const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataInicial = null, organistaInicial = null) => {
   const pool = db.getDb();
   
   try {
@@ -361,7 +361,13 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
     const totalDias = diasCulto.length;
     const totalOrganistas = organistas.length;
     
-    let cicloAtual = Number(igreja.rodizio_ciclo || 0);
+    let cicloAtual = cicloInicial !== null && cicloInicial !== undefined 
+      ? cicloInicial - 1 
+      : Number(igreja.rodizio_ciclo || 0);
+    
+    if (cicloAtual < 0) {
+      cicloAtual = 0;
+    }
     
     const gerarOrdemCiclo = (ciclo, totalDias, totalOrganistas) => {
       const ordem = [];
@@ -393,7 +399,7 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
       return novaOrdem;
     };
     
-    const dataInicio = new Date();
+    const dataInicio = dataInicial ? new Date(dataInicial) : new Date();
     const dataFim = adicionarMeses(dataInicio, periodoMeses);
     
     const todasDatas = [];
@@ -421,7 +427,9 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null) => {
     todasDatas.sort((a, b) => a.data - b.data);
     
     const novosRodizios = [];
-    let indiceOrganista = 0;
+    let indiceOrganista = organistaInicial !== null && organistaInicial >= 0 && organistaInicial < totalOrganistas 
+      ? organistaInicial 
+      : 0;
     
     for (const item of todasDatas) {
       const { culto, dataFormatada } = item;

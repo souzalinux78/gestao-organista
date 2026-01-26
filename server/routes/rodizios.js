@@ -66,7 +66,7 @@ router.get('/', authenticate, async (req, res) => {
 // Gerar rodízio (com verificação de acesso à igreja)
 router.post('/gerar', authenticate, async (req, res) => {
   try {
-    const { igreja_id, periodo_meses, ciclo_inicial } = req.body;
+    const { igreja_id, periodo_meses, ciclo_inicial, data_inicial, organista_inicial } = req.body;
     
     if (!igreja_id || !periodo_meses) {
       return res.status(400).json({ error: 'igreja_id e periodo_meses são obrigatórios' });
@@ -90,7 +90,12 @@ router.post('/gerar', authenticate, async (req, res) => {
       ? parseInt(ciclo_inicial) 
       : null;
     
-    const rodizios = await rodizioService.gerarRodizio(igreja_id, periodo_meses, cicloInicial);
+    const dataInicial = data_inicial && data_inicial !== '' ? data_inicial : null;
+    const organistaInicial = organista_inicial !== undefined && organista_inicial !== null && organista_inicial !== '' 
+      ? parseInt(organista_inicial) 
+      : null;
+    
+    const rodizios = await rodizioService.gerarRodizio(igreja_id, periodo_meses, cicloInicial, dataInicial, organistaInicial);
     
     // Enviar para webhook
     try {

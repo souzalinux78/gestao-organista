@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRodizios, gerarRodizio, getRodizioPDF, getDiagnosticoIgreja, limparRodiziosIgreja, testarWebhook } from '../services/api';
-import { getIgrejas, getCultosIgreja } from '../services/api';
+import { getIgrejas, getCultosIgreja, getOrganistasIgreja } from '../services/api';
 
 function Rodizios({ user }) {
   const navigate = useNavigate();
@@ -18,9 +18,12 @@ function Rodizios({ user }) {
   const [gerarForm, setGerarForm] = useState({
     igreja_id: '',
     periodo_meses: 6,
-    ciclo_inicial: ''
+    ciclo_inicial: '',
+    data_inicial: '',
+    organista_inicial: ''
   });
   const [cultosIgreja, setCultosIgreja] = useState([]);
+  const [organistasIgreja, setOrganistasIgreja] = useState([]);
   const [alert, setAlert] = useState(null);
 
   useEffect(() => {
@@ -36,13 +39,15 @@ function Rodizios({ user }) {
     }
   }, [igrejas, user]);
 
-  // Carregar cultos quando a igreja for selecionada
+  // Carregar cultos e organistas quando a igreja for selecionada
   useEffect(() => {
     if (gerarForm.igreja_id) {
       loadCultosIgreja(gerarForm.igreja_id);
+      loadOrganistasIgreja(gerarForm.igreja_id);
     } else {
       setCultosIgreja([]);
-      setGerarForm(prev => ({ ...prev, ciclo_inicial: '' }));
+      setOrganistasIgreja([]);
+      setGerarForm(prev => ({ ...prev, ciclo_inicial: '', organista_inicial: '' }));
     }
   }, [gerarForm.igreja_id]);
 
@@ -58,6 +63,16 @@ function Rodizios({ user }) {
     } catch (error) {
       console.error('Erro ao carregar cultos da igreja:', error);
       setCultosIgreja([]);
+    }
+  };
+
+  const loadOrganistasIgreja = async (igrejaId) => {
+    try {
+      const response = await getOrganistasIgreja(igrejaId);
+      setOrganistasIgreja(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar organistas da igreja:', error);
+      setOrganistasIgreja([]);
     }
   };
 
@@ -166,7 +181,13 @@ function Rodizios({ user }) {
       const cicloInicial = gerarForm.ciclo_inicial && gerarForm.ciclo_inicial !== '' 
         ? parseInt(gerarForm.ciclo_inicial) 
         : 1;
-      const response = await gerarRodizio(parseInt(gerarForm.igreja_id), gerarForm.periodo_meses, cicloInicial);
+      const response = await gerarRodizio(
+        parseInt(gerarForm.igreja_id), 
+        gerarForm.periodo_meses, 
+        cicloInicial,
+        gerarForm.data_inicial || null,
+        gerarForm.organista_inicial ? parseInt(gerarForm.organista_inicial) : null
+      );
       showAlert(`Rodízio limpo e regenerado com sucesso! ${response.data.rodizios} rodízios criados.`);
       loadRodizios();
     } catch (error) {
@@ -194,10 +215,12 @@ function Rodizios({ user }) {
       const response = await gerarRodizio(
         parseInt(gerarForm.igreja_id), 
         gerarForm.periodo_meses,
-        parseInt(gerarForm.ciclo_inicial)
+        parseInt(gerarForm.ciclo_inicial),
+        gerarForm.data_inicial || null,
+        gerarForm.organista_inicial ? parseInt(gerarForm.organista_inicial) : null
       );
       showAlert(`Rodízio gerado com sucesso! ${response.data.rodizios} rodízios criados.`);
-      setGerarForm({ igreja_id: '', periodo_meses: 6, ciclo_inicial: '' });
+      setGerarForm({ igreja_id: '', periodo_meses: 6, ciclo_inicial: '', data_inicial: '', organista_inicial: '' });
       loadRodizios();
     } catch (error) {
       const errorMessage = error.response?.data?.error || 'Erro ao gerar rodízio';
@@ -366,6 +389,38 @@ function Rodizios({ user }) {
               <option value={12}>12 meses</option>
             </select>
           </div>
+          <div className="form-group">
+            <label>Data Inicial</label>
+            <input
+              type="date"
+              value={gerarForm.data_inicial}
+              onChange={(e) => setGerarForm({ ...gerarForm, data_inicial: e.target.value })}
+              style={{ fontSize: '16px' }}
+            />
+            <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+              Selecione a data a partir da qual deseja gerar o rodízio. Se deixar em branco, começará a partir de hoje.
+            </small>
+          </div>
+          {gerarForm.igreja_id && organistasIgreja.length > 0 && (
+            <div className="form-group">
+              <label>Organista Inicial</label>
+              <select
+                value={gerarForm.organista_inicial}
+                onChange={(e) => setGerarForm({ ...gerarForm, organista_inicial: e.target.value })}
+                style={{ fontSize: '16px' }}
+              >
+                <option value="">Começar pela primeira organista da sequência</option>
+                {organistasIgreja.map((organista, index) => (
+                  <option key={organista.id} value={index}>
+                    {index + 1} - {organista.nome}
+                  </option>
+                ))}
+              </select>
+              <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+                Escolha qual organista da sequência deseja começar. Se deixar em branco, começará pela primeira.
+              </small>
+            </div>
+          )}
           {gerarForm.igreja_id && cultosIgreja.length > 0 && (
             <div className="form-group">
               <label>Ciclo Inicial *</label>
@@ -373,6 +428,7 @@ function Rodizios({ user }) {
                 value={gerarForm.ciclo_inicial}
                 onChange={(e) => setGerarForm({ ...gerarForm, ciclo_inicial: e.target.value })}
                 required
+                style={{ fontSize: '16px' }}
               >
                 <option value="">Selecione o ciclo inicial</option>
                 {Array.from({ length: cultosIgreja.length }, (_, i) => i + 1).map(ciclo => (
