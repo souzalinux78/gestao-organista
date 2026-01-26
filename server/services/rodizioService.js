@@ -362,54 +362,75 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
     const totalOrganistas = organistas.length;
     
     // cicloInicial vem da UI como 1 ou 2 (1-based)
-    // A função gerarOrdemCiclo espera:
-    // - ciclo 0 = ordem normal
-    // - ciclo 1 = inverte 2 primeiros
-    // - ciclo 2 = inverte 3 primeiros
-    // Então usamos cicloInicial diretamente (sem subtrair 1)
+    // A função gerarOrdemCiclo implementa:
+    // - Ciclo 1 = ordem normal: [1, 2, 3, 4, 5, 6]
+    // - Ciclo 2 = inverter pares: [2, 1, 4, 3, 6, 5]
+    // - Ciclos seguintes alternam entre 1 e 2
     let cicloAtual = cicloInicial !== null && cicloInicial !== undefined 
       ? cicloInicial 
-      : Number(igreja.rodizio_ciclo || 0);
+      : Number(igreja.rodizio_ciclo || 1);
     
-    if (cicloAtual < 0) {
-      cicloAtual = 0;
+    // Garantir que o ciclo seja pelo menos 1
+    if (cicloAtual < 1) {
+      cicloAtual = 1;
     }
     
     const gerarOrdemCiclo = (ciclo, totalDias, totalOrganistas) => {
       // Criar lista base de índices [0, 1, 2, ..., totalOrganistas-1]
+      // Representa organistas: 1, 2, 3, 4, 5, 6 (índices 0, 1, 2, 3, 4, 5)
       const ordem = [];
       for (let i = 0; i < totalOrganistas; i++) {
         ordem.push(i);
       }
       
-      // Ciclo 0 = ordem normal (sem inversão)
-      if (ciclo === 0) {
+      // Ciclo 1 = ordem normal: [0, 1, 2, 3, 4, 5] = organistas 1, 2, 3, 4, 5, 6
+      // Ciclo 2 = inverter pares consecutivos: [1, 0, 3, 2, 5, 4] = organistas 2, 1, 4, 3, 6, 5
+      
+      // Ciclo 0 ou 1 = ordem normal (sem inversão)
+      if (ciclo === 0 || ciclo === 1) {
         return ordem;
       }
       
-      // Aplicar inversão baseada no ciclo:
-      // Ciclo 1 = inverter os 2 primeiros [1, 0, 2, 3, ...]
-      // Ciclo 2 = inverter os 3 primeiros [2, 1, 0, 3, 4, ...]
-      // Ciclo N = inverter os (N+1) primeiros
-      const n = totalOrganistas;
-      if (n <= 1) return ordem;
-      
-      // k = número de elementos a inverter (1..n)
-      // Para ciclo 0: k = 1 (não inverte, retorna normal)
-      // Para ciclo 1: k = 2 (inverte 2 primeiros)
-      // Para ciclo 2: k = 3 (inverte 3 primeiros)
-      const k = (ciclo % n) + 1;
-      
-      // Se k = 1, não há inversão (ordem normal)
-      if (k === 1) {
-        return ordem;
+      // Ciclo 2 = inverter pares consecutivos
+      // Para cada par de organistas consecutivos, inverter a ordem
+      // Exemplo: [0,1,2,3,4,5] -> [1,0,3,2,5,4]
+      if (ciclo === 2) {
+        const novaOrdem = [];
+        for (let i = 0; i < totalOrganistas; i += 2) {
+          if (i + 1 < totalOrganistas) {
+            // Par completo: inverter [i, i+1] -> [i+1, i]
+            novaOrdem.push(ordem[i + 1]);
+            novaOrdem.push(ordem[i]);
+          } else {
+            // Organista ímpar no final: manter na mesma posição
+            novaOrdem.push(ordem[i]);
+          }
+        }
+        return novaOrdem;
       }
       
-      // Inverter os k primeiros elementos
-      const prefixo = ordem.slice(0, k).reverse();
-      const sufixo = ordem.slice(k);
+      // Para ciclos maiores que 2, alternar entre ciclo 1 e 2
+      // Ciclo 3 = ciclo 1 (ordem normal)
+      // Ciclo 4 = ciclo 2 (inverter pares)
+      // Ciclo 5 = ciclo 1 (ordem normal)
+      // etc.
+      const cicloMod = ((ciclo - 1) % 2) + 1;
       
-      return [...prefixo, ...sufixo];
+      if (cicloMod === 1) {
+        return ordem; // Ciclo 1 = ordem normal
+      } else {
+        // Ciclo 2 = inverter pares
+        const novaOrdem = [];
+        for (let i = 0; i < totalOrganistas; i += 2) {
+          if (i + 1 < totalOrganistas) {
+            novaOrdem.push(ordem[i + 1]);
+            novaOrdem.push(ordem[i]);
+          } else {
+            novaOrdem.push(ordem[i]);
+          }
+        }
+        return novaOrdem;
+      }
     };
     
     const dataInicio = dataInicial ? new Date(dataInicial) : new Date();
