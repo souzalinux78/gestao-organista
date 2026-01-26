@@ -3,7 +3,10 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 
-// Sistema de atualização automática - DESABILITADO no mobile para evitar loops
+// Sistema de atualização automática - DESABILITADO para evitar loops infinitos
+// DESABILITADO COMPLETAMENTE - pode ser reativado se necessário com melhorias
+const AUTO_UPDATE_ENABLED = false; // Desabilitado para evitar reloads infinitos
+
 let appVersion = null;
 let checkVersionInterval = null;
 let isReloading = false;
@@ -24,8 +27,13 @@ window.addEventListener('beforeunload', () => {
   sessionStorage.setItem('manual-refresh', 'true');
 });
 
-// Função para verificar versão do app (DESABILITADA no mobile após refresh)
+// Função para verificar versão do app (DESABILITADA para evitar loops)
 async function checkAppVersion() {
+  // DESABILITAR completamente se AUTO_UPDATE_ENABLED for false
+  if (!AUTO_UPDATE_ENABLED) {
+    return;
+  }
+  
   // DESABILITAR completamente no mobile após refresh manual
   if (isMobile && wasManualRefresh) {
     console.log('[UPDATE] Verificação desabilitada no mobile após refresh manual');
@@ -146,8 +154,8 @@ if ('serviceWorker' in navigator) {
           .then((registration) => {
             console.log('[PWA] Service Worker registrado:', registration.scope);
             
-            // No mobile, NÃO verificar atualizações automaticamente após refresh manual
-            if (!isMobile || !wasManualRefresh) {
+            // DESABILITAR verificação automática se AUTO_UPDATE_ENABLED for false
+            if (AUTO_UPDATE_ENABLED && (!isMobile || !wasManualRefresh)) {
               // Verificar atualizações apenas periodicamente (não imediatamente)
               setInterval(() => {
                 if (!wasManualRefresh) {
@@ -165,8 +173,8 @@ if ('serviceWorker' in navigator) {
               }
             }
             
-            // Verificar versão quando a página ganha foco (apenas no desktop)
-            if (!isMobile) {
+            // Verificar versão quando a página ganha foco (apenas no desktop e se habilitado)
+            if (AUTO_UPDATE_ENABLED && !isMobile) {
               let focusChecked = false;
               window.addEventListener('focus', () => {
                 if (!focusChecked && !isReloading && !wasManualRefresh) {
@@ -180,44 +188,46 @@ if ('serviceWorker' in navigator) {
               });
             }
             
-            // Escutar atualizações do service worker (com proteção - DESABILITADO no mobile após refresh)
-            registration.addEventListener('updatefound', () => {
-              const newWorker = registration.installing;
-              if (!newWorker) return;
-              
-              // No mobile após refresh manual, não recarregar automaticamente
-              if (isMobile && wasManualRefresh) {
-                console.log('[PWA] Atualização do SW detectada, mas refresh manual no mobile. Não recarregando.');
-                return;
-              }
-              
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && 
-                    navigator.serviceWorker.controller && 
-                    !isReloading &&
-                    reloadAttempts < MAX_RELOAD_ATTEMPTS &&
-                    !(isMobile && wasManualRefresh)) {
-                  console.log('[PWA] Nova versão disponível. Recarregando...');
-                  isReloading = true;
-                  reloadAttempts++;
-                  
-                  // Limpar caches antes de recarregar
-                  if ('caches' in window) {
-                    caches.keys().then(names => {
-                      Promise.all(names.map(name => caches.delete(name))).then(() => {
-                        setTimeout(() => {
-                          window.location.reload();
-                        }, 2000);
-                      });
-                    });
-                  } else {
-                    setTimeout(() => {
-                      window.location.reload();
-                    }, 2000);
-                  }
+            // Escutar atualizações do service worker (com proteção - DESABILITADO se AUTO_UPDATE_ENABLED for false)
+            if (AUTO_UPDATE_ENABLED) {
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                if (!newWorker) return;
+                
+                // No mobile após refresh manual, não recarregar automaticamente
+                if (isMobile && wasManualRefresh) {
+                  console.log('[PWA] Atualização do SW detectada, mas refresh manual no mobile. Não recarregando.');
+                  return;
                 }
+                
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && 
+                      navigator.serviceWorker.controller && 
+                      !isReloading &&
+                      reloadAttempts < MAX_RELOAD_ATTEMPTS &&
+                      !(isMobile && wasManualRefresh)) {
+                    console.log('[PWA] Nova versão disponível. Recarregando...');
+                    isReloading = true;
+                    reloadAttempts++;
+                    
+                    // Limpar caches antes de recarregar
+                    if ('caches' in window) {
+                      caches.keys().then(names => {
+                        Promise.all(names.map(name => caches.delete(name))).then(() => {
+                          setTimeout(() => {
+                            window.location.reload();
+                          }, 2000);
+                        });
+                      });
+                    } else {
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 2000);
+                    }
+                  }
+                });
               });
-            });
+            }
           })
           .catch((error) => {
             console.error('[PWA] Falha ao registrar Service Worker:', error);
@@ -226,34 +236,36 @@ if ('serviceWorker' in navigator) {
     });
   });
   
-  // Escutar mensagens do service worker (com proteção - DESABILITADO no mobile após refresh)
-  navigator.serviceWorker.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'SKIP_WAITING' && 
-        !isReloading && 
-        reloadAttempts < MAX_RELOAD_ATTEMPTS &&
-        !(isMobile && wasManualRefresh)) {
-      isReloading = true;
-      reloadAttempts++;
-      
-      if ('caches' in window) {
-        caches.keys().then(names => {
-          Promise.all(names.map(name => caches.delete(name))).then(() => {
-            setTimeout(() => {
-              window.location.reload();
-            }, 2000);
+  // Escutar mensagens do service worker (com proteção - DESABILITADO se AUTO_UPDATE_ENABLED for false)
+  if (AUTO_UPDATE_ENABLED) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'SKIP_WAITING' && 
+          !isReloading && 
+          reloadAttempts < MAX_RELOAD_ATTEMPTS &&
+          !(isMobile && wasManualRefresh)) {
+        isReloading = true;
+        reloadAttempts++;
+        
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            Promise.all(names.map(name => caches.delete(name))).then(() => {
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
+            });
           });
-        });
-      } else {
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+        } else {
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
       }
-    }
-  });
+    });
+  }
 }
 
-// Verificar versão na inicialização (apenas no desktop e se não foi refresh manual)
-if (!isMobile || !wasManualRefresh) {
+// Verificar versão na inicialização (apenas se AUTO_UPDATE_ENABLED for true)
+if (AUTO_UPDATE_ENABLED && (!isMobile || !wasManualRefresh)) {
   setTimeout(() => {
     if (!isReloading) {
       checkAppVersion();

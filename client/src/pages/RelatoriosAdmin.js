@@ -26,8 +26,8 @@ function RelatoriosAdmin({ user }) {
       // Não fazer logout em caso de erro, apenas mostrar mensagem
       const errorMessage = error.response?.data?.error || error.message || 'Erro ao carregar igrejas';
       if (error.response?.status === 401) {
-        // Se for erro de autenticação, redirecionar para login
-        window.location.href = '/login';
+        // Se for erro de autenticação, redirecionar para login usando navigate
+        navigate('/login', { replace: true });
         return;
       }
       showAlert(errorMessage, 'error');

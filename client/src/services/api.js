@@ -57,7 +57,8 @@ api.interceptors.response.use(
           setTimeout(() => {
             window._redirectingToLogin = false;
             if (window.location.pathname !== '/login') {
-              window.location.href = '/login';
+              // Usar replace para evitar histórico e reload completo
+              window.location.replace('/login');
             }
           }, 100);
         }

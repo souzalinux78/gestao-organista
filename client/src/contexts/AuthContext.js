@@ -44,7 +44,10 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     localStorage.removeItem('igrejas');
     setUser(null);
-    window.location.href = '/login';
+    // Usar replace para evitar histórico e reload completo
+    if (window.location.pathname !== '/login') {
+      window.location.replace('/login');
+    }
   };
 
   return (

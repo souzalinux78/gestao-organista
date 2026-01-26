@@ -16,13 +16,13 @@ const Relatorios = lazy(() => import('./pages/Relatorios'));
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
-  const token = localStorage.getItem('token');
   
   if (loading) {
     return <div className="loading">Carregando...</div>;
   }
   
-  return token ? children : <Navigate to="/login" />;
+  const token = localStorage.getItem('token');
+  return token ? children : <Navigate to="/login" replace />;
 }
 
 function AppContent() {
