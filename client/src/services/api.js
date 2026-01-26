@@ -29,10 +29,40 @@ api.interceptors.response.use(
   (error) => {
     // Erro de autenticação
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('igrejas');
-      window.location.href = '/login';
+      // Verificar se estamos em uma rota pública (login, register, cadastro)
+      const currentPath = window.location.pathname;
+      const rotasPublicas = ['/login', '/register', '/cadastro'];
+      const isRotaPublica = rotasPublicas.includes(currentPath);
+      
+      // Verificar se é uma requisição de autenticação (login/register)
+      const isAuthRequest = error.config?.url?.includes('/auth/login') || 
+                           error.config?.url?.includes('/auth/register');
+      
+      // Limpar dados de autenticação apenas se não for uma requisição de autenticação
+      // (para não limpar durante tentativa de login/cadastro)
+      if (!isAuthRequest) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('igrejas');
+      }
+      
+      // Só redirecionar se:
+      // 1. NÃO estiver em rota pública
+      // 2. NÃO for uma requisição de autenticação (login/register)
+      // 3. Já não estiver na página de login
+      if (!isRotaPublica && !isAuthRequest && currentPath !== '/login') {
+        // Usar uma flag para evitar múltiplos redirecionamentos
+        if (!window._redirectingToLogin) {
+          window._redirectingToLogin = true;
+          setTimeout(() => {
+            window._redirectingToLogin = false;
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          }, 100);
+        }
+      }
+      
       return Promise.reject(error);
     }
     

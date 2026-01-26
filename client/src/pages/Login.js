@@ -25,6 +25,13 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevenir múltiplos submits
+    
+    // Prevenir submit se já estiver carregando
+    if (loading) {
+      return;
+    }
+    
     setError('');
     setLoading(true);
 
@@ -35,11 +42,12 @@ function Login() {
       // Atualizar estado do usuário através do contexto
       updateUser(user, token, igrejas);
 
-      // Navegar para home
-      navigate('/');
+      // Navegar para home usando replace para evitar histórico
+      navigate('/', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.error || 'Erro ao fazer login');
-    } finally {
+      // Não redirecionar em caso de erro - apenas mostrar mensagem
+      const errorMessage = err.response?.data?.error || err.message || 'Erro ao fazer login';
+      setError(errorMessage);
       setLoading(false);
     }
   };

@@ -28,6 +28,13 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevenir múltiplos submits
+    
+    // Prevenir submit se já estiver carregando
+    if (loading) {
+      return;
+    }
+    
     setError('');
     setSuccess('');
     setLoading(true);
@@ -65,10 +72,12 @@ function Register() {
       
       // Redirecionar para login após 3 segundos
       setTimeout(() => {
-        navigate('/login');
+        navigate('/login', { replace: true });
       }, 3000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Erro ao realizar cadastro');
+      // Não redirecionar em caso de erro - apenas mostrar mensagem
+      const errorMessage = err.response?.data?.error || err.message || 'Erro ao realizar cadastro';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
