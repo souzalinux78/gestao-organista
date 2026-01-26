@@ -6,7 +6,7 @@ const path = require('path');
 require('dotenv').config();
 
 // Dependências opcionais (segurança) - não quebram se não estiverem instaladas
-let helmet, rateLimit;
+let helmet, rateLimit, loginLimiter, apiLimiter;
 try {
   helmet = require('helmet');
   rateLimit = require('express-rate-limit');
@@ -48,14 +48,27 @@ if (helmet) {
 }
 
 if (rateLimit) {
-  const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 300,
+  // Rate limit específico para login (mais permissivo para tentativas legítimas)
+  loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 20, // máximo 20 tentativas de login por 15 minutos (previne brute force)
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Muitas tentativas de login. Tente novamente em alguns minutos.',
+    skipSuccessfulRequests: true // Não contar requisições bem-sucedidas
+  });
+  
+  // Rate limit geral para outras rotas da API
+  apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 500, // Aumentado para 500 requisições por 15 minutos
     standardHeaders: true,
     legacyHeaders: false
   });
-  app.use('/api', apiLimiter);
+  
   console.log('[INFO] Rate limiting ativado');
+  console.log('[INFO] Login: máximo 20 tentativas por 15 minutos');
+  console.log('[INFO] API geral: máximo 500 requisições por 15 minutos');
 } else {
   console.warn('[WARN] Rate limiting não disponível - execute: npm install express-rate-limit');
 }
@@ -82,15 +95,35 @@ const notificacoesRoutes = require('./routes/notificacoes');
 const diagnosticoRoutes = require('./routes/diagnostico');
 
 // Rotas públicas
+// Aplicar rate limit específico para login usando middleware condicional
+if (rateLimit && loginLimiter) {
+  // Middleware condicional: aplicar rate limit apenas na rota POST /api/auth/login
+  app.use('/api/auth', (req, res, next) => {
+    if (req.path === '/login' && req.method === 'POST') {
+      return loginLimiter(req, res, next);
+    }
+    next();
+  });
+}
 app.use('/api/auth', authRoutes);
 
-// Rotas protegidas
-app.use('/api/organistas', organistasRoutes);
-app.use('/api/igrejas', igrejasRoutes);
-app.use('/api/cultos', cultosRoutes);
-app.use('/api/rodizios', rodiziosRoutes);
-app.use('/api/notificacoes', notificacoesRoutes);
-app.use('/api/diagnostico', diagnosticoRoutes);
+// Rotas protegidas (aplicar rate limit geral apenas nas rotas protegidas)
+if (rateLimit && apiLimiter) {
+  app.use('/api/organistas', apiLimiter, organistasRoutes);
+  app.use('/api/igrejas', apiLimiter, igrejasRoutes);
+  app.use('/api/cultos', apiLimiter, cultosRoutes);
+  app.use('/api/rodizios', apiLimiter, rodiziosRoutes);
+  app.use('/api/notificacoes', apiLimiter, notificacoesRoutes);
+  app.use('/api/diagnostico', apiLimiter, diagnosticoRoutes);
+} else {
+  // Se rate limit não estiver disponível, usar rotas sem rate limit
+  app.use('/api/organistas', organistasRoutes);
+  app.use('/api/igrejas', igrejasRoutes);
+  app.use('/api/cultos', cultosRoutes);
+  app.use('/api/rodizios', rodiziosRoutes);
+  app.use('/api/notificacoes', notificacoesRoutes);
+  app.use('/api/diagnostico', diagnosticoRoutes);
+}
 
 // Rota de health check
 app.get('/api/health', (req, res) => {
