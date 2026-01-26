@@ -24,7 +24,7 @@ async function addTipoUsuario() {
     // Adicionar coluna tipo_usuario
     await pool.execute(`
       ALTER TABLE usuarios 
-      ADD COLUMN tipo_usuario ENUM('encarregado', 'examinadora', NULL) DEFAULT NULL 
+      ADD COLUMN tipo_usuario ENUM('encarregado', 'examinadora') DEFAULT NULL 
       AFTER role
     `);
     

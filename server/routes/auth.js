@@ -39,15 +39,41 @@ router.post('/register', async (req, res) => {
     const senhaHash = await bcrypt.hash(senha, 10);
 
     // Criar usuário (não aprovado por padrão)
-    // Validar tipo_usuario se fornecido
+    // Verificar se a coluna tipo_usuario existe
+    let temTipoUsuario = false;
+    try {
+      const [columns] = await pool.execute(`
+        SELECT COLUMN_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = DATABASE() 
+        AND TABLE_NAME = 'usuarios' 
+        AND COLUMN_NAME = 'tipo_usuario'
+      `);
+      temTipoUsuario = columns.length > 0;
+    } catch (error) {
+      // Se der erro, assumir que não existe
+      temTipoUsuario = false;
+    }
+    
+    // Validar tipo_usuario se fornecido e se a coluna existe
     let tipoUsuarioValido = null;
-    if (tipo_usuario && (tipo_usuario === 'encarregado' || tipo_usuario === 'examinadora')) {
+    if (temTipoUsuario && tipo_usuario && (tipo_usuario === 'encarregado' || tipo_usuario === 'examinadora')) {
       tipoUsuarioValido = tipo_usuario;
     }
     
+    // Montar query dinamicamente baseado na existência da coluna
+    let sql, values;
+    if (temTipoUsuario) {
+      sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, tipo_usuario, aprovado) VALUES (?, ?, ?, ?, ?, ?)';
+      values = [nome, email, senhaHash, 'usuario', tipoUsuarioValido, 0];
+    } else {
+      sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)';
+      values = [nome, email, senhaHash, 'usuario', 0];
+    }
+    
     const [result] = await pool.execute({
-      sql: 'INSERT INTO usuarios (nome, email, senha_hash, role, tipo_usuario, aprovado) VALUES (?, ?, ?, ?, ?, ?)',
-      values: [nome, email, senhaHash, 'usuario', tipoUsuarioValido, 0],
+      sql: sql,
+      values: values,
       timeout: dbTimeout
     });
 

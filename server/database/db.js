@@ -38,6 +38,7 @@ const init = async () => {
     
     // Verificar e adicionar coluna funcao se necessário (migração)
     await migrateRodiziosFuncao();
+    await migrateTipoUsuario();
   } catch (error) {
     console.error('Erro ao conectar ao banco de dados:', error);
     throw error;
@@ -182,6 +183,40 @@ const createTables = async () => {
   } catch (error) {
     console.error('Erro ao criar tabelas:', error);
     throw error;
+  }
+};
+
+// Migração: adicionar coluna tipo_usuario se não existir
+const migrateTipoUsuario = async () => {
+  try {
+    const pool = getDb();
+    
+    // Verificar se a coluna já existe
+    const [columns] = await pool.execute(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = 'usuarios' 
+      AND COLUMN_NAME = 'tipo_usuario'
+    `);
+    
+    if (columns.length > 0) {
+      return; // Coluna já existe
+    }
+    
+    // Adicionar coluna tipo_usuario
+    await pool.execute(`
+      ALTER TABLE usuarios 
+      ADD COLUMN tipo_usuario ENUM('encarregado', 'examinadora') DEFAULT NULL 
+      AFTER role
+    `);
+    
+    console.log('✅ Migração: Campo tipo_usuario adicionado com sucesso!');
+  } catch (error) {
+    // Não falhar se a coluna já existir ou se houver outro erro
+    if (error.code !== 'ER_DUP_FIELDNAME') {
+      console.warn('⚠️  Aviso na migração tipo_usuario:', error.message);
+    }
   }
 };
 

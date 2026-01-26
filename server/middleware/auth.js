@@ -31,8 +31,9 @@ const authenticate = async (req, res, next) => {
     const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000);
     
     const queryStart = Date.now();
+    // Usar SELECT * para ser compatível mesmo se tipo_usuario não existir ainda
     const [users] = await pool.execute({
-      sql: 'SELECT id, nome, email, role, tipo_usuario, ativo, aprovado FROM usuarios WHERE id = ? LIMIT 1',
+      sql: 'SELECT * FROM usuarios WHERE id = ? LIMIT 1',
       values: [decoded.userId],
       timeout: dbTimeout
     });
@@ -54,7 +55,11 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    req.user = users[0];
+    // Garantir que tipo_usuario existe (pode ser null se a coluna não existir)
+    req.user = {
+      ...users[0],
+      tipo_usuario: users[0].tipo_usuario || null
+    };
     
     if (path.includes('organistas') && req.method === 'POST') {
       console.log(`[AUTH] Autenticação concluída em ${Date.now() - authStart}ms - Usuário: ${users[0].nome} (${users[0].role})`);
