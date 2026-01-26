@@ -220,10 +220,10 @@ function Cultos({ user }) {
               <tbody>
                 {cultos.map(culto => (
                   <tr key={culto.id}>
-                    <td style={{ wordBreak: 'break-word' }}>{culto.igreja_nome}</td>
-                    <td>{culto.dia_semana}</td>
-                    <td>{culto.hora}</td>
-                    <td>{culto.ativo === 1 ? 'Sim' : 'Não'}</td>
+                    <td data-label="Igreja" style={{ wordBreak: 'break-word' }}>{culto.igreja_nome}</td>
+                    <td data-label="Dia da Semana">{culto.dia_semana}</td>
+                    <td data-label="Hora">{culto.hora}</td>
+                    <td data-label="Ativo">{culto.ativo === 1 ? 'Sim' : 'Não'}</td>
                     <td>
                       <div className="actions">
                         <button

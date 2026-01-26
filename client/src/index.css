@@ -445,7 +445,7 @@ code {
 .table td {
   padding: 14px 12px;
   text-align: left;
-  border-bottom: 1px solid var(--gray-medium);
+  border-bottom: 1px solid var(--gray-300);
 }
 
 .table th {
@@ -455,10 +455,20 @@ code {
 .table td {
   word-wrap: break-word;
   vertical-align: middle;
+  max-width: 200px;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .table td:last-child {
   white-space: normal;
+  max-width: none;
+}
+
+@media (max-width: 768px) {
+  .table td {
+    max-width: 100%;
+  }
 }
 
 .table th {
@@ -479,6 +489,122 @@ code {
 
 .table tr:last-child td {
   border-bottom: none;
+}
+
+/* Transformar tabelas em cards em mobile */
+@media (max-width: 768px) {
+  .table-wrapper {
+    overflow-x: visible;
+    margin: 16px 0 0;
+    padding: 0;
+    box-shadow: none;
+    width: 100%;
+  }
+
+  .table,
+  .table thead,
+  .table tbody,
+  .table th,
+  .table td,
+  .table tr {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .table tr {
+    margin-bottom: 0;
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .table tr:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    background: var(--white);
+    border-color: var(--blue-soft);
+  }
+
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--gray-200);
+    max-width: 100%;
+    text-align: right;
+    position: relative;
+    padding-left: 45%;
+    box-sizing: border-box;
+    word-break: break-word;
+  }
+
+  .table td:last-child {
+    border-bottom: none;
+    padding-top: 12px;
+    margin-top: 4px;
+    padding-left: 0;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .table td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    width: 40%;
+    padding-right: 12px;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--blue-primary);
+    text-align: left;
+    font-size: 13px;
+  }
+
+  .table td:last-child:before {
+    content: 'Ações';
+    position: static;
+    width: 100%;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--blue-primary);
+    font-size: 14px;
+  }
+
+  .table .actions {
+    width: 100%;
+    justify-content: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .table .actions .btn {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    font-size: 15px;
+    padding: 12px 16px;
+  }
 }
 
 .actions {
@@ -579,6 +705,7 @@ code {
   .container {
     padding: 12px;
     max-width: 100%;
+    overflow-x: hidden;
   }
 
   /* Header mobile */
@@ -586,6 +713,9 @@ code {
     padding: 16px;
     margin-bottom: 16px;
     border-radius: 12px;
+    margin-left: -12px;
+    margin-right: -12px;
+    width: calc(100% + 24px);
   }
 
   .header h1 {
@@ -599,6 +729,10 @@ code {
     padding: 16px;
     border-radius: 12px;
     margin-bottom: 16px;
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .card h2 {
@@ -646,58 +780,43 @@ code {
     border-radius: 10px;
     font-weight: 600;
     letter-spacing: 0.3px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Botões em linha (formulários) */
+  form .btn,
+  .card > .btn {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  form .btn:last-child,
+  .card > .btn:last-child {
+    margin-bottom: 0;
   }
 
   /* Botões em ações */
   .actions {
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex-direction: column;
+    flex-wrap: nowrap;
     gap: 8px;
-    justify-content: flex-start;
+    justify-content: stretch;
+    width: 100%;
   }
 
   .actions .btn {
-    flex: 1 1 auto;
-    min-width: 100px;
-    margin-bottom: 0;
-    font-size: 14px;
-    padding: 10px 14px;
-    min-height: 44px;
-  }
-
-  /* Tabelas mobile */
-  .table-wrapper {
-    margin: 16px -16px 0;
-    padding: 0 16px 16px;
-    -webkit-overflow-scrolling: touch;
-    overflow-x: auto;
-    overflow-y: visible;
-  }
-
-  .table {
-    display: block;
-    font-size: 14px;
+    flex: 1;
     width: 100%;
-    min-width: 600px;
+    min-width: 0;
+    margin-bottom: 0;
+    font-size: 15px;
+    padding: 12px 16px;
+    min-height: 48px;
   }
 
-  .table th,
-  .table td {
-    padding: 12px 10px;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .table th {
-    font-size: 12px;
-    padding: 10px 8px;
-  }
-
-  /* Cards com tabelas */
-  .card .table-wrapper {
-    margin: 16px -16px 0;
-    padding: 0 16px 16px;
-  }
+  /* Tabelas já transformadas em cards acima */
+  /* Remover estilos duplicados */
 
   /* Alertas mobile */
   .alert {
@@ -711,16 +830,75 @@ code {
   /* Formulários em mobile */
   form {
     margin-top: 16px;
-  }
-
-  form .btn {
     width: 100%;
-    margin-bottom: 12px;
-    min-height: 48px;
+    box-sizing: border-box;
   }
 
-  form .btn:last-child {
-    margin-bottom: 0;
+  /* Grupos de botões em linha */
+  form > div[style*="display: flex"],
+  .card > div[style*="display: flex"] {
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  form > div[style*="display: flex"] .btn,
+  .card > div[style*="display: flex"] .btn {
+    width: 100% !important;
+    margin: 0 !important;
+    flex: none !important;
+  }
+
+  /* Garantir que não haja overflow horizontal */
+  body, html {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+  }
+
+  * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Ajustar grupos de formulários em linha */
+  .form-group[style*="flex"] {
+    flex-direction: column !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Filtros e controles em linha - Forçar coluna */
+  div[style*="display: flex"] {
+    flex-wrap: wrap !important;
+  }
+
+  div[style*="display: flex"][style*="gap"],
+  div[style*="display: flex"][style*="flexWrap"] {
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  div[style*="display: flex"][style*="gap"] > *,
+  div[style*="display: flex"][style*="flexWrap"] > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }
+
+  /* Espaçamento adequado */
+  .card > * {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* Garantir que selects e inputs não ultrapassem */
+  select, input, textarea {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   /* Selects e inputs especiais em mobile */
@@ -851,30 +1029,47 @@ code {
 @media (max-width: 360px) {
   .container {
     padding: 8px;
+    overflow-x: hidden;
   }
 
   .header {
     padding: 12px;
+    margin-left: -8px;
+    margin-right: -8px;
+    width: calc(100% + 16px);
   }
 
   .card {
     padding: 12px;
+    margin-bottom: 12px;
   }
 
-  .table {
-    font-size: 11px;
-    min-width: 450px;
+  .table tr {
+    padding: 12px;
   }
 
-  .table th,
   .table td {
-    padding: 8px 6px;
+    padding: 8px 0;
+    font-size: 12px;
+    padding-left: 40%;
+  }
+
+  .table td:before {
     font-size: 11px;
+    width: 36%;
   }
 
   .btn {
     padding: 12px 16px;
     font-size: 14px;
+    min-height: 48px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px 12px;
+    font-size: 16px;
   }
 }
 

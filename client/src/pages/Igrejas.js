@@ -284,13 +284,13 @@ function Igrejas({ user }) {
               <tbody>
                 {igrejas.map(igreja => (
                   <tr key={igreja.id}>
-                    <td style={{ fontWeight: '600' }}>{igreja.nome}</td>
-                    <td style={{ maxWidth: '300px', wordBreak: 'break-word' }}>{igreja.endereco || '-'}</td>
-                    <td>{igreja.encarregado_local_nome || '-'}</td>
-                    <td>{igreja.encarregado_regional_nome || '-'}</td>
+                    <td data-label="Nome" style={{ fontWeight: '600' }}>{igreja.nome}</td>
+                    <td data-label="Endereço" style={{ maxWidth: '300px', wordBreak: 'break-word' }}>{igreja.endereco || '-'}</td>
+                    <td data-label="Encarregado Local">{igreja.encarregado_local_nome || '-'}</td>
+                    <td data-label="Encarregado Regional">{igreja.encarregado_regional_nome || '-'}</td>
                     {user?.role === 'admin' && (
                       <>
-                        <td style={{ textAlign: 'center' }}>
+                        <td data-label="Organistas" style={{ textAlign: 'center' }}>
                           <span style={{ 
                             display: 'inline-block',
                             padding: '4px 8px',
@@ -303,7 +303,7 @@ function Igrejas({ user }) {
                             {igreja.total_organistas || 0}
                           </span>
                         </td>
-                        <td style={{ textAlign: 'center' }}>
+                        <td data-label="Usuários" style={{ textAlign: 'center' }}>
                           <span style={{ 
                             display: 'inline-block',
                             padding: '4px 8px',
@@ -316,7 +316,7 @@ function Igrejas({ user }) {
                             {igreja.total_usuarios || 0}
                           </span>
                         </td>
-                        <td style={{ textAlign: 'center' }}>
+                        <td data-label="Cultos" style={{ textAlign: 'center' }}>
                           <span style={{ 
                             display: 'inline-block',
                             padding: '4px 8px',

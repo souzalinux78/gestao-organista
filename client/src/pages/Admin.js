@@ -290,11 +290,11 @@ function Admin() {
                 <tbody>
                   {usuariosFiltrados.map(usuario => (
                     <tr key={usuario.id} style={usuario.aprovado === 0 ? { backgroundColor: '#fff3cd' } : {}}>
-                      <td style={{ wordBreak: 'break-word' }}>{usuario.nome}</td>
-                      <td style={{ wordBreak: 'break-word' }}>{usuario.email}</td>
-                      <td>{usuario.role === 'admin' ? 'Administrador' : 'Usuário'}</td>
-                      <td style={{ wordBreak: 'break-word', maxWidth: '200px' }}>{usuario.igrejas_nomes || '-'}</td>
-                      <td>
+                      <td data-label="Nome" style={{ wordBreak: 'break-word' }}>{usuario.nome}</td>
+                      <td data-label="Email" style={{ wordBreak: 'break-word' }}>{usuario.email}</td>
+                      <td data-label="Perfil">{usuario.role === 'admin' ? 'Administrador' : 'Usuário'}</td>
+                      <td data-label="Igrejas" style={{ wordBreak: 'break-word', maxWidth: '200px' }}>{usuario.igrejas_nomes || '-'}</td>
+                      <td data-label="Status">
                         {usuario.role === 'admin' ? (
                           <span style={{ color: '#28a745', fontWeight: '600' }}>Aprovado</span>
                         ) : usuario.aprovado === 1 ? (
@@ -303,7 +303,7 @@ function Admin() {
                           <span style={{ color: '#dc3545', fontWeight: '600' }}>⏳ Pendente</span>
                         )}
                       </td>
-                      <td>{usuario.ativo === 1 ? 'Sim' : 'Não'}</td>
+                      <td data-label="Ativo">{usuario.ativo === 1 ? 'Sim' : 'Não'}</td>
                       <td>
                         <div className="actions" style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                           {usuario.role !== 'admin' && usuario.aprovado === 0 && (

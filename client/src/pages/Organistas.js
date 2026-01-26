@@ -212,12 +212,12 @@ function Organistas() {
               <tbody>
                 {organistas.map(organista => (
                   <tr key={organista.id}>
-                    <td style={{ fontWeight: '600' }}>{organista.ordem ?? '-'}</td>
-                    <td style={{ wordBreak: 'break-word' }}>{organista.nome}</td>
-                    <td>{organista.telefone || '-'}</td>
-                    <td style={{ wordBreak: 'break-word' }}>{organista.email || '-'}</td>
-                    <td>{organista.oficializada === 1 ? 'Sim' : 'Não'}</td>
-                    <td>{organista.ativa === 1 ? 'Sim' : 'Não'}</td>
+                    <td data-label="Nº" style={{ fontWeight: '600' }}>{organista.ordem ?? '-'}</td>
+                    <td data-label="Nome" style={{ wordBreak: 'break-word' }}>{organista.nome}</td>
+                    <td data-label="Telefone">{organista.telefone || '-'}</td>
+                    <td data-label="Email" style={{ wordBreak: 'break-word' }}>{organista.email || '-'}</td>
+                    <td data-label="Oficializada">{organista.oficializada === 1 ? 'Sim' : 'Não'}</td>
+                    <td data-label="Ativa">{organista.ativa === 1 ? 'Sim' : 'Não'}</td>
                     <td>
                       <div className="actions">
                         <button
