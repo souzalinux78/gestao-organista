@@ -361,8 +361,14 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
     const totalDias = diasCulto.length;
     const totalOrganistas = organistas.length;
     
+    // cicloInicial vem da UI como 1 ou 2 (1-based)
+    // A função gerarOrdemCiclo espera:
+    // - ciclo 0 = ordem normal
+    // - ciclo 1 = inverte 2 primeiros
+    // - ciclo 2 = inverte 3 primeiros
+    // Então usamos cicloInicial diretamente (sem subtrair 1)
     let cicloAtual = cicloInicial !== null && cicloInicial !== undefined 
-      ? cicloInicial - 1 
+      ? cicloInicial 
       : Number(igreja.rodizio_ciclo || 0);
     
     if (cicloAtual < 0) {
@@ -370,33 +376,40 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
     }
     
     const gerarOrdemCiclo = (ciclo, totalDias, totalOrganistas) => {
+      // Criar lista base de índices [0, 1, 2, ..., totalOrganistas-1]
       const ordem = [];
       for (let i = 0; i < totalOrganistas; i++) {
         ordem.push(i);
       }
       
+      // Ciclo 0 = ordem normal (sem inversão)
       if (ciclo === 0) {
         return ordem;
       }
       
-      const cicloMod = ciclo % totalDias;
+      // Aplicar inversão baseada no ciclo:
+      // Ciclo 1 = inverter os 2 primeiros [1, 0, 2, 3, ...]
+      // Ciclo 2 = inverter os 3 primeiros [2, 1, 0, 3, 4, ...]
+      // Ciclo N = inverter os (N+1) primeiros
+      const n = totalOrganistas;
+      if (n <= 1) return ordem;
       
-      if (cicloMod === 0) {
+      // k = número de elementos a inverter (1..n)
+      // Para ciclo 0: k = 1 (não inverte, retorna normal)
+      // Para ciclo 1: k = 2 (inverte 2 primeiros)
+      // Para ciclo 2: k = 3 (inverte 3 primeiros)
+      const k = (ciclo % n) + 1;
+      
+      // Se k = 1, não há inversão (ordem normal)
+      if (k === 1) {
         return ordem;
       }
       
-      const novaOrdem = [];
-      novaOrdem.push(cicloMod);
+      // Inverter os k primeiros elementos
+      const prefixo = ordem.slice(0, k).reverse();
+      const sufixo = ordem.slice(k);
       
-      for (let i = 0; i < cicloMod; i++) {
-        novaOrdem.push(i);
-      }
-      
-      for (let i = cicloMod + 1; i < totalOrganistas; i++) {
-        novaOrdem.push(i);
-      }
-      
-      return novaOrdem;
+      return [...prefixo, ...sufixo];
     };
     
     const dataInicio = dataInicial ? new Date(dataInicial) : new Date();
