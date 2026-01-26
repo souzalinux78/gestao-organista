@@ -142,11 +142,11 @@ function Header({ user, onLogout }) {
         </Link>
         {user?.role === 'admin' && (
           <>
-            <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
-              Admin
-            </Link>
             <Link to="/relatorios-admin" className={location.pathname === '/relatorios-admin' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
               Relatórios
+            </Link>
+            <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
+              Admin
             </Link>
           </>
         )}

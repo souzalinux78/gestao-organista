@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRodizios, gerarRodizio, getRodizioPDF, getDiagnosticoIgreja, limparRodiziosIgreja, testarWebhook } from '../services/api';
+import { getRodizios, gerarRodizio, getRodizioPDF, getDiagnosticoIgreja, limparRodiziosIgreja, testarWebhook, updateRodizio } from '../services/api';
 import { getIgrejas, getCultosIgreja, getOrganistasIgreja } from '../services/api';
 
 function Rodizios({ user }) {
@@ -73,6 +73,41 @@ function Rodizios({ user }) {
     } catch (error) {
       console.error('Erro ao carregar organistas da igreja:', error);
       setOrganistasIgreja([]);
+    }
+  };
+
+  const [editandoRodizio, setEditandoRodizio] = useState(null);
+  const [organistaEditando, setOrganistaEditando] = useState('');
+
+  const handleIniciarEdicao = async (rodizio) => {
+    // Carregar organistas da igreja se necessário
+    if (organistasIgreja.length === 0 && rodizio.igreja_id) {
+      await loadOrganistasIgreja(rodizio.igreja_id);
+    }
+    setEditandoRodizio(rodizio.id);
+    setOrganistaEditando(rodizio.organista_id.toString());
+  };
+
+  const handleCancelarEdicao = () => {
+    setEditandoRodizio(null);
+    setOrganistaEditando('');
+  };
+
+  const handleSalvarEdicao = async (rodizioId) => {
+    if (!organistaEditando) {
+      showAlert('Selecione uma organista', 'error');
+      return;
+    }
+
+    try {
+      await updateRodizio(rodizioId, parseInt(organistaEditando));
+      showAlert('Rodízio atualizado com sucesso!');
+      setEditandoRodizio(null);
+      setOrganistaEditando('');
+      loadRodizios();
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || 'Erro ao atualizar rodízio';
+      showAlert(errorMessage, 'error');
     }
   };
 
@@ -542,6 +577,7 @@ function Rodizios({ user }) {
                   <th>Função</th>
                   <th>Organista</th>
                   <th>Telefone</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -568,8 +604,59 @@ function Rodizios({ user }) {
                         {rodizio.funcao === 'meia_hora' ? '🎵 Meia Hora' : '🎹 Tocar no Culto'}
                       </span>
                     </td>
-                    <td style={{ wordBreak: 'break-word' }}>{rodizio.organista_nome}</td>
+                    <td style={{ wordBreak: 'break-word' }}>
+                      {editandoRodizio === rodizio.id ? (
+                        <select
+                          value={organistaEditando}
+                          onChange={(e) => setOrganistaEditando(e.target.value)}
+                          style={{ fontSize: '14px', padding: '4px 8px', minWidth: '150px' }}
+                        >
+                          <option value="">Selecione...</option>
+                          {organistasIgreja.map(org => (
+                            <option key={org.id} value={org.id}>
+                              {org.nome}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        rodizio.organista_nome
+                      )}
+                    </td>
                     <td>{rodizio.organista_telefone || '-'}</td>
+                    <td>
+                      {editandoRodizio === rodizio.id ? (
+                        <div style={{ display: 'flex', gap: '5px' }}>
+                          <button
+                            className="btn btn-success"
+                            onClick={() => handleSalvarEdicao(rodizio.id)}
+                            style={{ fontSize: '12px', padding: '4px 8px' }}
+                          >
+                            ✓ Salvar
+                          </button>
+                          <button
+                            className="btn btn-secondary"
+                            onClick={handleCancelarEdicao}
+                            style={{ fontSize: '12px', padding: '4px 8px' }}
+                          >
+                            ✕ Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => {
+                            // Carregar organistas da igreja se necessário
+                            if (organistasIgreja.length === 0 && rodizio.igreja_id) {
+                              loadOrganistasIgreja(rodizio.igreja_id);
+                            }
+                            handleIniciarEdicao(rodizio);
+                          }}
+                          style={{ fontSize: '12px', padding: '4px 8px' }}
+                        >
+                          ✏️ Editar
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

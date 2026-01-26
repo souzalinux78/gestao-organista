@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getIgrejas, getRodizioPDF } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 function Relatorios({ user }) {
+  const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const [igrejas, setIgrejas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +30,14 @@ function Relatorios({ user }) {
       const igrejasFiltradas = response.data.filter(i => igrejasIds.includes(i.id));
       setIgrejas(igrejasFiltradas);
     } catch (error) {
-      showAlert('Erro ao carregar igrejas', 'error');
+      // Não fazer logout em caso de erro, apenas mostrar mensagem
+      const errorMessage = error.response?.data?.error || error.message || 'Erro ao carregar igrejas';
+      if (error.response?.status === 401) {
+        // Se for erro de autenticação, redirecionar para login
+        window.location.href = '/login';
+        return;
+      }
+      showAlert(errorMessage, 'error');
     } finally {
       setLoading(false);
     }

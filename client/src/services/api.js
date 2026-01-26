@@ -123,6 +123,7 @@ export const getRodizioPDF = (igrejaId, periodoInicio, periodoFim) => {
   if (periodoFim) params.periodo_fim = periodoFim;
   return api.get(`/rodizios/pdf/${igrejaId}`, { params, responseType: 'blob' });
 };
+export const updateRodizio = (id, organistaId) => api.put(`/rodizios/${id}`, { organista_id: organistaId });
 export const deleteRodizio = (id) => api.delete(`/rodizios/${id}`);
 export const limparRodiziosIgreja = (igrejaId, periodoInicio, periodoFim) => {
   const params = {};

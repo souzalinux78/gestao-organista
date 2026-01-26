@@ -181,6 +181,58 @@ router.get('/pdf/:igreja_id', authenticate, async (req, res) => {
   }
 });
 
+// Atualizar rodízio (com verificação de acesso)
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const { organista_id } = req.body;
+    const pool = db.getDb();
+    
+    if (!organista_id) {
+      return res.status(400).json({ error: 'organista_id é obrigatório' });
+    }
+    
+    // Verificar acesso ao rodízio (através da igreja)
+    const [rodizios] = await pool.execute('SELECT igreja_id FROM rodizios WHERE id = ?', [req.params.id]);
+    if (rodizios.length === 0) {
+      return res.status(404).json({ error: 'Rodízio não encontrado' });
+    }
+    
+    if (req.user.role !== 'admin') {
+      const [associations] = await pool.execute(
+        'SELECT * FROM usuario_igreja WHERE usuario_id = ? AND igreja_id = ?',
+        [req.user.id, rodizios[0].igreja_id]
+      );
+      
+      if (associations.length === 0) {
+        return res.status(403).json({ error: 'Acesso negado a este rodízio' });
+      }
+    }
+    
+    // Verificar se a organista existe e está ativa
+    const [organistas] = await pool.execute('SELECT id, ativa FROM organistas WHERE id = ?', [organista_id]);
+    if (organistas.length === 0) {
+      return res.status(404).json({ error: 'Organista não encontrada' });
+    }
+    if (!organistas[0].ativa) {
+      return res.status(400).json({ error: 'Organista não está ativa' });
+    }
+    
+    // Atualizar rodízio
+    const [result] = await pool.execute(
+      'UPDATE rodizios SET organista_id = ? WHERE id = ?',
+      [organista_id, req.params.id]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Rodízio não encontrado' });
+    }
+    
+    res.json({ message: 'Rodízio atualizado com sucesso' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Deletar rodízio (com verificação de acesso)
 router.delete('/:id', authenticate, async (req, res) => {
   try {
