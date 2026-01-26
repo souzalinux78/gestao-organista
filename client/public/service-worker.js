@@ -50,37 +50,44 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(event.request.url);
-  const isStaticAsset = url.pathname.match(/\.(html|css|js|json)$/);
-  
-  // Para TODOS os arquivos, sempre buscar da rede primeiro (SEM CACHE)
+
+  // Nunca interceptar chamadas da API
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Para todos os arquivos, sempre buscar da rede primeiro (SEM CACHE)
   event.respondWith(
-    fetch(event.request, { 
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-      }
-    })
+    fetch(event.request, { cache: 'no-store' })
       .then((response) => {
-        // Se a requisição foi bem-sucedida, retornar resposta da rede
         if (response && response.status === 200) {
-          // Criar uma nova resposta sem cache headers
-          const newResponse = response.clone();
-          return newResponse;
+          return response;
         }
         throw new Error('Network response was not ok');
       })
       .catch(() => {
         // Se a rede falhar, tentar buscar do cache como último recurso
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          // Se não houver cache, retornar página offline básica
-          if (event.request.destination === 'document') {
-            return caches.match('/');
-          }
-        });
+        return caches.match(event.request)
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            if (event.request.destination === 'document') {
+              return caches.match('/');
+            }
+            return null;
+          })
+          .then((fallbackResponse) => {
+            if (fallbackResponse) {
+              return fallbackResponse;
+            }
+            // Garantir sempre uma Response válida
+            return new Response('', {
+              status: 503,
+              statusText: 'Service Unavailable'
+            });
+          });
       })
   );
 });

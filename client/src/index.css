@@ -1841,3 +1841,23 @@ textarea:disabled {
     font-size: 13px !important;
   }
 }
+
+@media (max-width: 768px) {
+  .container {
+    align-items: stretch !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .table-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
