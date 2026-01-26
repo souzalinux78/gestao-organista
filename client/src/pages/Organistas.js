@@ -185,24 +185,36 @@ function Organistas() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
-            <div className="form-group">
-              <label>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
                 <input
                   type="checkbox"
                   checked={formData.oficializada}
                   onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
+                  style={{ 
+                    width: '20px', 
+                    height: '20px', 
+                    cursor: 'pointer',
+                    margin: 0
+                  }}
                 />
-                {' '}Oficializada
+                <span style={{ fontSize: '16px', fontWeight: '500' }}>Oficializada</span>
               </label>
             </div>
-            <div className="form-group">
-              <label>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
                 <input
                   type="checkbox"
                   checked={formData.ativa}
                   onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
+                  style={{ 
+                    width: '20px', 
+                    height: '20px', 
+                    cursor: 'pointer',
+                    margin: 0
+                  }}
                 />
-                {' '}Ativa
+                <span style={{ fontSize: '16px', fontWeight: '500' }}>Ativa</span>
               </label>
             </div>
             <button type="submit" className="btn btn-primary">
