@@ -53,10 +53,23 @@ server {
         root /var/www/gestao-organista/client/build;
         try_files $uri $uri/ /index.html;
         
-        # Cache para arquivos estáticos
-        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-            expires 1y;
-            add_header Cache-Control "public, immutable";
+        # SEM CACHE para HTML - sempre buscar versão atual
+        location ~* \.(html)$ {
+            add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate";
+            add_header Pragma "no-cache";
+            add_header Expires "0";
+        }
+        
+        # Cache curto para CSS e JS (com versionamento no nome do arquivo)
+        location ~* \.(js|css)$ {
+            add_header Cache-Control "public, max-age=0, must-revalidate";
+            add_header Pragma "no-cache";
+        }
+        
+        # Cache para imagens e fontes
+        location ~* \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 7d;
+            add_header Cache-Control "public, max-age=604800";
         }
     }
 

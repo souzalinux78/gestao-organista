@@ -1,10 +1,22 @@
 // Service Worker - Network First Strategy (Sempre atualizado)
-const CACHE_VERSION = Date.now().toString();
+// Versão baseada em timestamp para forçar atualização
+const CACHE_VERSION = new Date().getTime().toString();
 const CACHE_NAME = `gestao-organistas-${CACHE_VERSION}`;
 
 // Instalar Service Worker
 self.addEventListener('install', (event) => {
   console.log('[SW] Instalando Service Worker - Versão:', CACHE_VERSION);
+  // Limpar todos os caches antigos imediatamente
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          console.log('[SW] Removendo cache antigo:', cacheName);
+          return caches.delete(cacheName);
+        })
+      );
+    })
+  );
   self.skipWaiting(); // Ativar imediatamente
 });
 
@@ -35,26 +47,38 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Se a requisição foi bem-sucedida, retornar resposta da rede
-        if (response && response.status === 200) {
-          return response;
-        }
-        throw new Error('Network response was not ok');
-      })
-      .catch(() => {
-        // Se a rede falhar, tentar buscar do cache como fallback
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
+  // Para HTML, CSS e JS, sempre buscar da rede primeiro (sem cache)
+  const url = new URL(event.request.url);
+  const isStaticAsset = url.pathname.match(/\.(html|css|js|json)$/);
+  
+  if (isStaticAsset) {
+    // Para arquivos estáticos, sempre buscar da rede e ignorar cache
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then((response) => {
+          if (response && response.status === 200) {
+            return response;
           }
-          // Se não houver cache, retornar página offline básica
-          if (event.request.destination === 'document') {
-            return caches.match('/');
+          throw new Error('Network response was not ok');
+        })
+        .catch(() => {
+          // Se a rede falhar, tentar buscar do cache como último recurso
+          return caches.match(event.request);
+        })
+    );
+  } else {
+    // Para outros recursos (imagens, etc), usar network first
+    event.respondWith(
+      fetch(event.request, { cache: 'no-cache' })
+        .then((response) => {
+          if (response && response.status === 200) {
+            return response;
           }
-        });
-      })
-  );
+          throw new Error('Network response was not ok');
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+  }
 });

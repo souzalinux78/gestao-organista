@@ -74,10 +74,19 @@ echo -e "${GREEN}✅ Dependências do backend instaladas${NC}"
 # 4. Instalar dependências e build do frontend
 echo -e "${YELLOW}📦 Instalando dependências do frontend...${NC}"
 cd client
+# Limpar caches antes do build
+rm -rf build
+rm -rf node_modules/.cache
+rm -rf .cache
 npm install
-npm run build
+# Build sem cache
+GENERATE_SOURCEMAP=false INLINE_RUNTIME_CHUNK=false npm run build
 cd ..
 echo -e "${GREEN}✅ Frontend buildado${NC}"
+
+# Limpar cache do Nginx
+echo -e "${YELLOW}🧹 Limpando cache do Nginx...${NC}"
+sudo rm -rf /var/cache/nginx/* 2>/dev/null || echo -e "${YELLOW}⚠️  Não foi possível limpar cache do Nginx${NC}"
 
 # 5. Executar migrações (se houver)
 echo -e "${YELLOW}🔄 Verificando migrações...${NC}"

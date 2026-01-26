@@ -27,21 +27,25 @@ if [ ! -d "client" ]; then
     exit 1
 fi
 
-# Limpar build anterior
-echo -e "${YELLOW}🧹 Limpando build anterior...${NC}"
+# Limpar build anterior e caches
+echo -e "${YELLOW}🧹 Limpando build anterior e caches...${NC}"
 cd client
 rm -rf build
 rm -rf node_modules/.cache
-echo -e "${GREEN}✅ Build anterior removido${NC}"
+rm -rf .cache
+rm -rf build/.cache
+# Limpar cache do npm também
+npm cache clean --force 2>/dev/null || true
+echo -e "${GREEN}✅ Build anterior e caches removidos${NC}"
 
 # Instalar dependências
 echo -e "${YELLOW}📦 Instalando dependências...${NC}"
 npm install
 echo -e "${GREEN}✅ Dependências instaladas${NC}"
 
-# Build do frontend
-echo -e "${YELLOW}🔨 Fazendo build do frontend...${NC}"
-npm run build
+# Build do frontend com variável de ambiente para evitar cache
+echo -e "${YELLOW}🔨 Fazendo build do frontend (sem cache)...${NC}"
+GENERATE_SOURCEMAP=false INLINE_RUNTIME_CHUNK=false npm run build
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Build concluído com sucesso!${NC}"
@@ -67,6 +71,14 @@ fi
 
 cd ..
 
+# Limpar cache do Nginx
+echo -e "${YELLOW}🧹 Limpando cache do Nginx...${NC}"
+if sudo rm -rf /var/cache/nginx/* 2>/dev/null; then
+    echo -e "${GREEN}✅ Cache do Nginx limpo${NC}"
+else
+    echo -e "${YELLOW}⚠️  Não foi possível limpar cache do Nginx${NC}"
+fi
+
 # Recarregar Nginx
 echo -e "${YELLOW}🔄 Recarregando Nginx...${NC}"
 if sudo systemctl reload nginx 2>/dev/null; then
@@ -81,8 +93,19 @@ echo -e "${GREEN}========================================"
 echo "  ✅ Frontend Rebuild Concluído!"
 echo "========================================${NC}"
 echo ""
-echo "📝 Próximos passos:"
-echo "1. Limpe o cache do navegador (Ctrl+Shift+R ou Cmd+Shift+R)"
-echo "2. Acesse: https://gestaoorganista.automatizeonline.com.br"
-echo "3. Verifique se o menu aparece corretamente"
+echo "📝 Próximos passos IMPORTANTES:"
+echo "1. Limpe o cache do navegador completamente:"
+echo "   - Chrome/Edge: Ctrl+Shift+Delete → Limpar dados de navegação"
+echo "   - Firefox: Ctrl+Shift+Delete → Limpar cache"
+echo "   - Ou use modo anônimo para testar"
+echo "2. Desregistre o Service Worker (se instalado como PWA):"
+echo "   - Chrome: DevTools (F12) → Application → Service Workers → Unregister"
+echo "3. Recarregue a página com Ctrl+Shift+R (hard refresh)"
+echo "4. Acesse: https://gestaoorganista.automatizeonline.com.br"
+echo ""
+echo "⚠️  Se ainda não atualizar:"
+echo "   - Feche todas as abas do site"
+echo "   - Limpe o cache do navegador completamente"
+echo "   - Desinstale o PWA se estiver instalado"
+echo "   - Acesse novamente"
 echo ""
