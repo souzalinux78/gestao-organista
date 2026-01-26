@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Organistas from './pages/Organistas';
-import Igrejas from './pages/Igrejas';
-import Cultos from './pages/Cultos';
-import Rodizios from './pages/Rodizios';
-import Admin from './pages/Admin';
+const Organistas = lazy(() => import('./pages/Organistas'));
+const Igrejas = lazy(() => import('./pages/Igrejas'));
+const Cultos = lazy(() => import('./pages/Cultos'));
+const Rodizios = lazy(() => import('./pages/Rodizios'));
+const Admin = lazy(() => import('./pages/Admin'));
 import InstallPrompt from './components/InstallPrompt';
 import './App.css';
 
@@ -34,19 +34,21 @@ function AppContent() {
     <div className="App">
       {user && <Header user={user} onLogout={logout} />}
       <div className="container">
-        <Routes>
-          <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-          <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
-          <Route path="/cadastro" element={!user ? <Register /> : <Navigate to="/" />} />
-          <Route path="/" element={<PrivateRoute><Home user={user} /></PrivateRoute>} />
-          <Route path="/organistas" element={<PrivateRoute><Organistas /></PrivateRoute>} />
-          <Route path="/igrejas" element={<PrivateRoute><Igrejas user={user} /></PrivateRoute>} />
-          <Route path="/cultos" element={<PrivateRoute><Cultos user={user} /></PrivateRoute>} />
-          <Route path="/rodizios" element={<PrivateRoute><Rodizios user={user} /></PrivateRoute>} />
-          {user?.role === 'admin' && (
-            <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
-          )}
-        </Routes>
+        <Suspense fallback={<div className="loading">Carregando...</div>}>
+          <Routes>
+            <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+            <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
+            <Route path="/cadastro" element={!user ? <Register /> : <Navigate to="/" />} />
+            <Route path="/" element={<PrivateRoute><Home user={user} /></PrivateRoute>} />
+            <Route path="/organistas" element={<PrivateRoute><Organistas /></PrivateRoute>} />
+            <Route path="/igrejas" element={<PrivateRoute><Igrejas user={user} /></PrivateRoute>} />
+            <Route path="/cultos" element={<PrivateRoute><Cultos user={user} /></PrivateRoute>} />
+            <Route path="/rodizios" element={<PrivateRoute><Rodizios user={user} /></PrivateRoute>} />
+            {user?.role === 'admin' && (
+              <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
+            )}
+          </Routes>
+        </Suspense>
       </div>
       {location.pathname !== '/login' && location.pathname !== '/register' && location.pathname !== '/cadastro' && <InstallPrompt />}
     </div>

@@ -151,6 +151,15 @@ code {
   align-items: center;
 }
 
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
 /* Garantir que container não ultrapasse a largura da viewport */
 @media (max-width: 1200px) {
   .container {
@@ -1847,6 +1856,15 @@ textarea:disabled {
     align-items: stretch !important;
     padding-left: 8px !important;
     padding-right: 8px !important;
+  }
+
+  .page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .page-header .btn {
+    width: 100% !important;
   }
 
   .card {

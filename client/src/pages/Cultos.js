@@ -121,7 +121,7 @@ function Cultos({ user }) {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div className="page-header">
           <h2>Cultos</h2>
           <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
             {showForm ? 'Cancelar' : '+ Novo Culto'}

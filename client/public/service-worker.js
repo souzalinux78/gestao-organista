@@ -3,6 +3,8 @@
 const CACHE_VERSION = new Date().getTime().toString();
 const CACHE_NAME = `gestao-organistas-${CACHE_VERSION}`;
 
+const OFFLINE_URL = '/offline.html';
+
 // Instalar Service Worker
 self.addEventListener('install', (event) => {
   console.log('[SW] Instalando Service Worker - Versão:', CACHE_VERSION);
@@ -15,8 +17,9 @@ self.addEventListener('install', (event) => {
           return caches.delete(cacheName);
         })
       );
-    }).then(() => {
-      // Forçar ativação imediata
+    }).then(async () => {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.addAll([OFFLINE_URL, '/']);
       return self.skipWaiting();
     })
   );
@@ -74,7 +77,7 @@ self.addEventListener('fetch', (event) => {
               return cachedResponse;
             }
             if (event.request.destination === 'document') {
-              return caches.match('/');
+              return caches.match(OFFLINE_URL);
             }
             return null;
           })

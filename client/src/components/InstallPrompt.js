@@ -5,8 +5,13 @@ function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const ios = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(ios);
+
     // Verificar se já está instalado
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
@@ -17,6 +22,12 @@ function InstallPrompt() {
     const installed = localStorage.getItem('pwa-installed');
     if (installed === 'true') {
       setIsInstalled(true);
+      return;
+    }
+
+    // iOS não suporta beforeinstallprompt
+    if (ios) {
+      setShowPrompt(true);
       return;
     }
 
@@ -86,7 +97,7 @@ function InstallPrompt() {
     }
   }, []);
 
-  if (isInstalled || !showPrompt || !deferredPrompt) {
+  if (isInstalled || !showPrompt) {
     return null;
   }
 
@@ -98,15 +109,21 @@ function InstallPrompt() {
         </div>
         <div className="install-prompt-text">
           <h3>Instalar App</h3>
-          <p>Instale o app para acesso rápido e uso offline!</p>
+          {isIOS ? (
+            <p>Toque em compartilhar e depois em "Adicionar à Tela de Início".</p>
+          ) : (
+            <p>Instale o app para acesso rápido e uso offline!</p>
+          )}
         </div>
         <div className="install-prompt-actions">
-          <button 
-            className="btn-install"
-            onClick={handleInstallClick}
-          >
-            Instalar
-          </button>
+          {!isIOS && (
+            <button 
+              className="btn-install"
+              onClick={handleInstallClick}
+            >
+              Instalar
+            </button>
+          )}
           <button 
             className="btn-dismiss"
             onClick={handleDismiss}
