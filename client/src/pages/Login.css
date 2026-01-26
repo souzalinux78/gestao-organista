@@ -1,15 +1,13 @@
 /* Garantir fundo azul no body quando estiver na página de login */
 body.login-page {
-  background: var(--blue-primary) !important;
-  background: linear-gradient(135deg, var(--blue-primary) 0%, var(--blue-light) 100%) !important;
+  background: linear-gradient(135deg, var(--blue-primary) 0%, var(--blue-light) 50%, var(--blue-lighter) 100%) !important;
   margin: 0;
   padding: 0;
   overflow: hidden;
 }
 
 html.login-page {
-  background: var(--blue-primary);
-  background: linear-gradient(135deg, var(--blue-primary) 0%, var(--blue-light) 100%);
+  background: linear-gradient(135deg, var(--blue-primary) 0%, var(--blue-light) 50%, var(--blue-lighter) 100%);
   height: 100%;
 }
 
@@ -26,14 +24,14 @@ html.login-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--blue-primary);
-  background: linear-gradient(135deg, var(--blue-primary) 0%, var(--blue-light) 100%);
+  background: linear-gradient(135deg, var(--blue-primary) 0%, var(--blue-light) 50%, var(--blue-lighter) 100%);
   padding: 20px;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   z-index: 0;
+  position: relative;
 }
 
 .login-container::before {
@@ -42,15 +40,27 @@ html.login-page {
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--gold-primary) 0%, var(--gold-light) 100%);
+  height: 5px;
+  background: linear-gradient(90deg, var(--gold-primary) 0%, var(--gold-light) 50%, var(--gold-lighter) 100%);
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
+}
+
+.login-container::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .login-card {
   background: white;
   padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
   width: 100%;
   max-width: 450px;
   position: relative;
@@ -58,6 +68,19 @@ html.login-page {
   animation: fadeInUp 0.5s ease-out;
   margin: auto;
   box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--gold-primary), var(--gold-light));
+  border-radius: 20px 20px 0 0;
 }
 
 @keyframes fadeInUp {
