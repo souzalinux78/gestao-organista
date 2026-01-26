@@ -121,9 +121,9 @@ function Cultos({ user }) {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, flex: '1 1 auto', minWidth: '200px' }}>Cultos</h2>
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)} style={{ whiteSpace: 'nowrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <h2>Cultos</h2>
+          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
             {showForm ? 'Cancelar' : '+ Novo Culto'}
           </button>
         </div>
@@ -222,21 +222,19 @@ function Cultos({ user }) {
                   <tr key={culto.id}>
                     <td data-label="Igreja" style={{ wordBreak: 'break-word' }}>{culto.igreja_nome}</td>
                     <td data-label="Dia da Semana">{culto.dia_semana}</td>
-                    <td data-label="Hora">{culto.hora}</td>
+                    <td data-label="Hora">{culto.hora ? culto.hora.substring(0, 5) : '-'}</td>
                     <td data-label="Ativo">{culto.ativo === 1 ? 'Sim' : 'Não'}</td>
-                    <td>
+                    <td data-label="Ações">
                       <div className="actions">
                         <button
                           className="btn btn-secondary"
                           onClick={() => handleEdit(culto)}
-                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
                         >
                           Editar
                         </button>
                         <button
                           className="btn btn-danger"
                           onClick={() => handleDelete(culto.id)}
-                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
                         >
                           Deletar
                         </button>

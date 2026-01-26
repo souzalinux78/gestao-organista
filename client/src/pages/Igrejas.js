@@ -331,19 +331,17 @@ function Igrejas({ user }) {
                         </td>
                       </>
                     )}
-                    <td>
+                    <td data-label="Ações">
                       <div className="actions">
                         <button
                           className="btn btn-secondary"
                           onClick={() => handleEdit(igreja)}
-                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
                         >
                           Editar
                         </button>
                         <button
                           className="btn btn-success"
                           onClick={() => handleManageOrganistas(igreja)}
-                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '90px' }}
                         >
                           Organistas
                         </button>
@@ -351,7 +349,6 @@ function Igrejas({ user }) {
                           <button
                             className="btn btn-danger"
                             onClick={() => handleDelete(igreja.id)}
-                            style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
                           >
                             Deletar
                           </button>

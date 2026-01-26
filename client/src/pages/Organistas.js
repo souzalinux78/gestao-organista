@@ -113,9 +113,9 @@ function Organistas() {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, flex: '1 1 auto', minWidth: '200px' }}>Organistas</h2>
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)} style={{ whiteSpace: 'nowrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <h2>Organistas</h2>
+          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
             {showForm ? 'Cancelar' : '+ Nova Organista'}
           </button>
         </div>
@@ -218,19 +218,17 @@ function Organistas() {
                     <td data-label="Email" style={{ wordBreak: 'break-word' }}>{organista.email || '-'}</td>
                     <td data-label="Oficializada">{organista.oficializada === 1 ? 'Sim' : 'Não'}</td>
                     <td data-label="Ativa">{organista.ativa === 1 ? 'Sim' : 'Não'}</td>
-                    <td>
+                    <td data-label="Ações">
                       <div className="actions">
                         <button
                           className="btn btn-secondary"
                           onClick={() => handleEdit(organista)}
-                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
                         >
                           Editar
                         </button>
                         <button
                           className="btn btn-danger"
                           onClick={() => handleDelete(organista.id)}
-                          style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
                         >
                           Deletar
                         </button>
