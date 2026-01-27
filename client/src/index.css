@@ -1895,3 +1895,25 @@ textarea:disabled {
   outline: 3px solid var(--blue-primary);
   outline-offset: 2px;
 }
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #0f172a;
+    color: #e5e7eb;
+  }
+
+  .card {
+    background: #020617;
+    border-color: #1e293b;
+  }
+
+  input, select, textarea {
+    background: #020617;
+    color: white;
+    border-color: #334155;
+  }
+
+  header {
+    background: #020617;
+  }
+}
