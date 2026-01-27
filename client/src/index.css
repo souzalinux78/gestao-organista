@@ -295,7 +295,7 @@ code {
   box-shadow: var(--shadow-lg);
   margin: 0 auto clamp(1rem, 3vw, 1.5rem) auto; /* 16px - 24px responsivo, centralizado */
   border: 1px solid var(--gray-200);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform .25s ease, box-shadow .25s ease;
   position: relative;
   overflow: hidden;
   width: 100%;
@@ -320,7 +320,7 @@ code {
 
 .card:hover {
   box-shadow: var(--shadow-xl);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   border-color: var(--blue-soft);
 }
 
