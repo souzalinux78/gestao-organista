@@ -58,6 +58,19 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.3);
   --shadow-blue: 0 4px 20px rgba(46, 134, 171, 0.25);
+  
+  /* Espaçamento */
+  --spacing-xs: .25rem;
+  --spacing-sm: .5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  
+  /* Tipografia */
+  --font-size-sm: .875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.6rem;
 }
 
 * {
