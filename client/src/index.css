@@ -1952,3 +1952,12 @@ textarea:disabled {
   0%, 100% { opacity: .4; }
   50% { opacity: 1; }
 }
+
+.page {
+  animation: fade .25s ease;
+}
+
+@keyframes fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; }
+}

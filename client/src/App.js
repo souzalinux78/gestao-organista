@@ -38,7 +38,8 @@ function AppContent() {
       {user && <Header user={user} onLogout={logout} />}
       <div className="container">
         <Suspense fallback={<div className="loading">Carregando...</div>}>
-          <Routes>
+          <div className="page">
+            <Routes>
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
             <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
             <Route path="/cadastro" element={!user ? <Register /> : <Navigate to="/" />} />
@@ -57,6 +58,7 @@ function AppContent() {
               <Route path="/relatorios" element={<PrivateRoute><Relatorios user={user} /></PrivateRoute>} />
             )}
           </Routes>
+          </div>
         </Suspense>
       </div>
       {location.pathname !== '/login' && location.pathname !== '/register' && location.pathname !== '/cadastro' && <InstallPrompt />}
