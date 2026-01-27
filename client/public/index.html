@@ -35,6 +35,36 @@
   </head>
   <body>
     <noscript>Você precisa habilitar JavaScript para executar este aplicativo.</noscript>
+    <div id="app-loader">
+      <div class="loader">🎹</div>
+    </div>
     <div id="root"></div>
+    <script>
+      // Remover loader quando React carregar
+      function removeLoader() {
+        const loader = document.getElementById('app-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          loader.style.transition = 'opacity 0.3s ease';
+          setTimeout(() => loader.remove(), 300);
+        }
+      }
+      
+      // Verificar quando React renderiza
+      const observer = new MutationObserver(() => {
+        if (document.getElementById('root').children.length > 0) {
+          removeLoader();
+          observer.disconnect();
+        }
+      });
+      
+      observer.observe(document.getElementById('root'), {
+        childList: true,
+        subtree: true
+      });
+      
+      // Fallback: remover após 3 segundos
+      setTimeout(removeLoader, 3000);
+    </script>
   </body>
 </html>
