@@ -130,6 +130,7 @@ body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
   background: linear-gradient(135deg, var(--blue-pastel) 0%, var(--gray-50) 50%, var(--blue-pastel) 100%);
   background-attachment: fixed;
   min-height: 100vh;
@@ -369,6 +370,10 @@ input, select {
   padding: .6rem;
 }
 
+input {
+  appearance: none;
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -409,6 +414,10 @@ input, select {
 .btn, button {
   border-radius: 12px;
   padding: .6rem 1.1rem;
+}
+
+button {
+  touch-action: manipulation;
 }
 
 .btn {
