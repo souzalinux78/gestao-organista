@@ -1890,3 +1890,8 @@ textarea:disabled {
     max-width: 100% !important;
   }
 }
+
+*:focus-visible {
+  outline: 3px solid var(--blue-primary);
+  outline-offset: 2px;
+}
