@@ -364,13 +364,16 @@ code {
   line-height: 1.5;
 }
 
+input, select {
+  border-radius: 10px;
+  padding: .6rem;
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: clamp(0.75rem, 2.5vw, 0.875rem); /* 12px - 14px responsivo */
   border: 2px solid var(--gray-medium);
-  border-radius: clamp(0.5rem, 2vw, 0.625rem); /* 8px - 10px responsivo */
   font-size: clamp(0.8125rem, 2.5vw, 0.875rem); /* 13px - 14px responsivo */
   transition: all 0.3s ease;
   background: var(--white);
@@ -403,10 +406,13 @@ code {
   line-height: 1.5;
 }
 
+.btn, button {
+  border-radius: 12px;
+  padding: .6rem 1.1rem;
+}
+
 .btn {
-  padding: clamp(0.75rem, 2.5vw, 0.875rem) clamp(1rem, 4vw, 1.5rem); /* 12-14px vertical, 16-24px horizontal */
   border: none;
-  border-radius: clamp(0.5rem, 2vw, 0.625rem); /* 8px - 10px responsivo */
   cursor: pointer;
   font-size: clamp(0.8125rem, 2.5vw, 0.875rem); /* 13px - 14px responsivo */
   font-weight: 600;
