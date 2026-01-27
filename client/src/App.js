@@ -80,7 +80,7 @@ function Header({ user, onLogout }) {
   
   return (
     <div className="header">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+      <div className="header__content">
         <div style={{ flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center', gap: '15px' }}>
           <img 
             src={process.env.PUBLIC_URL + '/logo.png'} 

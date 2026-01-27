@@ -24,6 +24,14 @@ body.login-page .App .container {
   box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
 }
 
+.header__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
 /* Responsividade para Header */
 @media (max-width: 768px) {
   .header > div {
