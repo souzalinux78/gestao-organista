@@ -57,7 +57,7 @@ router.post('/register', async (req, res) => {
     
     // Validar tipo_usuario se fornecido e se a coluna existe
     let tipoUsuarioValido = null;
-    if (temTipoUsuario && tipo_usuario && (tipo_usuario === 'encarregado' || tipo_usuario === 'examinadora')) {
+    if (temTipoUsuario && tipo_usuario && (tipo_usuario === 'encarregado' || tipo_usuario === 'examinadora' || tipo_usuario === 'instrutoras')) {
       tipoUsuarioValido = tipo_usuario;
     }
     

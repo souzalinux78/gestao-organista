@@ -24,12 +24,12 @@ async function addTipoUsuario() {
     // Adicionar coluna tipo_usuario
     await pool.execute(`
       ALTER TABLE usuarios 
-      ADD COLUMN tipo_usuario ENUM('encarregado', 'examinadora') DEFAULT NULL 
+      ADD COLUMN tipo_usuario ENUM('encarregado', 'examinadora', 'instrutoras') DEFAULT NULL 
       AFTER role
     `);
     
     console.log('✅ Campo tipo_usuario adicionado com sucesso!');
-    console.log('   Valores possíveis: encarregado, examinadora, NULL');
+    console.log('   Valores possíveis: encarregado, examinadora, instrutoras, NULL');
     
   } catch (error) {
     console.error('❌ Erro ao adicionar campo tipo_usuario:', error);

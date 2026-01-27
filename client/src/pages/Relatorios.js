@@ -22,7 +22,7 @@ function Relatorios({ user }) {
   const loadIgrejas = async () => {
     try {
       setLoading(true);
-      // Buscar apenas igrejas do usuário (encarregado ou examinadora)
+      // Buscar apenas igrejas do usuário (encarregado, examinadora ou instrutoras)
       const response = await getIgrejas();
       // Filtrar apenas as igrejas associadas ao usuário
       const igrejasUsuario = JSON.parse(localStorage.getItem('igrejas') || '[]');
@@ -83,7 +83,10 @@ function Relatorios({ user }) {
   }
 
   const tipoUsuario = authUser?.tipo_usuario || '';
-  const tipoTexto = tipoUsuario === 'encarregado' ? 'Encarregado' : tipoUsuario === 'examinadora' ? 'Examinadora' : 'Usuário';
+  const tipoTexto = tipoUsuario === 'encarregado' ? 'Encarregado' 
+    : tipoUsuario === 'examinadora' ? 'Examinadora' 
+    : tipoUsuario === 'instrutoras' ? 'Instrutoras' 
+    : 'Usuário';
 
   return (
     <div>

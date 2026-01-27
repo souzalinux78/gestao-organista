@@ -53,7 +53,7 @@ function AppContent() {
                 <Route path="/relatorios-admin" element={<PrivateRoute><RelatoriosAdmin user={user} /></PrivateRoute>} />
               </>
             )}
-            {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora') && (
+            {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora' || user?.tipo_usuario === 'instrutoras') && (
               <Route path="/relatorios" element={<PrivateRoute><Relatorios user={user} /></PrivateRoute>} />
             )}
           </Routes>
@@ -150,7 +150,7 @@ function Header({ user, onLogout }) {
             </Link>
           </>
         )}
-        {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora') && (
+        {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora' || user?.tipo_usuario === 'instrutoras') && (
           <Link to="/relatorios" className={location.pathname === '/relatorios' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
             Relatórios
           </Link>

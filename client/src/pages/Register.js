@@ -178,9 +178,10 @@ function Register() {
               <option value="">Selecione (opcional)</option>
               <option value="encarregado">Encarregado</option>
               <option value="examinadora">Examinadora</option>
+              <option value="instrutoras">Instrutoras</option>
             </select>
             <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
-              Selecione se você é encarregado ou examinadora (opcional)
+              Selecione se você é encarregado, examinadora ou instrutoras (opcional)
             </small>
           </div>
 

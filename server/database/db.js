@@ -186,14 +186,14 @@ const createTables = async () => {
   }
 };
 
-// Migração: adicionar coluna tipo_usuario se não existir
+// Migração: adicionar coluna tipo_usuario se não existir ou atualizar ENUM
 const migrateTipoUsuario = async () => {
   try {
     const pool = getDb();
     
     // Verificar se a coluna já existe
     const [columns] = await pool.execute(`
-      SELECT COLUMN_NAME 
+      SELECT COLUMN_NAME, COLUMN_TYPE
       FROM INFORMATION_SCHEMA.COLUMNS 
       WHERE TABLE_SCHEMA = DATABASE() 
       AND TABLE_NAME = 'usuarios' 
@@ -201,13 +201,29 @@ const migrateTipoUsuario = async () => {
     `);
     
     if (columns.length > 0) {
-      return; // Coluna já existe
+      // Coluna já existe - verificar se precisa atualizar o ENUM
+      const columnType = columns[0].COLUMN_TYPE;
+      if (!columnType.includes('instrutoras')) {
+        // Atualizar ENUM para incluir 'instrutoras'
+        try {
+          await pool.execute(`
+            ALTER TABLE usuarios 
+            MODIFY COLUMN tipo_usuario ENUM('encarregado', 'examinadora', 'instrutoras') DEFAULT NULL
+          `);
+          console.log('✅ Migração: ENUM tipo_usuario atualizado para incluir "instrutoras"!');
+        } catch (updateError) {
+          console.warn('⚠️  Aviso ao atualizar ENUM tipo_usuario:', updateError.message);
+        }
+      } else {
+        console.log('ℹ️  Campo tipo_usuario já possui o valor "instrutoras" no ENUM.');
+      }
+      return;
     }
     
     // Adicionar coluna tipo_usuario
     await pool.execute(`
       ALTER TABLE usuarios 
-      ADD COLUMN tipo_usuario ENUM('encarregado', 'examinadora') DEFAULT NULL 
+      ADD COLUMN tipo_usuario ENUM('encarregado', 'examinadora', 'instrutoras') DEFAULT NULL 
       AFTER role
     `);
     

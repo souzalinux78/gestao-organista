@@ -16,7 +16,8 @@
     "migrate-ordem-igreja": "node server/scripts/migrate-ordem-por-igreja.js",
     "diagnostico": "node server/scripts/diagnostico-usuario.js",
     "migrate-indexes-acesso": "node server/scripts/migrate-indexes-acesso.js",
-    "migrate-tipo-usuario": "node server/scripts/addTipoUsuario.js"
+    "migrate-tipo-usuario": "node server/scripts/addTipoUsuario.js",
+    "migrate-tipo-usuario-instrutoras": "node server/scripts/updateTipoUsuarioInstrutoras.js"
   },
   "keywords": ["organista", "igreja", "gestão"],
   "author": "",
