@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { isTokenExpired } from './utils/jwt';
+import { isTokenExpired } from '../utils/jwt';
 
 const AuthContext = createContext(null);
 
