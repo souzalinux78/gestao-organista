@@ -85,12 +85,14 @@ function Configuracoes() {
 
   return (
     <div className="configuracoes">
-      <Toast 
-        message={toast.message} 
-        type={toast.type} 
-        onClose={hideToast} 
-        duration={toast.duration} 
-      />
+      {toast?.message && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={hideToast}
+          duration={toast.duration}
+        />
+      )}
       
       <div className="page-header">
         <h2>⚙️ Configurações do Sistema</h2>

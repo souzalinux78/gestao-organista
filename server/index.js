@@ -149,9 +149,9 @@ if (rateLimit && apiLimiter) {
   app.use('/api/rodizios', apiLimiter, rodiziosRoutes);
   app.use('/api/notificacoes', apiLimiter, notificacoesRoutes);
   app.use('/api/diagnostico', apiLimiter, diagnosticoRoutes);
-    app.use('/api/admin', apiLimiter, adminRoutes);
-    app.use('/api/configuracoes', apiLimiter, configuracoesRoutes);
-  } else {
+  app.use('/api/admin', apiLimiter, adminRoutes);
+  app.use('/api/configuracoes', apiLimiter, configuracoesRoutes);
+} else {
   // Se rate limit não estiver disponível, usar rotas sem rate limit
   app.use('/api/organistas', organistasRoutes);
   app.use('/api/igrejas', igrejasRoutes);
@@ -159,9 +159,9 @@ if (rateLimit && apiLimiter) {
   app.use('/api/rodizios', rodiziosRoutes);
   app.use('/api/notificacoes', notificacoesRoutes);
   app.use('/api/diagnostico', diagnosticoRoutes);
-    app.use('/api/admin', adminRoutes);
-    app.use('/api/configuracoes', configuracoesRoutes);
-  }
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/configuracoes', configuracoesRoutes);
+}
 
 // Rota de health check
 app.get('/api/health', (req, res) => {
