@@ -18,10 +18,10 @@ body.login-page .App .container {
 }
 
 .nav a.active {
-  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-light) 100%);
-  color: var(--blue-primary);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+  color: var(--white);
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+  box-shadow: var(--shadow-accent);
 }
 
 .header__content {
