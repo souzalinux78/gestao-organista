@@ -179,8 +179,9 @@ router.post('/login', validate(schemas.login), asyncHandler(async (req, res) => 
     throw new AppError('Email ou senha inválidos', 401, 'INVALID_CREDENTIALS');
   }
 
-  // Buscar igrejas do usuário
-  const igrejas = await getUserIgrejas(user.id, user.role === 'admin');
+  // Buscar igrejas do usuário (com tenant_id se disponível)
+  const tenantId = user.tenant_id || null;
+  const igrejas = await getUserIgrejas(user.id, user.role === 'admin', tenantId);
 
   // Gerar token com JWT_SECRET validado
   // Reduzido de 7d para 1d para melhor segurança (token comprometido válido por menos tempo)
@@ -219,7 +220,8 @@ router.post('/login', validate(schemas.login), asyncHandler(async (req, res) => 
 // Verificar token (usado pelo frontend)
 router.get('/me', authenticate, async (req, res) => {
   try {
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    const tenantId = req.user.tenant_id || req.user.tenantId || null;
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     
     res.json({
       user: {

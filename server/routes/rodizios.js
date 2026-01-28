@@ -7,15 +7,17 @@ const pdfService = require('../services/pdfService');
 const webhookService = require('../services/webhookService');
 const notificacaoService = require('../services/notificacaoService');
 const { authenticate, getUserIgrejas } = require('../middleware/auth');
+const { tenantResolver, getTenantId } = require('../middleware/tenantResolver');
 const { checkIgrejaAccess, checkRodizioAccess } = require('../middleware/igrejaAccess');
 
-// Listar rodízios (filtrado por igrejas do usuário)
-router.get('/', authenticate, async (req, res) => {
+// Listar rodízios (filtrado por igrejas do usuário e tenant)
+router.get('/', authenticate, tenantResolver, async (req, res) => {
   try {
     const { igreja_id, periodo_inicio, periodo_fim } = req.query;
+    const tenantId = getTenantId(req);
     
-    // Obter igrejas do usuário
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    // Obter igrejas do usuário (já filtradas por tenant)
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
     
     if (igrejaIds.length === 0) {
@@ -196,7 +198,8 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
     const hoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     
     // Obter todas as igrejas do usuário
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    const tenantId = getTenantId(req);
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
     
     if (igrejaIds.length === 0) {

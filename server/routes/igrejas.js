@@ -2,16 +2,25 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
 const { authenticate, getUserIgrejas, invalidateIgrejasCache } = require('../middleware/auth');
+const { tenantResolver, getTenantId } = require('../middleware/tenantResolver');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 
-// Listar igrejas (filtrado por usuário, admin vê todas)
-router.get('/', authenticate, async (req, res) => {
+// Listar igrejas (filtrado por usuário e tenant, admin vê todas se sem tenant)
+router.get('/', authenticate, tenantResolver, async (req, res) => {
   try {
     const pool = db.getDb();
+    const tenantId = getTenantId(req);
+    
+    // Verificar se coluna tenant_id existe
+    const { cachedColumnExists } = require('../utils/cache');
+    const temTenantId = await cachedColumnExists('igrejas', 'tenant_id');
     
     // Admin vê todas as igrejas com informações adicionais
-    if (req.user.role === 'admin') {
+    // Se admin tem tenantId null, vê todas (acesso global)
+    // Se admin tem tenantId específico, filtra por tenant
+    if (req.user.role === 'admin' && !tenantId) {
+      // Admin sem tenant = acesso global
       const [igrejas] = await pool.execute(
         `SELECT 
           i.id, i.nome, i.endereco, 
@@ -26,6 +35,7 @@ router.get('/', authenticate, async (req, res) => {
          LEFT JOIN organistas_igreja oi ON i.id = oi.igreja_id
          LEFT JOIN usuario_igreja ui ON i.id = ui.igreja_id
          LEFT JOIN cultos c ON i.id = c.igreja_id AND c.ativo = 1
+         ${temTenantId ? '' : ''}
          GROUP BY i.id, i.nome, i.endereco, 
                   i.encarregado_local_nome, i.encarregado_local_telefone,
                   i.encarregado_regional_nome, i.encarregado_regional_telefone,
@@ -34,8 +44,8 @@ router.get('/', authenticate, async (req, res) => {
       );
       res.json(igrejas);
     } else {
-      // Usuário comum vê apenas suas igrejas
-      const igrejas = await getUserIgrejas(req.user.id, false);
+      // Usuário comum ou admin com tenant específico = filtrar por tenant
+      const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
       res.json(igrejas);
     }
   } catch (error) {
@@ -76,7 +86,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Criar nova igreja (admin ou usuário comum)
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, tenantResolver, async (req, res) => {
   try {
     const { 
       nome, 
@@ -88,16 +98,39 @@ router.post('/', authenticate, async (req, res) => {
       mesma_organista_ambas_funcoes
     } = req.body;
     const pool = db.getDb();
+    const tenantId = getTenantId(req);
     
-    // Criar igreja
-    const [result] = await pool.execute(
-      `INSERT INTO igrejas (
+    // Verificar se coluna tenant_id existe
+    const { cachedColumnExists } = require('../utils/cache');
+    const temTenantId = await cachedColumnExists('igrejas', 'tenant_id');
+    
+    // Criar igreja com tenant_id se disponível
+    let sql, values;
+    if (temTenantId && tenantId) {
+      sql = `INSERT INTO igrejas (
+        nome, endereco, 
+        encarregado_local_nome, encarregado_local_telefone,
+        encarregado_regional_nome, encarregado_regional_telefone,
+        mesma_organista_ambas_funcoes, tenant_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+      values = [
+        nome, 
+        endereco || null,
+        encarregado_local_nome || null,
+        encarregado_local_telefone || null,
+        encarregado_regional_nome || null,
+        encarregado_regional_telefone || null,
+        mesma_organista_ambas_funcoes ? 1 : 0,
+        tenantId
+      ];
+    } else {
+      sql = `INSERT INTO igrejas (
         nome, endereco, 
         encarregado_local_nome, encarregado_local_telefone,
         encarregado_regional_nome, encarregado_regional_telefone,
         mesma_organista_ambas_funcoes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      values = [
         nome, 
         endereco || null,
         encarregado_local_nome || null,
@@ -105,8 +138,10 @@ router.post('/', authenticate, async (req, res) => {
         encarregado_regional_nome || null,
         encarregado_regional_telefone || null,
         mesma_organista_ambas_funcoes ? 1 : 0
-      ]
-    );
+      ];
+    }
+    
+    const [result] = await pool.execute(sql, values);
     
     const igrejaId = result.insertId;
     

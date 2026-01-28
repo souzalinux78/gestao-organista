@@ -2,16 +2,18 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
 const { authenticate, getUserIgrejas } = require('../middleware/auth');
+const { tenantResolver, getTenantId } = require('../middleware/tenantResolver');
 const { cachedColumnExists } = require('../utils/cache');
 
-// Listar organistas (filtrado por igrejas do usuário)
-router.get('/', authenticate, async (req, res) => {
+// Listar organistas (filtrado por igrejas do usuário e tenant)
+router.get('/', authenticate, tenantResolver, async (req, res) => {
   try {
     const pool = db.getDb();
     const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000);
+    const tenantId = getTenantId(req);
     
-    // Obter igrejas do usuário
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    // Obter igrejas do usuário (já filtradas por tenant)
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
     
     if (igrejaIds.length === 0) {
@@ -62,12 +64,13 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Buscar organista por ID (com verificação de acesso)
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', authenticate, tenantResolver, async (req, res) => {
   try {
     const pool = db.getDb();
+    const tenantId = getTenantId(req);
     
-    // Obter igrejas do usuário
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    // Obter igrejas do usuário (já filtradas por tenant)
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
     
     // Verificar se a organista está associada a alguma igreja do usuário
@@ -90,7 +93,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Criar nova organista
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, tenantResolver, async (req, res) => {
   const startTime = Date.now();
   let organistaId = null;
   let ordemValue = undefined;
@@ -117,7 +120,8 @@ router.post('/', authenticate, async (req, res) => {
     try {
       console.log(`[DEBUG] Buscando igrejas do usuário ${req.user.id}...`);
       const getUserIgrejasStart = Date.now();
-      igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+      const tenantId = getTenantId(req);
+      igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
       igrejaIds = igrejas.map(i => i.id);
       console.log(`[DEBUG] Igrejas encontradas (${Date.now() - getUserIgrejasStart}ms): ${igrejaIds.length} igreja(s) - IDs: [${igrejaIds.join(', ')}]`);
     } catch (getUserIgrejasError) {
@@ -157,19 +161,39 @@ router.post('/', authenticate, async (req, res) => {
       }
     }
     
-    // Criar organista
+    // Verificar se coluna tenant_id existe em organistas
+    const temTenantIdOrganistas = await cachedColumnExists('organistas', 'tenant_id');
+    const tenantId = getTenantId(req);
+    
+    // Criar organista com tenant_id se disponível
     console.log(`[DEBUG] Criando organista no banco...`);
     const insertStart = Date.now();
     
-    const [result] = await pool.execute({
-      sql: 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?)',
-      values: [
+    let sqlOrganista, valuesOrganista;
+    if (temTenantIdOrganistas && tenantId) {
+      sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa, tenant_id) VALUES (?, ?, ?, ?, ?, ?)';
+      valuesOrganista = [
+        nome.trim(),
+        telefone || null,
+        email || null,
+        oficializada ? 1 : 0,
+        ativa !== undefined ? (ativa ? 1 : 0) : 1,
+        tenantId
+      ];
+    } else {
+      sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?)';
+      valuesOrganista = [
         nome.trim(),
         telefone || null,
         email || null,
         oficializada ? 1 : 0,
         ativa !== undefined ? (ativa ? 1 : 0) : 1
-      ],
+      ];
+    }
+    
+    const [result] = await pool.execute({
+      sql: sqlOrganista,
+      values: valuesOrganista,
       timeout: dbTimeout
     });
     
@@ -296,14 +320,15 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Atualizar organista (com verificação de acesso)
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticate, tenantResolver, async (req, res) => {
   try {
     const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
     const pool = db.getDb();
     const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000);
+    const tenantId = getTenantId(req);
     
-    // Obter igrejas do usuário
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    // Obter igrejas do usuário (já filtradas por tenant)
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
     
     // Verificar se a organista está associada a alguma igreja do usuário

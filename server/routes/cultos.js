@@ -2,12 +2,14 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
 const { authenticate, getUserIgrejas } = require('../middleware/auth');
+const { tenantResolver, getTenantId } = require('../middleware/tenantResolver');
 
-// Listar cultos (filtrado por igrejas do usuário)
-router.get('/', authenticate, async (req, res) => {
+// Listar cultos (filtrado por igrejas do usuário e tenant)
+router.get('/', authenticate, tenantResolver, async (req, res) => {
   try {
     const pool = db.getDb();
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    const tenantId = getTenantId(req);
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
     
     if (igrejaIds.length === 0) {

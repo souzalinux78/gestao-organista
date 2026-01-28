@@ -138,9 +138,9 @@ const checkIgrejaAccess = async (req, res, next) => {
   }
 };
 
-// Função auxiliar para obter igrejas do usuário (com cache)
-const getUserIgrejas = async (userId, isAdmin) => {
-  const cacheKey = isAdmin ? 'igrejas:admin' : `igrejas:user:${userId}`;
+// Função auxiliar para obter igrejas do usuário (com cache e filtro de tenant)
+const getUserIgrejas = async (userId, isAdmin, tenantId = null) => {
+  const cacheKey = isAdmin && !tenantId ? 'igrejas:admin' : `igrejas:user:${userId}:tenant:${tenantId || 'null'}`;
   const cacheTTL = 2 * 60 * 1000; // 2 minutos de cache
   
   return cached(cacheKey, async () => {
@@ -148,22 +148,56 @@ const getUserIgrejas = async (userId, isAdmin) => {
     const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000);
     
     try {
-      if (isAdmin) {
-        const [igrejas] = await pool.execute({
-          sql: 'SELECT * FROM igrejas ORDER BY nome',
-          timeout: dbTimeout
-        });
-        return igrejas || [];
+      // Verificar se coluna tenant_id existe em igrejas
+      const { cachedColumnExists } = require('../utils/cache');
+      const temTenantId = await cachedColumnExists('igrejas', 'tenant_id');
+      
+      if (isAdmin && !tenantId) {
+        // Admin sem tenant específico = acesso global (todos os tenants)
+        if (temTenantId) {
+          const [igrejas] = await pool.execute({
+            sql: 'SELECT * FROM igrejas ORDER BY nome',
+            timeout: dbTimeout
+          });
+          return igrejas || [];
+        } else {
+          // Se coluna não existe, retornar todas (compatibilidade)
+          const [igrejas] = await pool.execute({
+            sql: 'SELECT * FROM igrejas ORDER BY nome',
+            timeout: dbTimeout
+          });
+          return igrejas || [];
+        }
       } else {
-        // Query otimizada com índice em usuario_igreja.usuario_id
+        // Usuário comum ou admin com tenant específico = filtrar por tenant_id
+        let sql, values;
+        
+        if (temTenantId && tenantId) {
+          // Filtrar por tenant_id se disponível
+          sql = `SELECT i.* 
+                 FROM igrejas i
+                 INNER JOIN usuario_igreja ui ON i.id = ui.igreja_id
+                 WHERE ui.usuario_id = ? AND i.tenant_id = ?
+                 ORDER BY i.nome
+                 LIMIT 100`;
+          values = [userId, tenantId];
+        } else if (temTenantId && !tenantId) {
+          // Se tenant_id existe mas não foi fornecido, retornar vazio (segurança)
+          return [];
+        } else {
+          // Se coluna não existe, usar query antiga (compatibilidade)
+          sql = `SELECT i.* 
+                 FROM igrejas i
+                 INNER JOIN usuario_igreja ui ON i.id = ui.igreja_id
+                 WHERE ui.usuario_id = ?
+                 ORDER BY i.nome
+                 LIMIT 100`;
+          values = [userId];
+        }
+        
         const [igrejas] = await pool.execute({
-          sql: `SELECT i.* 
-                FROM igrejas i
-                INNER JOIN usuario_igreja ui ON i.id = ui.igreja_id
-                WHERE ui.usuario_id = ?
-                ORDER BY i.nome
-                LIMIT 100`,
-          values: [userId],
+          sql,
+          values,
           timeout: dbTimeout
         });
         return igrejas || [];
@@ -172,6 +206,7 @@ const getUserIgrejas = async (userId, isAdmin) => {
       logger.error(`Erro em getUserIgrejas para usuário ${userId}`, { 
         userId, 
         isAdmin, 
+        tenantId,
         error: error.message 
       });
       // Retornar array vazio em caso de erro para não quebrar o fluxo

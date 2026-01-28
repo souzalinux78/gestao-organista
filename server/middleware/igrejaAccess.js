@@ -4,6 +4,7 @@
  */
 
 const { getUserIgrejas } = require('./auth');
+const { getTenantId } = require('./tenantResolver');
 
 /**
  * Verifica se o usuário tem acesso à igreja especificada
@@ -27,8 +28,9 @@ async function checkIgrejaAccess(req, res, next) {
       return res.status(400).json({ error: 'igreja_id deve ser um número válido' });
     }
     
-    // Obter igrejas do usuário
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    // Obter igrejas do usuário (com tenant_id se disponível)
+    const tenantId = getTenantId(req);
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     
     // Verificar acesso (admin tem acesso a todas)
     const temAcesso = req.user.role === 'admin' || igrejas.some(i => i.id === igrejaIdInt);
