@@ -255,6 +255,7 @@ code {
     monospace;
 }
 
+/* Container antigo - mantido para compatibilidade com páginas antigas */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -266,9 +267,17 @@ code {
   align-items: center;
   position: relative;
   z-index: 1;
-  overflow-y: visible; /* Permitir scroll */
+  overflow-y: visible;
   overflow-x: hidden;
   flex: 1;
+}
+
+/* Quando usando layout com sidebar, remover container antigo */
+.app-content .container {
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  align-items: stretch;
 }
 
 .page-header {

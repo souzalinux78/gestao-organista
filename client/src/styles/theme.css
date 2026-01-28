@@ -25,6 +25,13 @@
   --primary-soft: rgba(79, 70, 229, 0.1);
   --primary-glow: rgba(79, 70, 229, 0.2);
   
+  /* Layout Colors (Admin Panel Style) - Azul Escuro Profissional */
+  --sidebar-bg: #1E3A8A;
+  --sidebar-hover: #1E40AF;
+  --sidebar-active: #2563EB;
+  --header-bg: #1E3A8A;
+  --header-text: #FFFFFF;
+  
   /* Secondary Colors */
   --secondary: #7C3AED;
   --secondary-light: #8B5CF6;

@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { isTokenExpired } from './utils/jwt';
@@ -54,34 +54,51 @@ function AppContent() {
     return <LazyLoadingFallback />;
   }
 
+  // Se não estiver logado, mostrar layout normal (login/register)
+  if (!user) {
+    return (
+      <div className="App">
+        <Suspense fallback={<LazyLoadingFallback />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/cadastro" element={<Register />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Suspense>
+      </div>
+    );
+  }
+
   return (
     <div className="App">
-      {user && <Header user={user} onLogout={logout} />}
-      <div className="container">
-        <Suspense fallback={<LazyLoadingFallback />}>
-          <div className="page">
+      {user && <Sidebar user={user} location={location} />}
+      <div className="app-main">
+        {user && <TopHeader user={user} onLogout={logout} />}
+        <div className="app-content">
+          <Suspense fallback={<LazyLoadingFallback />}>
             <Routes>
-            <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-            <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
-            <Route path="/cadastro" element={!user ? <Register /> : <Navigate to="/" />} />
-            <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
-            <Route path="/organistas" element={<PrivateRoute><Organistas user={user} /></PrivateRoute>} />
-            <Route path="/igrejas" element={<PrivateRoute><Igrejas user={user} /></PrivateRoute>} />
-            <Route path="/cultos" element={<PrivateRoute><Cultos user={user} /></PrivateRoute>} />
-            <Route path="/rodizios" element={<PrivateRoute><Rodizios user={user} /></PrivateRoute>} />
-            {user?.role === 'admin' && (
-              <>
-                <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
-                <Route path="/relatorios-admin" element={<PrivateRoute><RelatoriosAdmin user={user} /></PrivateRoute>} />
-                <Route path="/configuracoes" element={<PrivateRoute><Configuracoes /></PrivateRoute>} />
-              </>
-            )}
-            {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora' || user?.tipo_usuario === 'instrutoras') && (
-              <Route path="/relatorios" element={<PrivateRoute><Relatorios user={user} /></PrivateRoute>} />
-            )}
-          </Routes>
-          </div>
-        </Suspense>
+              <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+              <Route path="/organistas" element={<PrivateRoute><Organistas user={user} /></PrivateRoute>} />
+              <Route path="/igrejas" element={<PrivateRoute><Igrejas user={user} /></PrivateRoute>} />
+              <Route path="/cultos" element={<PrivateRoute><Cultos user={user} /></PrivateRoute>} />
+              <Route path="/rodizios" element={<PrivateRoute><Rodizios user={user} /></PrivateRoute>} />
+              {user?.role === 'admin' && (
+                <>
+                  <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
+                  <Route path="/relatorios-admin" element={<PrivateRoute><RelatoriosAdmin user={user} /></PrivateRoute>} />
+                  <Route path="/configuracoes" element={<PrivateRoute><Configuracoes /></PrivateRoute>} />
+                </>
+              )}
+              {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora' || user?.tipo_usuario === 'instrutoras') && (
+                <Route path="/relatorios" element={<PrivateRoute><Relatorios user={user} /></PrivateRoute>} />
+              )}
+              <Route path="/login" element={<Navigate to="/" replace />} />
+              <Route path="/register" element={<Navigate to="/" replace />} />
+              <Route path="/cadastro" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </div>
       </div>
       {location.pathname !== '/login' && location.pathname !== '/register' && location.pathname !== '/cadastro' && <InstallPrompt />}
     </div>
@@ -98,88 +115,116 @@ function App() {
   );
 }
 
-function Header({ user, onLogout }) {
-  const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
+function Sidebar({ user, location }) {
+  const closeSidebar = () => {
+    const sidebar = document.querySelector('.app-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    sidebar?.classList.remove('sidebar-open');
+    overlay?.classList.remove('sidebar-overlay--open');
+  };
   
   return (
-    <div className="header">
-      <div className="header__content">
-        <div className="header__title-wrapper">
-          <img 
-            src={process.env.PUBLIC_URL + '/logo.png'} 
-            alt="Logo" 
-            className="header__logo"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-            onLoad={(e) => {
-              e.target.style.display = 'block';
-            }}
-          />
-          <div className="header__title-container">
-            <h1 className="header__title">🎹 Sistema de Gestão de Organistas</h1>
-            {user && (
-              <div className="header__user-info">
-                {user.nome} ({user.role === 'admin' ? 'Administrador' : 'Usuário'})
-              </div>
-            )}
-          </div>
+    <>
+      <div className="sidebar-overlay" onClick={closeSidebar}></div>
+      <div className="app-sidebar">
+        <div className="sidebar-header">
+          <div className="sidebar-logo">🎹</div>
+          <div className="sidebar-title">Gestão Organistas</div>
         </div>
-        <div className="header__actions">
-          <ThemeToggle />
-          {user && (
-            <button 
-              onClick={onLogout} 
-              className="btn btn-secondary header__logout-btn"
-            >
-              Sair
-            </button>
+        <nav className="sidebar-nav">
+          <Link to="/" className={`sidebar-nav__item ${location.pathname === '/' ? 'active' : ''}`} onClick={closeSidebar}>
+            <span className="sidebar-nav__icon">📊</span>
+            <span className="sidebar-nav__text">Dashboard</span>
+          </Link>
+          <Link to="/organistas" className={`sidebar-nav__item ${location.pathname === '/organistas' ? 'active' : ''}`} onClick={closeSidebar}>
+            <span className="sidebar-nav__icon">👥</span>
+            <span className="sidebar-nav__text">Organistas</span>
+          </Link>
+          <Link to="/igrejas" className={`sidebar-nav__item ${location.pathname === '/igrejas' ? 'active' : ''}`} onClick={closeSidebar}>
+            <span className="sidebar-nav__icon">🏢</span>
+            <span className="sidebar-nav__text">Igrejas</span>
+          </Link>
+          <Link to="/cultos" className={`sidebar-nav__item ${location.pathname === '/cultos' ? 'active' : ''}`} onClick={closeSidebar}>
+            <span className="sidebar-nav__icon">📖</span>
+            <span className="sidebar-nav__text">Cultos</span>
+          </Link>
+          <Link to="/rodizios" className={`sidebar-nav__item ${location.pathname === '/rodizios' ? 'active' : ''}`} onClick={closeSidebar}>
+            <span className="sidebar-nav__icon">📅</span>
+            <span className="sidebar-nav__text">Rodízios</span>
+          </Link>
+          {user?.role === 'admin' && (
+            <>
+              <Link to="/relatorios-admin" className={`sidebar-nav__item ${location.pathname === '/relatorios-admin' ? 'active' : ''}`} onClick={closeSidebar}>
+                <span className="sidebar-nav__icon">📄</span>
+                <span className="sidebar-nav__text">Relatórios</span>
+              </Link>
+              <Link to="/admin" className={`sidebar-nav__item ${location.pathname === '/admin' ? 'active' : ''}`} onClick={closeSidebar}>
+                <span className="sidebar-nav__icon">👤</span>
+                <span className="sidebar-nav__text">Usuários</span>
+              </Link>
+              <Link to="/configuracoes" className={`sidebar-nav__item ${location.pathname === '/configuracoes' ? 'active' : ''}`} onClick={closeSidebar}>
+                <span className="sidebar-nav__icon">⚙️</span>
+                <span className="sidebar-nav__text">Configurações</span>
+              </Link>
+            </>
           )}
-          <button 
-            className="btn btn-secondary mobile-menu-toggle"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-          >
-            {menuOpen ? '✕' : '☰'}
-          </button>
+          {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora' || user?.tipo_usuario === 'instrutoras') && (
+            <Link to="/relatorios" className={`sidebar-nav__item ${location.pathname === '/relatorios' ? 'active' : ''}`} onClick={closeSidebar}>
+              <span className="sidebar-nav__icon">📄</span>
+              <span className="sidebar-nav__text">Relatórios</span>
+            </Link>
+          )}
+        </nav>
+      </div>
+    </>
+  );
+}
+
+function TopHeader({ user, onLogout }) {
+  const [igrejas, setIgrejas] = useState([]);
+  
+  useEffect(() => {
+    const igrejasData = localStorage.getItem('igrejas');
+    if (igrejasData) {
+      try {
+        setIgrejas(JSON.parse(igrejasData));
+      } catch (e) {
+        console.error('Erro ao parsear igrejas:', e);
+      }
+    }
+  }, []);
+  
+  const toggleSidebar = () => {
+    const sidebar = document.querySelector('.app-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    sidebar?.classList.toggle('sidebar-open');
+    overlay?.classList.toggle('sidebar-overlay--open');
+  };
+  
+  return (
+    <div className="app-header">
+      <div className="app-header__left">
+        <button 
+          className="app-header__menu-toggle"
+          onClick={toggleSidebar}
+          aria-label="Toggle sidebar"
+        >
+          ☰
+        </button>
+        <div>
+          <div className="app-header__title">Painel Admin</div>
+          <div className="app-header__subtitle">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</div>
         </div>
       </div>
-      <nav className={`nav ${menuOpen ? 'nav-open' : ''}`}>
-        <Link to="/" className={location.pathname === '/' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
-          Início
-        </Link>
-        <Link to="/organistas" className={location.pathname === '/organistas' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
-          Organistas
-        </Link>
-        <Link to="/igrejas" className={location.pathname === '/igrejas' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
-          Igrejas
-        </Link>
-        <Link to="/cultos" className={location.pathname === '/cultos' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
-          Cultos
-        </Link>
-        <Link to="/rodizios" className={location.pathname === '/rodizios' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
-          Rodízios
-        </Link>
-        {user?.role === 'admin' && (
-          <>
-            <Link to="/relatorios-admin" className={location.pathname === '/relatorios-admin' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
-              Relatórios
-            </Link>
-            <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
-              Admin
-            </Link>
-            <Link to="/configuracoes" className={location.pathname === '/configuracoes' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
-              Configurações
-            </Link>
-          </>
-        )}
-        {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora' || user?.tipo_usuario === 'instrutoras') && (
-          <Link to="/relatorios" className={location.pathname === '/relatorios' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
-            Relatórios
-          </Link>
-        )}
-      </nav>
+      <div className="app-header__right">
+        <ThemeToggle />
+        <div className="app-header__user">
+          <span className="app-header__email">{user?.email}</span>
+        </div>
+        <button onClick={onLogout} className="btn btn-danger btn-sm">
+          Sair
+        </button>
+      </div>
     </div>
   );
 }

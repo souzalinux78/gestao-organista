@@ -173,7 +173,7 @@ function Home() {
   return (
     <div className="dashboard">
       <div className="dashboard__header">
-        <h1>Bem-vindo, {user?.nome}!</h1>
+        <h1>Dashboard</h1>
         <p className="dashboard__subtitle">Visão geral do sistema</p>
       </div>
 
