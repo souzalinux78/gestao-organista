@@ -190,3 +190,21 @@ export const enviarNotificacao = (rodizioId) => api.post(`/notificacoes/enviar/$
 
 // Diagnóstico
 export const getDiagnosticoIgreja = (igrejaId) => api.get(`/diagnostico/igreja/${igrejaId}`);
+
+// Admin Panel
+// Tenants
+export const getTenants = () => api.get('/admin/tenants');
+export const getTenant = (id) => api.get(`/admin/tenants/${id}`);
+export const createTenant = (data) => api.post('/admin/tenants', data);
+export const updateTenant = (id, data) => api.put(`/admin/tenants/${id}`, data);
+export const deleteTenant = (id) => api.delete(`/admin/tenants/${id}`);
+
+// Reset Password
+export const resetPassword = (userId, novaSenha) => api.post(`/admin/usuarios/${userId}/reset-password`, { nova_senha: novaSenha });
+
+// Metrics
+export const getMetrics = () => api.get('/admin/metrics');
+
+// Logs
+export const getLogs = (params) => api.get('/admin/logs', { params });
+export const clearLogs = (dias = 30) => api.delete('/admin/logs', { params: { dias } });

@@ -183,6 +183,21 @@ const createTables = async () => {
       FOREIGN KEY (rodizio_id) REFERENCES rodizios(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
+    // Tabela de Logs do Sistema
+    `CREATE TABLE IF NOT EXISTS logs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      nivel ENUM('ERROR', 'WARN', 'INFO', 'DEBUG') NOT NULL DEFAULT 'INFO',
+      mensagem TEXT NOT NULL,
+      meta JSON,
+      usuario_id INT NULL,
+      ip VARCHAR(45),
+      user_agent TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_logs_nivel (nivel),
+      INDEX idx_logs_created_at (created_at),
+      INDEX idx_logs_usuario (usuario_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
     // Tabela de Usuários
     `CREATE TABLE IF NOT EXISTS usuarios (
       id INT AUTO_INCREMENT PRIMARY KEY,

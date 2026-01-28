@@ -112,6 +112,7 @@ const cultosRoutes = require('./routes/cultos');
 const rodiziosRoutes = require('./routes/rodizios');
 const notificacoesRoutes = require('./routes/notificacoes');
 const diagnosticoRoutes = require('./routes/diagnostico');
+const adminRoutes = require('./routes/admin');
 
 // Rotas públicas
 // Aplicar rate limit específico para login usando middleware condicional
@@ -147,6 +148,7 @@ if (rateLimit && apiLimiter) {
   app.use('/api/rodizios', apiLimiter, rodiziosRoutes);
   app.use('/api/notificacoes', apiLimiter, notificacoesRoutes);
   app.use('/api/diagnostico', apiLimiter, diagnosticoRoutes);
+  app.use('/api/admin', apiLimiter, adminRoutes);
 } else {
   // Se rate limit não estiver disponível, usar rotas sem rate limit
   app.use('/api/organistas', organistasRoutes);
@@ -155,6 +157,7 @@ if (rateLimit && apiLimiter) {
   app.use('/api/rodizios', rodiziosRoutes);
   app.use('/api/notificacoes', notificacoesRoutes);
   app.use('/api/diagnostico', diagnosticoRoutes);
+  app.use('/api/admin', adminRoutes);
 }
 
 // Rota de health check

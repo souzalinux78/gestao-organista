@@ -1,6 +1,6 @@
 {
   "name": "gestao-organista",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "Sistema de gestão de organistas para igrejas",
   "main": "server/index.js",
   "scripts": {

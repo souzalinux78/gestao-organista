@@ -14,6 +14,7 @@ const Igrejas = lazy(() => import('./pages/Igrejas'));
 const Cultos = lazy(() => import('./pages/Cultos'));
 const Rodizios = lazy(() => import('./pages/Rodizios'));
 const Admin = lazy(() => import('./pages/Admin'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const RelatoriosAdmin = lazy(() => import('./pages/RelatoriosAdmin'));
 const Relatorios = lazy(() => import('./pages/Relatorios'));
 
@@ -70,6 +71,7 @@ function AppContent() {
             {user?.role === 'admin' && (
               <>
                 <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
+                <Route path="/admin-panel" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
                 <Route path="/relatorios-admin" element={<PrivateRoute><RelatoriosAdmin user={user} /></PrivateRoute>} />
               </>
             )}
@@ -165,6 +167,9 @@ function Header({ user, onLogout }) {
             </Link>
             <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
               Admin
+            </Link>
+            <Link to="/admin-panel" className={location.pathname === '/admin-panel' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
+              Painel Admin
             </Link>
           </>
         )}
