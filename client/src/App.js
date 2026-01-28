@@ -1,6 +1,7 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { isTokenExpired } from './utils/jwt';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import InstallPrompt from './components/InstallPrompt';
@@ -15,14 +16,30 @@ const RelatoriosAdmin = lazy(() => import('./pages/RelatoriosAdmin'));
 const Relatorios = lazy(() => import('./pages/Relatorios'));
 
 function PrivateRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   
   if (loading) {
     return <div className="loading">Carregando...</div>;
   }
   
   const token = localStorage.getItem('token');
-  return token ? children : <Navigate to="/login" replace />;
+  
+  // Verificar se token existe
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Verificar se token está expirado
+  if (isTokenExpired(token)) {
+    // Limpar token expirado
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('igrejas');
+    // Redirecionar para login
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
 }
 
 function AppContent() {

@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { isTokenExpired } from './utils/jwt';
 
 const AuthContext = createContext(null);
 
@@ -12,6 +13,16 @@ export const AuthProvider = ({ children }) => {
     const userData = localStorage.getItem('user');
     
     if (token && userData) {
+      // Verificar se token está expirado
+      if (isTokenExpired(token)) {
+        // Limpar dados expirados
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('igrejas');
+        setLoading(false);
+        return;
+      }
+      
       try {
         setUser(JSON.parse(userData));
       } catch (error) {

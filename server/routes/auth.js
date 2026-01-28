@@ -168,11 +168,12 @@ router.post('/login', validate(schemas.login), asyncHandler(async (req, res) => 
   const igrejas = await getUserIgrejas(user.id, user.role === 'admin');
 
   // Gerar token com JWT_SECRET validado
+  // Reduzido de 7d para 1d para melhor segurança (token comprometido válido por menos tempo)
   const envConfig = getConfig();
   const token = jwt.sign(
     { userId: user.id, email: user.email, role: user.role, tipo_usuario: user.tipo_usuario },
     envConfig.JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: '1d' } // Reduzido de 7d para 1d
   );
 
   // Remover senha_hash da resposta

@@ -1,21 +1,41 @@
 import axios from 'axios';
+import { isTokenExpired } from './utils/jwt';
 
 const api = axios.create({
   baseURL: '/api',
-  // Evita “ficar salvando para sempre” quando o backend/proxy não responde.
+  // Evita "ficar salvando para sempre" quando o backend/proxy não responde.
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Interceptor para adicionar token
+// Interceptor para adicionar token e verificar expiração
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+    
     if (token) {
+      // Verificar se token está expirado antes de enviar
+      if (isTokenExpired(token)) {
+        // Limpar token expirado
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('igrejas');
+        
+        // Rejeitar requisição com erro de autenticação
+        return Promise.reject({
+          response: {
+            status: 401,
+            data: { error: 'Token expirado' }
+          },
+          isTokenExpired: true
+        });
+      }
+      
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => {
@@ -27,8 +47,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Erro de autenticação
-    if (error.response?.status === 401) {
+    // Erro de autenticação (incluindo token expirado)
+    if (error.response?.status === 401 || error.isTokenExpired) {
       // Verificar se estamos em uma rota pública (login, register, cadastro)
       const currentPath = window.location.pathname;
       const rotasPublicas = ['/login', '/register', '/cadastro'];
