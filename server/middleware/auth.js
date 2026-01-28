@@ -60,10 +60,13 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    // Garantir que tipo_usuario existe (pode ser null se a coluna não existir)
+    // Garantir que tipo_usuario e tenant_id existem (podem ser null se as colunas não existirem)
     req.user = {
       ...users[0],
-      tipo_usuario: users[0].tipo_usuario || null
+      tipo_usuario: users[0].tipo_usuario || null,
+      tenant_id: users[0].tenant_id || null,
+      // Se tenant_id não vier do banco, tentar do JWT (para compatibilidade)
+      tenantId: decoded.tenantId || users[0].tenant_id || null
     };
     
     if (path.includes('organistas') && req.method === 'POST') {

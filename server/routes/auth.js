@@ -42,6 +42,13 @@ router.post('/register', async (req, res) => {
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha, 10);
 
+    // Obter tenant padrão para novos usuários
+    const [tenants] = await pool.execute(
+      'SELECT id FROM tenants WHERE slug = ? LIMIT 1',
+      ['default']
+    );
+    const defaultTenantId = tenants.length > 0 ? tenants[0].id : null;
+
     // Criar usuário (não aprovado por padrão)
     // Verificar se a coluna tipo_usuario existe (com cache)
     const { cachedColumnExists } = require('../utils/cache');
@@ -53,11 +60,20 @@ router.post('/register', async (req, res) => {
       tipoUsuarioValido = tipo_usuario;
     }
     
-    // Montar query dinamicamente baseado na existência da coluna
+    // Verificar se tenant_id existe na tabela
+    const temTenantId = await cachedColumnExists('usuarios', 'tenant_id');
+    
+    // Montar query dinamicamente baseado na existência das colunas
     let sql, values;
-    if (temTipoUsuario) {
+    if (temTipoUsuario && temTenantId && defaultTenantId) {
+      sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, tipo_usuario, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      values = [nome, email, senhaHash, 'usuario', tipoUsuarioValido, defaultTenantId, 0];
+    } else if (temTipoUsuario) {
       sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, tipo_usuario, aprovado) VALUES (?, ?, ?, ?, ?, ?)';
       values = [nome, email, senhaHash, 'usuario', tipoUsuarioValido, 0];
+    } else if (temTenantId && defaultTenantId) {
+      sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?)';
+      values = [nome, email, senhaHash, 'usuario', defaultTenantId, 0];
     } else {
       sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)';
       values = [nome, email, senhaHash, 'usuario', 0];
@@ -92,6 +108,17 @@ router.post('/register', async (req, res) => {
     });
 
     const igrejaId = igrejaResult.insertId;
+    
+    // Se igrejas têm tenant_id, atualizar a igreja criada com o tenant do usuário
+    const igrejasTemTenantId = await cachedColumnExists('igrejas', 'tenant_id');
+    
+    if (igrejasTemTenantId && defaultTenantId) {
+      await pool.execute({
+        sql: 'UPDATE igrejas SET tenant_id = ? WHERE id = ?',
+        values: [defaultTenantId, igrejaId],
+        timeout: dbTimeout
+      });
+    }
 
     // Associar usuário à igreja criada
     await pool.execute({
@@ -157,9 +184,16 @@ router.post('/login', validate(schemas.login), asyncHandler(async (req, res) => 
 
   // Gerar token com JWT_SECRET validado
   // Reduzido de 7d para 1d para melhor segurança (token comprometido válido por menos tempo)
+  // Incluir tenant_id no token para resolução rápida
   const envConfig = getConfig();
   const token = jwt.sign(
-    { userId: user.id, email: user.email, role: user.role, tipo_usuario: user.tipo_usuario },
+    { 
+      userId: user.id, 
+      email: user.email, 
+      role: user.role, 
+      tipo_usuario: user.tipo_usuario,
+      tenantId: user.tenant_id || null // Adicionar tenant_id ao JWT
+    },
     envConfig.JWT_SECRET,
     { expiresIn: '1d' } // Reduzido de 7d para 1d
   );
@@ -192,7 +226,8 @@ router.get('/me', authenticate, async (req, res) => {
         id: req.user.id,
         nome: req.user.nome,
         email: req.user.email,
-        role: req.user.role
+        role: req.user.role,
+        tenant_id: req.user.tenant_id || req.user.tenantId || null
       },
       igrejas
     });
@@ -225,12 +260,34 @@ router.post('/usuarios', authenticate, isAdmin, async (req, res) => {
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha, 10);
 
+    // Obter tenant do admin que está criando (ou tenant padrão)
+    const adminTenantId = req.user.tenant_id || req.user.tenantId || null;
+    
+    // Se admin não tem tenant (acesso global), usar tenant padrão para novos usuários
+    const [tenants] = await pool.execute(
+      'SELECT id FROM tenants WHERE slug = ? LIMIT 1',
+      ['default']
+    );
+    const defaultTenantId = tenants.length > 0 ? tenants[0].id : null;
+    const tenantIdParaNovoUsuario = adminTenantId || defaultTenantId;
+    
+    // Verificar se tenant_id existe na tabela
+    const { cachedColumnExists } = require('../utils/cache');
+    const temTenantId = await cachedColumnExists('usuarios', 'tenant_id');
+    
     // Criar usuário (admin sempre aprova automaticamente)
     const aprovado = role === 'admin' ? 1 : 1; // Admin sempre aprovado, usuários criados por admin também
-    const [result] = await pool.execute(
-      'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)',
-      [nome, email, senhaHash, role || 'usuario', aprovado]
-    );
+    
+    let sql, values;
+    if (temTenantId && tenantIdParaNovoUsuario) {
+      sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?)';
+      values = [nome, email, senhaHash, role || 'usuario', tenantIdParaNovoUsuario, aprovado];
+    } else {
+      sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)';
+      values = [nome, email, senhaHash, role || 'usuario', aprovado];
+    }
+    
+    const [result] = await pool.execute(sql, values);
 
     const userId = result.insertId;
 
