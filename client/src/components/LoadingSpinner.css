@@ -125,40 +125,5 @@
   animation: spin 0.6s linear infinite;
 }
 
-/* Skeleton Loading (para conteúdo que está carregando) */
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--gray-200) 0%,
-    var(--gray-100) 50%,
-    var(--gray-200) 100%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.5s ease-in-out infinite;
-  border-radius: var(--radius-md);
-}
-
-@keyframes skeleton-loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-.skeleton-text {
-  height: 1em;
-  margin-bottom: 0.5rem;
-}
-
-.skeleton-title {
-  height: 1.5em;
-  width: 60%;
-  margin-bottom: 1rem;
-}
-
-.skeleton-card {
-  height: 200px;
-  border-radius: var(--radius-lg);
-}
+/* Skeleton Loading movido para Skeleton.css */
+/* Importe './Skeleton.css' onde necessário */
