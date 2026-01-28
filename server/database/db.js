@@ -49,7 +49,16 @@ const init = async () => {
       await migrateTenants();
     } catch (error) {
       // Não falhar inicialização se migração falhar (pode já estar aplicada)
-      console.warn('⚠️  Aviso na migração multi-tenant:', error.message);
+      console.warn('⚠️  Aviso na migração multi-tenant FASE 1:', error.message);
+    }
+    
+    // Migração multi-tenant (FASE 2) - Adicionar tenant_id em igrejas e organistas
+    try {
+      const migrateFase2 = require('../scripts/migrate-fase2');
+      await migrateFase2();
+    } catch (error) {
+      // Não falhar inicialização se migração falhar (pode já estar aplicada)
+      console.warn('⚠️  Aviso na migração multi-tenant FASE 2:', error.message);
     }
   } catch (error) {
     console.error('Erro ao conectar ao banco de dados:', error);
