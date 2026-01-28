@@ -166,7 +166,14 @@ iframe, embed, object {
 }
 
 /* Logo responsivo */
-.header img,
+.header img {
+  max-width: 120px;
+  max-height: 32px;
+  height: auto;
+  width: auto;
+  object-fit: contain;
+}
+
 .login-logo img {
   max-width: 100%;
   height: auto;

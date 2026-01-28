@@ -81,9 +81,11 @@ body.login-page .App .container {
 }
 
 .header__logo {
-  height: 50px;
+  height: 32px;
   width: auto;
+  max-width: 120px;
   display: none;
+  object-fit: contain;
 }
 
 .header__title-container {
