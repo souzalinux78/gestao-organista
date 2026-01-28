@@ -105,7 +105,7 @@ function Login() {
               Clique aqui para se cadastrar
             </Link>
           </p>
-          <p className="login-info__text" style={{ marginTop: '10px' }}>
+          <p className="login-info__text">
             Após o cadastro, aguarde a aprovação do administrador.
           </p>
         </div>

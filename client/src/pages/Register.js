@@ -143,7 +143,7 @@ function Register() {
               inputMode="numeric"
               pattern="[0-9() -]+"
             />
-            <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+            <small className="form-hint-small">
               Obrigatório para aprovação do administrador
             </small>
           </div>
@@ -181,7 +181,7 @@ function Register() {
               required
               placeholder="Ex: Bairro do Cruzeiro"
             />
-            <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+            <small className="form-hint-small">
               Nome da igreja ou comum que você representa
             </small>
           </div>
@@ -191,14 +191,14 @@ function Register() {
             <select
               value={tipoUsuario}
               onChange={(e) => setTipoUsuario(e.target.value)}
-              style={{ fontSize: '16px' }}
+              className="select-base"
             >
               <option value="">Selecione (opcional)</option>
               <option value="encarregado">Encarregado</option>
               <option value="examinadora">Examinadora</option>
               <option value="instrutoras">Instrutoras</option>
             </select>
-            <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+            <small className="form-hint-small">
               Selecione se você é encarregado, examinadora ou instrutoras (opcional)
             </small>
           </div>
@@ -208,9 +208,9 @@ function Register() {
           </button>
         </form>
 
-        <div className="login-info" style={{ marginTop: '20px' }}>
-          <p>Já tem uma conta? <Link to="/login" style={{ color: '#2E86AB', fontWeight: '600' }}>Faça login</Link></p>
-          <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '10px' }}>
+        <div className="login-info login-info--spaced">
+          <p>Já tem uma conta? <Link to="/login" className="login-info__link">Faça login</Link></p>
+          <p className="login-info__text">
             Após o cadastro, aguarde a aprovação do administrador para acessar o sistema.
           </p>
         </div>
