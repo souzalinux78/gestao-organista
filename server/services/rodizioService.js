@@ -1,77 +1,14 @@
 const db = require('../database/db');
+const { getProximaData, adicionarMeses, formatarData, calcularHoraMeiaHora } = require('../utils/dateHelpers');
+const rodizioRepository = require('./rodizioRepository');
 
-const DIAS_SEMANA = {
-  'domingo': 0,
-  'segunda': 1,
-  'terça': 2,
-  'quarta': 3,
-  'quinta': 4,
-  'sexta': 5,
-  'sábado': 6
-};
-
-// Função para obter próxima data de um dia da semana
-const getProximaData = (diaSemana, dataInicio) => {
-  const diaNum = DIAS_SEMANA[diaSemana.toLowerCase()];
-  if (diaNum === undefined) {
-    throw new Error(`Dia da semana inválido: ${diaSemana}`);
-  }
-  
-  const inicio = new Date(dataInicio);
-  const diaAtual = inicio.getDay();
-  let diasParaAdicionar = diaNum - diaAtual;
-  
-  if (diasParaAdicionar < 0) {
-    diasParaAdicionar += 7;
-  }
-  
-  const proximaData = new Date(inicio);
-  proximaData.setDate(inicio.getDate() + diasParaAdicionar);
-  
-  return proximaData;
-};
-
-// Função para adicionar meses a uma data
-const adicionarMeses = (data, meses) => {
-  const novaData = new Date(data);
-  novaData.setMonth(novaData.getMonth() + meses);
-  return novaData;
-};
-
-// Função para formatar data como YYYY-MM-DD
-const formatarData = (data) => {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, '0');
-  const dia = String(data.getDate()).padStart(2, '0');
-  return `${ano}-${mes}-${dia}`;
-};
-
-// Função para calcular horário da meia hora (30 minutos antes do culto)
-const calcularHoraMeiaHora = (horaCulto) => {
-  // horaCulto pode ser uma string "HH:MM:SS" ou "HH:MM"
-  const [horas, minutos] = horaCulto.split(':').map(Number);
-  
-  // Subtrair 30 minutos
-  let horaMeiaHora = horas;
-  let minutoMeiaHora = minutos - 30;
-  
-  // Se minutos ficarem negativos, ajustar horas
-  if (minutoMeiaHora < 0) {
-    minutoMeiaHora += 60;
-    horaMeiaHora -= 1;
-  }
-  
-  // Formatar como "HH:MM:SS"
-  return `${String(horaMeiaHora).padStart(2, '0')}:${String(minutoMeiaHora).padStart(2, '0')}:00`;
-};
-
-// Função para verificar se organista tocou recentemente (evitar sequências)
+// Função para verificar se organista tocou nos últimos X dias (evitar sequências)
 // Verifica se tocou nos últimos 7 dias para evitar cultos muito próximos
-const organistaTocouRecentemente = (organistaId, dataAtual, rodiziosGerados, diasVerificar = 7) => {
+const organistaTocouNosUltimosDias = (organistaId, dataAtual, rodiziosExistentes, diasVerificar = 7) => {
   const dataLimite = new Date(dataAtual);
   dataLimite.setDate(dataLimite.getDate() - diasVerificar);
   
-  return rodiziosGerados.some(r => {
+  return rodiziosExistentes.some(r => {
     const dataRodizio = new Date(r.data_culto);
     return r.organista_id === organistaId && 
            dataRodizio >= dataLimite && 
@@ -79,9 +16,9 @@ const organistaTocouRecentemente = (organistaId, dataAtual, rodiziosGerados, dia
   });
 };
 
-// Função para verificar se organista tocou em cultos muito próximos (dentro de X dias)
-const organistaTocouMuitoProximo = (organistaId, dataAtual, rodiziosGerados, diasMinimos = 7) => {
-  return rodiziosGerados.some(r => {
+// Função para verificar se organista tocou dentro do intervalo mínimo de dias
+const organistaTocouDentroDoIntervaloMinimo = (organistaId, dataAtual, rodiziosExistentes, diasMinimos = 7) => {
+  return rodiziosExistentes.some(r => {
     if (r.organista_id !== organistaId) return false;
     
     const dataRodizio = new Date(r.data_culto);
@@ -93,15 +30,15 @@ const organistaTocouMuitoProximo = (organistaId, dataAtual, rodiziosGerados, dia
 };
 
 // Função para verificar se organista tocou no mesmo dia da semana recentemente
-const organistaTocouNoMesmoDiaSemana = (organistaId, diaSemana, rodiziosGerados) => {
-  return rodiziosGerados.some(r => 
+const organistaTocouNoMesmoDiaSemana = (organistaId, diaSemana, rodiziosExistentes) => {
+  return rodiziosExistentes.some(r => 
     r.organista_id === organistaId && 
     r.dia_semana.toLowerCase() === diaSemana.toLowerCase()
   );
 };
 
 // Função para contar quantas vezes cada organista tocou em cada dia da semana
-const contarTocadasPorDiaSemana = (organistas, rodiziosGerados) => {
+const contarTocadasPorDiaSemana = (organistas, rodiziosExistentes) => {
   const contadores = {};
   
   organistas.forEach(o => {
@@ -112,7 +49,7 @@ const contarTocadasPorDiaSemana = (organistas, rodiziosGerados) => {
     });
   });
   
-  rodiziosGerados.forEach(r => {
+  rodiziosExistentes.forEach(r => {
     if (contadores[r.organista_id] && r.dia_semana) {
       const dia = r.dia_semana.toLowerCase();
       contadores[r.organista_id][dia] = (contadores[r.organista_id][dia] || 0) + 1;
@@ -123,8 +60,8 @@ const contarTocadasPorDiaSemana = (organistas, rodiziosGerados) => {
 };
 
 // Função para verificar se organista sempre faz a mesma função (verifica desequilíbrio)
-const organistaSempreMesmaFuncao = (organistaId, funcao, rodiziosGerados) => {
-  const rodiziosOrganista = rodiziosGerados.filter(r => r.organista_id === organistaId);
+const organistaSempreMesmaFuncao = (organistaId, funcao, rodiziosExistentes) => {
+  const rodiziosOrganista = rodiziosExistentes.filter(r => r.organista_id === organistaId);
   
   if (rodiziosOrganista.length < 3) return false;
   
@@ -143,22 +80,22 @@ const organistaSempreMesmaFuncao = (organistaId, funcao, rodiziosGerados) => {
 };
 
 // Função para distribuir organistas de forma equilibrada
-const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, diaSemana) => {
+const distribuirOrganistas = (organistas, rodiziosExistentes, dataAtual, funcao, diaSemana) => {
   // Criar contadores de quantas vezes cada organista já tocou em cada função
   const contadoresMeiaHora = {};
   const contadoresTocarCulto = {};
   const contadoresTotal = {};
   
   organistas.forEach(o => {
-    contadoresMeiaHora[o.id] = rodiziosGerados.filter(r => 
+    contadoresMeiaHora[o.id] = rodiziosExistentes.filter(r => 
       r.organista_id === o.id && r.funcao === 'meia_hora'
     ).length;
     
-    contadoresTocarCulto[o.id] = rodiziosGerados.filter(r => 
+    contadoresTocarCulto[o.id] = rodiziosExistentes.filter(r => 
       r.organista_id === o.id && r.funcao === 'tocar_culto'
     ).length;
     
-    contadoresTotal[o.id] = rodiziosGerados.filter(r => 
+    contadoresTotal[o.id] = rodiziosExistentes.filter(r => 
       r.organista_id === o.id
     ).length;
   });
@@ -171,7 +108,7 @@ const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, di
   });
   
   // Contar quantas vezes cada organista tocou em cada dia da semana
-  const contadoresPorDia = contarTocadasPorDiaSemana(organistas, rodiziosGerados);
+  const contadoresPorDia = contarTocadasPorDiaSemana(organistas, rodiziosExistentes);
   const diaSemanaLower = diaSemana.toLowerCase();
   
   // Ordenar por:
@@ -204,8 +141,8 @@ const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, di
     if (diffDesequilibrio !== 0) return diffDesequilibrio;
     
     // Prioridade 3: Penalizar quem sempre faz a mesma função
-    const aSempreMesma = organistaSempreMesmaFuncao(a.id, funcao, rodiziosGerados);
-    const bSempreMesma = organistaSempreMesmaFuncao(b.id, funcao, rodiziosGerados);
+    const aSempreMesma = organistaSempreMesmaFuncao(a.id, funcao, rodiziosExistentes);
+    const bSempreMesma = organistaSempreMesmaFuncao(b.id, funcao, rodiziosExistentes);
     
     if (aSempreMesma && !bSempreMesma) return 1; // A sempre faz, B não - priorizar B
     if (!aSempreMesma && bSempreMesma) return -1; // B sempre faz, A não - priorizar A
@@ -215,8 +152,8 @@ const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, di
     if (diffTotal !== 0) return diffTotal;
     
     // Prioridade 5: Verificar se tocou muito recentemente (evitar cultos seguidos)
-    const aTocouMuitoProximo = organistaTocouMuitoProximo(a.id, dataAtual, rodiziosGerados, 7);
-    const bTocouMuitoProximo = organistaTocouMuitoProximo(b.id, dataAtual, rodiziosGerados, 7);
+    const aTocouMuitoProximo = organistaTocouDentroDoIntervaloMinimo(a.id, dataAtual, rodiziosExistentes, 7);
+    const bTocouMuitoProximo = organistaTocouDentroDoIntervaloMinimo(b.id, dataAtual, rodiziosExistentes, 7);
     
     if (aTocouMuitoProximo && !bTocouMuitoProximo) return 1;
     if (!aTocouMuitoProximo && bTocouMuitoProximo) return -1;
@@ -235,13 +172,13 @@ const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, di
   // 1. Já estão escaladas para outra função no mesmo culto
   // 2. Tocararam muito recentemente (evitar cultos seguidos)
   const organistasDisponiveis = organistasOrdenadas.filter(organista => {
-    const jaEscaladaOutraFuncao = rodiziosGerados.some(r => 
+    const jaEscaladaOutraFuncao = rodiziosExistentes.some(r => 
       r.organista_id === organista.id && 
       r.data_culto === formatarData(dataAtual) &&
       r.funcao !== funcao
     );
     
-    const tocouMuitoProximo = organistaTocouMuitoProximo(organista.id, dataAtual, rodiziosGerados, 7);
+    const tocouMuitoProximo = organistaTocouDentroDoIntervaloMinimo(organista.id, dataAtual, rodiziosExistentes, 7);
     
     return !jaEscaladaOutraFuncao && !tocouMuitoProximo;
   });
@@ -250,7 +187,7 @@ const distribuirOrganistas = (organistas, rodiziosGerados, dataAtual, funcao, di
   // usar as que não estão escaladas para outra função (mesmo que tenham tocado recentemente)
   if (organistasDisponiveis.length === 0) {
     const organistasNaoEscaladas = organistasOrdenadas.filter(organista => {
-      const jaEscaladaOutraFuncao = rodiziosGerados.some(r => 
+      const jaEscaladaOutraFuncao = rodiziosExistentes.some(r => 
         r.organista_id === organista.id && 
         r.data_culto === formatarData(dataAtual) &&
         r.funcao !== funcao
@@ -441,12 +378,8 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
       let dataAtual = getProximaData(culto.dia_semana, dataInicio);
       while (dataAtual <= dataFim) {
         const dataFormatada = formatarData(dataAtual);
-        const [rodiziosExistentes] = await pool.execute(
-          `SELECT id FROM rodizios 
-           WHERE culto_id = ? AND data_culto = ?`,
-          [culto.id, dataFormatada]
-        );
-        if (rodiziosExistentes.length === 0) {
+        const existe = await rodizioRepository.existeRodizio(culto.id, dataFormatada);
+        if (!existe) {
           todasDatas.push({
             culto: culto,
             data: new Date(dataAtual),
@@ -553,14 +486,18 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
     }
     
     if (novosRodizios.length > 0) {
-      await inserirRodizios(novosRodizios);
+      await rodizioRepository.inserirRodizios(novosRodizios);
       await pool.execute(
         'UPDATE igrejas SET rodizio_ciclo = ? WHERE id = ?',
         [cicloAtual, igrejaId]
       );
     }
     
-    const rodiziosCompletos = await buscarRodiziosCompletos(igrejaId, formatarData(dataInicio), formatarData(dataFim));
+    const rodiziosCompletos = await rodizioRepository.buscarRodiziosCompletos(
+      igrejaId, 
+      formatarData(dataInicio), 
+      formatarData(dataFim)
+    );
     
     return rodiziosCompletos;
   } catch (error) {
@@ -568,55 +505,7 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
   }
 };
 
-const inserirRodizios = async (rodizios) => {
-  const pool = db.getDb();
-  
-  try {
-    const query = `INSERT INTO rodizios 
-     (igreja_id, culto_id, organista_id, data_culto, hora_culto, dia_semana, funcao, periodo_inicio, periodo_fim)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    
-    for (const rodizio of rodizios) {
-      await pool.execute(query, [
-        rodizio.igreja_id,
-        rodizio.culto_id,
-        rodizio.organista_id,
-        rodizio.data_culto,
-        rodizio.hora_culto,
-        rodizio.dia_semana,
-        rodizio.funcao,
-        rodizio.periodo_inicio,
-        rodizio.periodo_fim
-      ]);
-    }
-  } catch (error) {
-    throw error;
-  }
-};
-
-const buscarRodiziosCompletos = async (igrejaId, periodoInicio, periodoFim) => {
-  const pool = db.getDb();
-  
-  try {
-    const [rows] = await pool.execute(
-      `SELECT r.*, 
-              o.nome as organista_nome, o.telefone as organista_telefone, o.email as organista_email,
-              i.nome as igreja_nome,
-              c.dia_semana, c.hora as hora_culto
-       FROM rodizios r
-       INNER JOIN organistas o ON r.organista_id = o.id
-       INNER JOIN igrejas i ON r.igreja_id = i.id
-       INNER JOIN cultos c ON r.culto_id = c.id
-       WHERE r.igreja_id = ? AND r.data_culto >= ? AND r.data_culto <= ?
-       ORDER BY r.data_culto, r.hora_culto, r.funcao`,
-      [igrejaId, periodoInicio, periodoFim]
-    );
-    
-    return rows;
-  } catch (error) {
-    throw error;
-  }
-};
+// Funções inserirRodizios e buscarRodiziosCompletos foram movidas para rodizioRepository.js
 
 module.exports = {
   gerarRodizio

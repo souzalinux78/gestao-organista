@@ -2,16 +2,17 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
 const rodizioService = require('../services/rodizioService');
+const rodizioRepository = require('../services/rodizioRepository');
 const pdfService = require('../services/pdfService');
 const webhookService = require('../services/webhookService');
 const notificacaoService = require('../services/notificacaoService');
-const { authenticate, getUserIgrejas, checkIgrejaAccess } = require('../middleware/auth');
+const { authenticate, getUserIgrejas } = require('../middleware/auth');
+const { checkIgrejaAccess, checkRodizioAccess } = require('../middleware/igrejaAccess');
 
 // Listar rodízios (filtrado por igrejas do usuário)
 router.get('/', authenticate, async (req, res) => {
   try {
     const { igreja_id, periodo_inicio, periodo_fim } = req.query;
-    const pool = db.getDb();
     
     // Obter igrejas do usuário
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
@@ -28,61 +29,33 @@ router.get('/', authenticate, async (req, res) => {
       }
     }
     
-    let query = `
-      SELECT r.*, 
-             o.nome as organista_nome, o.telefone as organista_telefone, o.email as organista_email,
-             i.nome as igreja_nome,
-             c.dia_semana, c.hora as hora_culto
-      FROM rodizios r
-      INNER JOIN organistas o ON r.organista_id = o.id
-      INNER JOIN igrejas i ON r.igreja_id = i.id
-      INNER JOIN cultos c ON r.culto_id = c.id
-      WHERE r.igreja_id IN (${igrejaIds.map(() => '?').join(',')})
-    `;
-    const params = [...igrejaIds];
+    // Usar repository para buscar rodízios
+    const igrejasParaBuscar = igreja_id ? [parseInt(igreja_id)] : igrejaIds;
+    const rodizios = await rodizioRepository.buscarRodiziosCompletos(
+      igrejasParaBuscar,
+      periodo_inicio || null,
+      periodo_fim || null
+    );
     
-    if (igreja_id) {
-      query += ' AND r.igreja_id = ?';
-      params.push(igreja_id);
-    }
-    if (periodo_inicio) {
-      query += ' AND r.data_culto >= ?';
-      params.push(periodo_inicio);
-    }
-    if (periodo_fim) {
-      query += ' AND r.data_culto <= ?';
-      params.push(periodo_fim);
-    }
-    
-    query += ' ORDER BY r.data_culto, r.hora_culto, r.funcao';
-    
-    const [rows] = await pool.execute(query, params);
-    res.json(rows);
+    res.json(rodizios);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Gerar rodízio (com verificação de acesso à igreja)
-router.post('/gerar', authenticate, async (req, res) => {
+router.post('/gerar', authenticate, checkIgrejaAccess, async (req, res) => {
   try {
-    const { igreja_id, periodo_meses, ciclo_inicial, data_inicial, organista_inicial } = req.body;
+    const { periodo_meses, ciclo_inicial, data_inicial, organista_inicial } = req.body;
+    const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
     
-    if (!igreja_id || !periodo_meses) {
-      return res.status(400).json({ error: 'igreja_id e periodo_meses são obrigatórios' });
+    if (!periodo_meses) {
+      return res.status(400).json({ error: 'periodo_meses é obrigatório' });
     }
     
     // Aceitar 3, 6 ou 12 meses
     if (![3, 6, 12].includes(periodo_meses)) {
       return res.status(400).json({ error: 'periodo_meses deve ser 3, 6 ou 12' });
-    }
-    
-    // Verificar acesso à igreja
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
-    const temAcesso = req.user.role === 'admin' || igrejas.some(i => i.id === parseInt(igreja_id));
-    
-    if (!temAcesso) {
-      return res.status(403).json({ error: 'Acesso negado a esta igreja' });
     }
     
     // ciclo_inicial é opcional, mas se fornecido deve ser válido
@@ -117,49 +90,18 @@ router.post('/gerar', authenticate, async (req, res) => {
 });
 
 // Gerar PDF do rodízio (com verificação de acesso)
-router.get('/pdf/:igreja_id', authenticate, async (req, res) => {
+router.get('/pdf/:igreja_id', authenticate, checkIgrejaAccess, async (req, res) => {
   try {
-    // Verificar acesso à igreja
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
-    const temAcesso = req.user.role === 'admin' || igrejas.some(i => i.id === parseInt(req.params.igreja_id));
-    
-    if (!temAcesso) {
-      return res.status(403).json({ error: 'Acesso negado a esta igreja' });
-    }
-    
     const { periodo_inicio, periodo_fim } = req.query;
-    const pool = db.getDb();
+    const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
     
-    let query = `
-      SELECT r.*, 
-             o.nome as organista_nome, o.telefone as organista_telefone,
-             i.nome as igreja_nome,
-             c.dia_semana, c.hora as hora_culto
-      FROM rodizios r
-      INNER JOIN organistas o ON r.organista_id = o.id
-      INNER JOIN igrejas i ON r.igreja_id = i.id
-      INNER JOIN cultos c ON r.culto_id = c.id
-      WHERE r.igreja_id = ?
-    `;
-    const params = [req.params.igreja_id];
-    
-    if (periodo_inicio) {
-      query += ' AND r.data_culto >= ?';
-      params.push(periodo_inicio);
-    }
-    if (periodo_fim) {
-      query += ' AND r.data_culto <= ?';
-      params.push(periodo_fim);
-    }
-    
-    query += ' ORDER BY r.data_culto, c.hora';
-    
-    console.log('[DEBUG] Query PDF:', query);
-    console.log('[DEBUG] Params PDF:', params);
-    
-    const [rows] = await pool.execute(query, params);
-    
-    console.log('[DEBUG] Rodízios encontrados para PDF:', rows.length);
+    // Usar repository para buscar rodízios
+    const rows = await rodizioRepository.buscarRodiziosCompletos(
+      igreja_id,
+      periodo_inicio || null,
+      periodo_fim || null,
+      { orderBy: 'r.data_culto, c.hora' }
+    );
     
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Nenhum rodízio encontrado para o período selecionado' });
@@ -182,30 +124,13 @@ router.get('/pdf/:igreja_id', authenticate, async (req, res) => {
 });
 
 // Atualizar rodízio (com verificação de acesso)
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticate, checkRodizioAccess, async (req, res) => {
   try {
     const { organista_id } = req.body;
     const pool = db.getDb();
     
     if (!organista_id) {
       return res.status(400).json({ error: 'organista_id é obrigatório' });
-    }
-    
-    // Verificar acesso ao rodízio (através da igreja)
-    const [rodizios] = await pool.execute('SELECT igreja_id FROM rodizios WHERE id = ?', [req.params.id]);
-    if (rodizios.length === 0) {
-      return res.status(404).json({ error: 'Rodízio não encontrado' });
-    }
-    
-    if (req.user.role !== 'admin') {
-      const [associations] = await pool.execute(
-        'SELECT * FROM usuario_igreja WHERE usuario_id = ? AND igreja_id = ?',
-        [req.user.id, rodizios[0].igreja_id]
-      );
-      
-      if (associations.length === 0) {
-        return res.status(403).json({ error: 'Acesso negado a este rodízio' });
-      }
     }
     
     // Verificar se a organista existe e está ativa
@@ -217,13 +142,10 @@ router.put('/:id', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Organista não está ativa' });
     }
     
-    // Atualizar rodízio
-    const [result] = await pool.execute(
-      'UPDATE rodizios SET organista_id = ? WHERE id = ?',
-      [organista_id, req.params.id]
-    );
+    // Atualizar rodízio usando repository
+    const atualizado = await rodizioRepository.atualizarRodizio(req.rodizioId, { organista_id });
     
-    if (result.affectedRows === 0) {
+    if (!atualizado) {
       return res.status(404).json({ error: 'Rodízio não encontrado' });
     }
     
@@ -234,28 +156,12 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // Deletar rodízio (com verificação de acesso)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, checkRodizioAccess, async (req, res) => {
   try {
-    const pool = db.getDb();
+    // Usar repository para deletar
+    const deletado = await rodizioRepository.deletarRodizio(req.rodizioId);
     
-    // Verificar acesso ao rodízio (através da igreja)
-    if (req.user.role !== 'admin') {
-      const [rodizios] = await pool.execute('SELECT igreja_id FROM rodizios WHERE id = ?', [req.params.id]);
-      if (rodizios.length > 0) {
-        const [associations] = await pool.execute(
-          'SELECT * FROM usuario_igreja WHERE usuario_id = ? AND igreja_id = ?',
-          [req.user.id, rodizios[0].igreja_id]
-        );
-        
-        if (associations.length === 0) {
-          return res.status(403).json({ error: 'Acesso negado a este rodízio' });
-        }
-      }
-    }
-    
-    const [result] = await pool.execute('DELETE FROM rodizios WHERE id = ?', [req.params.id]);
-    
-    if (result.affectedRows === 0) {
+    if (!deletado) {
       return res.status(404).json({ error: 'Rodízio não encontrado' });
     }
     
@@ -266,33 +172,19 @@ router.delete('/:id', authenticate, async (req, res) => {
 });
 
 // Deletar rodízios de uma igreja (com verificação de acesso)
-router.delete('/igreja/:igreja_id', authenticate, async (req, res) => {
+router.delete('/igreja/:igreja_id', authenticate, checkIgrejaAccess, async (req, res) => {
   try {
-    // Verificar acesso à igreja
-    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
-    const temAcesso = req.user.role === 'admin' || igrejas.some(i => i.id === parseInt(req.params.igreja_id));
-    
-    if (!temAcesso) {
-      return res.status(403).json({ error: 'Acesso negado a esta igreja' });
-    }
-    
     const { periodo_inicio, periodo_fim } = req.query;
-    const pool = db.getDb();
+    const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
     
-    let query = 'DELETE FROM rodizios WHERE igreja_id = ?';
-    const params = [req.params.igreja_id];
+    // Usar repository para deletar
+    const deletados = await rodizioRepository.deletarRodizios(
+      igreja_id,
+      periodo_inicio || null,
+      periodo_fim || null
+    );
     
-    if (periodo_inicio) {
-      query += ' AND data_culto >= ?';
-      params.push(periodo_inicio);
-    }
-    if (periodo_fim) {
-      query += ' AND data_culto <= ?';
-      params.push(periodo_fim);
-    }
-    
-    const [result] = await pool.execute(query, params);
-    res.json({ message: `${result.affectedRows} rodízio(s) deletado(s) com sucesso` });
+    res.json({ message: `${deletados} rodízio(s) deletado(s) com sucesso` });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -301,25 +193,22 @@ router.delete('/igreja/:igreja_id', authenticate, async (req, res) => {
 // Testar webhook (simula envio de notificação)
 router.post('/testar-webhook', authenticate, async (req, res) => {
   try {
-    const pool = db.getDb();
     const hoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     
+    // Obter todas as igrejas do usuário
+    const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin');
+    const igrejaIds = igrejas.map(i => i.id);
+    
+    if (igrejaIds.length === 0) {
+      return res.status(404).json({ error: 'Nenhuma igreja associada ao usuário' });
+    }
+    
     // Buscar a próxima data de culto com rodízio (hoje ou futura)
-    const [proximos] = await pool.execute(
-      `SELECT r.*, 
-              o.nome as organista_nome, o.telefone as organista_telefone, o.email as organista_email,
-              i.nome as igreja_nome,
-              i.encarregado_local_nome, i.encarregado_local_telefone,
-              i.encarregado_regional_nome, i.encarregado_regional_telefone,
-              c.dia_semana, c.hora as hora_culto, r.funcao
-       FROM rodizios r
-       INNER JOIN organistas o ON r.organista_id = o.id
-       INNER JOIN igrejas i ON r.igreja_id = i.id
-       INNER JOIN cultos c ON r.culto_id = c.id
-       WHERE r.data_culto >= ?
-       ORDER BY r.data_culto ASC
-       LIMIT 1`,
-      [hoje]
+    const proximos = await rodizioRepository.buscarRodiziosCompletos(
+      igrejaIds,
+      hoje,
+      null,
+      { orderBy: 'r.data_culto ASC', limit: 1 }
     );
     
     if (proximos.length === 0) {
@@ -329,21 +218,9 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
     const rodizioBase = proximos[0];
 
     // Buscar TODOS os rodízios da mesma igreja e mesma data (meia_hora + tocar_culto)
-    const [rodiziosDoDia] = await pool.execute(
-      `SELECT r.*, 
-              o.nome as organista_nome, o.telefone as organista_telefone, o.email as organista_email,
-              i.nome as igreja_nome,
-              i.encarregado_local_nome, i.encarregado_local_telefone,
-              i.encarregado_regional_nome, i.encarregado_regional_telefone,
-              c.dia_semana, c.hora as hora_culto, r.funcao
-       FROM rodizios r
-       INNER JOIN organistas o ON r.organista_id = o.id
-       INNER JOIN igrejas i ON r.igreja_id = i.id
-       INNER JOIN cultos c ON r.culto_id = c.id
-       WHERE r.data_culto = ?
-         AND r.igreja_id = ?
-       ORDER BY r.hora_culto, r.funcao`,
-      [rodizioBase.data_culto, rodizioBase.igreja_id]
+    const rodiziosDoDia = await rodizioRepository.buscarRodiziosDoDia(
+      rodizioBase.data_culto,
+      rodizioBase.igreja_id
     );
 
     if (rodiziosDoDia.length === 0) {
@@ -352,8 +229,6 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
     
     // Simular envio de notificação (que chama o webhook)
     try {
-      const resultados = [];
-
       // 1) Enviar webhook para cada organista (meia_hora e tocar_culto) - paralelizado
       const notificacoesPromises = rodiziosDoDia.map(async (r) => {
         try {

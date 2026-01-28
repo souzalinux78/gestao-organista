@@ -44,6 +44,7 @@ router.post('/register', async (req, res) => {
 
     // Criar usuário (não aprovado por padrão)
     // Verificar se a coluna tipo_usuario existe (com cache)
+    const { cachedColumnExists } = require('../utils/cache');
     const temTipoUsuario = await cachedColumnExists('usuarios', 'tipo_usuario');
     
     // Validar tipo_usuario se fornecido e se a coluna existe
