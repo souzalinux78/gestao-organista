@@ -89,6 +89,43 @@
   --blue-light: var(--primary-light);
   --blue-dark: var(--primary-dark);
   --blue-soft: var(--primary-soft);
+  
+  /* Variantes adicionais */
+  --primary-soft: rgba(79, 70, 229, 0.1);
+  --primary-glow: rgba(79, 70, 229, 0.2);
+  --secondary-light: #8B5CF6;
+  --secondary-dark: #6D28D9;
+  --secondary-soft: rgba(124, 58, 237, 0.1);
+  --accent-light: #10B981;
+  --accent-dark: #047857;
+  --accent-soft: rgba(5, 150, 105, 0.1);
+  --success-light: #34D399;
+  --success-dark: #059669;
+  --success-soft: rgba(16, 185, 129, 0.1);
+  --danger-light: #F87171;
+  --danger-dark: #DC2626;
+  --danger-soft: rgba(239, 68, 68, 0.1);
+  --warning-light: #FBBF24;
+  --warning-dark: #D97706;
+  --info-light: #60A5FA;
+  --info-dark: #2563EB;
+  
+  /* Gray scale */
+  --gray-50: #F8FAFC;
+  --gray-100: #F1F5F9;
+  --gray-200: var(--border);
+  --gray-300: var(--border-medium);
+  --gray-400: var(--text-light);
+  --gray-500: var(--text-muted);
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1E293B;
+  --gray-900: #0F172A;
+  
+  /* Gold/Accent compatibility */
+  --gold-primary: var(--accent);
+  --gold-light: var(--accent-light);
+  --gold-dark: var(--accent-dark);
 }
 
 /* === DARK THEME === */
@@ -159,6 +196,54 @@
   
   /* Compatibility */
   --white: var(--bg-card);
+  --bg: var(--bg-main);
+  --bg-secondary: var(--bg-card);
+  --card-bg: var(--bg-card);
+  --card-border: var(--border);
+  --card-hover: var(--bg-hover);
+  --text: var(--text-main);
+  --text-secondary: var(--text-muted);
+  --blue-primary: var(--primary);
+  --blue-light: var(--primary-light);
+  --blue-dark: var(--primary-dark);
+  --blue-soft: var(--primary-soft);
+  
+  /* Variantes adicionais */
+  --primary-soft: rgba(99, 102, 241, 0.15);
+  --primary-glow: rgba(99, 102, 241, 0.3);
+  --secondary-light: #A78BFA;
+  --secondary-dark: #7C3AED;
+  --secondary-soft: rgba(139, 92, 246, 0.15);
+  --accent-light: #34D399;
+  --accent-dark: #059669;
+  --accent-soft: rgba(16, 185, 129, 0.15);
+  --success-light: #6EE7B7;
+  --success-dark: #10B981;
+  --success-soft: rgba(52, 211, 153, 0.15);
+  --danger-light: #FCA5A5;
+  --danger-dark: #EF4444;
+  --danger-soft: rgba(248, 113, 113, 0.15);
+  --warning-light: #FCD34D;
+  --warning-dark: #F59E0B;
+  --info-light: #93C5FD;
+  --info-dark: #3B82F6;
+  
+  /* Gray scale */
+  --gray-50: #0F172A;
+  --gray-100: #1E293B;
+  --gray-200: var(--border);
+  --gray-300: var(--border-medium);
+  --gray-400: var(--text-light);
+  --gray-500: var(--text-muted);
+  --gray-600: #64748B;
+  --gray-700: #475569;
+  --gray-800: #334155;
+  --gray-900: #1E293B;
+  
+  /* Gold/Accent compatibility */
+  --gold-primary: var(--accent);
+  --gold-light: var(--accent-light);
+  --gold-dark: var(--accent-dark);
 }
 
 /* === TRANSITIONS SUAVES === */

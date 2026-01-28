@@ -3,27 +3,12 @@
    Design System - SaaS Premium
    ============================================ */
 
+/* NOTA: Variáveis de cores principais estão em theme.css
+   Este arquivo apenas define variáveis de compatibilidade e estilos */
+
 :root {
-  /* === PALETA PREMIUM SAAS 2025 === */
-  --bg-main: #F9FAFB;
-  --bg-card: #FFFFFF;
-  --bg-hover: #F3F4F6;
-  --text-main: #1F2937;
-  --text-muted: #4B5563;
-  --text-light: #6B7280;
-  --primary: #4F46E5;
-  --primary-hover: #4338CA;
-  --primary-light: #6366F1;
-  --primary-dark: #3730A3;
-  --secondary: #7C3AED;
-  --accent: #059669;
-  --success: #10B981;
-  --danger: #EF4444;
-  --warning: #F59E0B;
-  --border: #E5E7EB;
-  --border-light: #F3F4F6;
-  --border-medium: #D1D5DB;
-  --radius: 12px;
+  /* Variáveis de compatibilidade (usam variáveis do theme.css) */
+  /* As cores principais estão definidas em theme.css */
   
   /* Variantes para compatibilidade */
   --primary-soft: rgba(79, 70, 229, 0.1);
@@ -78,15 +63,16 @@
   --text-dark: var(--text-main);
   --text-medium: var(--text-muted);
   --text-lighter: var(--text-light);
-  --danger: #ef4444;
-  --danger-light: #f87171;
-  --danger-dark: #dc2626;
-  --warning: #f59e0b;
-  --warning-light: #fbbf24;
-  --warning-dark: #d97706;
-  --info: #3b82f6;
-  --info-light: #60a5fa;
-  --info-dark: #2563eb;
+  /* Cores de status usam variáveis do theme.css */
+  --danger: var(--danger);
+  --danger-light: var(--danger-light);
+  --danger-dark: var(--danger-dark);
+  --warning: var(--warning);
+  --warning-light: var(--warning-light);
+  --warning-dark: var(--warning-dark);
+  --info: var(--info);
+  --info-light: var(--info-light);
+  --info-dark: var(--info-dark);
   
   /* === SOMBRAS SUAVES E MODERNAS === */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);

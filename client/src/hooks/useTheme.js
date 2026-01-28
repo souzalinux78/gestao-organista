@@ -39,8 +39,10 @@ function applyTheme(theme) {
   
   if (theme === 'dark') {
     root.setAttribute('data-theme', 'dark');
+    console.log('[Theme] Aplicado tema dark, atributo data-theme:', root.getAttribute('data-theme'));
   } else {
     root.setAttribute('data-theme', 'light');
+    console.log('[Theme] Aplicado tema light, atributo data-theme:', root.getAttribute('data-theme'));
   }
 }
 
@@ -102,6 +104,9 @@ export function useTheme() {
   const toggleTheme = () => {
     setThemeState(prevTheme => {
       const newTheme = prevTheme === 'dark' ? 'light' : 'dark';
+      console.log('[Theme] Alternando tema:', prevTheme, '->', newTheme);
+      // Aplicar imediatamente
+      applyTheme(newTheme);
       return newTheme;
     });
   };
