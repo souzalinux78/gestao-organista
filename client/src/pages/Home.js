@@ -204,7 +204,7 @@ function Home() {
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-card__icon kpi-card__icon--cultos">⛪</div>
+          <div className="kpi-card__icon kpi-card__icon--cultos">📖</div>
           <div className="kpi-card__content">
             <div className="kpi-card__value">{stats.cultos}</div>
             <div className="kpi-card__label">Cultos</div>
