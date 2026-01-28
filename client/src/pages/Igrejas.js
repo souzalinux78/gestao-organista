@@ -343,77 +343,20 @@ function Igrejas({ user }) {
       </div>
 
       {showOrganistasModal && selectedIgreja && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '15px',
-          boxSizing: 'border-box',
-          overflow: 'auto',
-          WebkitOverflowScrolling: 'touch'
-        }}>
-          <div className="card" style={{ 
-            maxWidth: '600px', 
-            width: '100%',
-            maxHeight: '90vh', 
-            overflow: 'auto',
-            margin: 'auto',
-            position: 'relative'
-          }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              marginBottom: '20px',
-              flexWrap: 'wrap',
-              gap: '10px'
-            }}>
-              <h2 style={{ 
-                fontSize: 'clamp(1.1rem, 4vw, 1.5rem)',
-                margin: 0,
-                flex: '1 1 auto',
-                minWidth: '200px'
-              }}>
-                Organistas Oficializadas - {selectedIgreja.nome}
-              </h2>
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => setShowOrganistasModal(false)}
-                style={{ 
-                  minWidth: '80px',
-                  flexShrink: 0
-                }}
-              >
+        <div className="modal-overlay">
+          <div className="card modal-panel">
+            <div className="modal-header">
+              <h2 className="modal-title">Organistas Oficializadas - {selectedIgreja.nome}</h2>
+              <button className="btn btn-secondary btn-nowrap" onClick={() => setShowOrganistasModal(false)}>
                 Fechar
               </button>
             </div>
             
-            <h3 style={{ 
-              marginBottom: '15px',
-              fontSize: 'clamp(1rem, 3.5vw, 1.2rem)'
-            }}>Adicionar Organista</h3>
+            <h3 className="form-section-title">Adicionar Organista</h3>
             {allOrganistas.filter(o => !organistasIgreja.find(oi => oi.id === o.id)).length === 0 ? (
-              <div style={{ 
-                padding: '15px', 
-                background: '#fff3cd', 
-                border: '1px solid #ffc107', 
-                borderRadius: '4px', 
-                marginBottom: '20px',
-                fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)'
-              }}>
-                <strong>⚠️ Nenhuma organista disponível</strong>
-                <p style={{ 
-                  margin: '5px 0 0 0', 
-                  fontSize: 'clamp(0.8rem, 2.2vw, 0.9rem)',
-                  lineHeight: '1.5'
-                }}>
+              <div className="callout">
+                <strong className="callout__title">⚠️ Nenhuma organista disponível</strong>
+                <p className="form-hint" style={{ marginTop: '6px' }}>
                   Todas as organistas oficializadas já estão associadas a esta igreja, ou não há organistas marcadas como "Oficializada" e "Ativa".
                   <br />
                   Vá em "Organistas" e verifique se há organistas marcadas como oficializadas.
@@ -428,15 +371,6 @@ function Igrejas({ user }) {
                       e.target.value = '';
                     }
                   }}
-                  style={{ 
-                    width: '100%', 
-                    padding: '12px', 
-                    marginBottom: '10px',
-                    fontSize: '16px',
-                    borderRadius: '8px',
-                    border: '2px solid var(--gray-medium)',
-                    boxSizing: 'border-box'
-                  }}
                 >
                   <option value="">Selecione uma organista oficializada...</option>
                   {allOrganistas
@@ -448,51 +382,26 @@ function Igrejas({ user }) {
                     ))}
                 </select>
                 {allOrganistas.filter(o => !organistasIgreja.find(oi => oi.id === o.id)).length > 0 ? (
-                  <p style={{ 
-                    fontSize: 'clamp(0.8rem, 2.2vw, 0.9rem)', 
-                    color: '#28a745', 
-                    margin: '5px 0', 
-                    fontWeight: '600' 
-                  }}>
+                  <p className="form-hint" style={{ color: 'var(--success)', fontWeight: 700 }}>
                     ✅ {allOrganistas.filter(o => !organistasIgreja.find(oi => oi.id === o.id)).length} organista(s) disponível(is) para adicionar
                   </p>
                 ) : allOrganistas.length > 0 ? (
-                  <p style={{ 
-                    fontSize: 'clamp(0.8rem, 2.2vw, 0.9rem)', 
-                    color: '#ffc107', 
-                    margin: '5px 0', 
-                    fontWeight: '600' 
-                  }}>
+                  <p className="form-hint" style={{ color: '#92400E', fontWeight: 700 }}>
                     ⚠️ Todas as organistas oficializadas já estão associadas a esta igreja
                   </p>
                 ) : (
-                  <p style={{ 
-                    fontSize: 'clamp(0.8rem, 2.2vw, 0.9rem)', 
-                    color: '#dc3545', 
-                    margin: '5px 0', 
-                    fontWeight: '600' 
-                  }}>
+                  <p className="form-hint" style={{ color: 'var(--danger)', fontWeight: 700 }}>
                     ❌ Nenhuma organista oficializada e ativa cadastrada no sistema
                   </p>
                 )}
               </div>
             )}
 
-            <h3 style={{ 
-              marginBottom: '15px',
-              fontSize: 'clamp(1rem, 3.5vw, 1.2rem)'
-            }}>Organistas da Igreja ({organistasIgreja.length})</h3>
+            <h3 className="form-section-title">Organistas da Igreja ({organistasIgreja.length})</h3>
             {organistasIgreja.length === 0 ? (
-              <div style={{ 
-                padding: '15px', 
-                background: '#fff3cd', 
-                border: '1px solid #ffc107', 
-                borderRadius: '4px', 
-                marginBottom: '20px',
-                fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)'
-              }}>
-                <strong>⚠️ Nenhuma organista oficializada associada a esta igreja</strong>
-                <p style={{ margin: '10px 0 0 0', fontSize: 'clamp(0.8rem, 2.2vw, 0.9rem)', lineHeight: '1.6' }}>
+              <div className="callout">
+                <strong className="callout__title">⚠️ Nenhuma organista oficializada associada a esta igreja</strong>
+                <p className="form-hint" style={{ marginTop: '8px' }}>
                   <strong>Para gerar rodízios, você precisa adicionar organistas acima.</strong>
                   <br />
                   Se não aparecer nenhuma organista no dropdown, verifique:
@@ -515,17 +424,12 @@ function Igrejas({ user }) {
                   <tbody>
                     {organistasIgreja.map(organista => (
                       <tr key={organista.id}>
-                        <td style={{ fontWeight: '500' }}>{organista.nome}</td>
+                        <td className="td-strong">{organista.nome}</td>
                         <td>{organista.telefone || '-'}</td>
                         <td>
                           <button
                             className="btn btn-danger"
                             onClick={() => handleRemoveOrganista(organista.id)}
-                            style={{ 
-                              fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', 
-                              padding: '8px 12px',
-                              minWidth: '80px'
-                            }}
                           >
                             Remover
                           </button>

@@ -390,54 +390,11 @@ function Admin() {
 
         {/* Modal de Edição */}
         {showEditModal && editing && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '15px',
-            boxSizing: 'border-box',
-            overflow: 'auto',
-            WebkitOverflowScrolling: 'touch'
-          }}>
-            <div className="card" style={{ 
-              maxWidth: '600px', 
-              width: '100%',
-              maxHeight: '90vh', 
-              overflow: 'auto',
-              margin: 'auto',
-              position: 'relative'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                marginBottom: '20px',
-                flexWrap: 'wrap',
-                gap: '10px'
-              }}>
-                <h2 style={{ 
-                  fontSize: 'clamp(1.1rem, 4vw, 1.5rem)',
-                  margin: 0,
-                  flex: '1 1 auto',
-                  minWidth: '200px'
-                }}>
-                  Editar Usuário
-                </h2>
-                <button 
-                  className="btn btn-secondary" 
-                  onClick={handleCloseEditModal}
-                  style={{ 
-                    minWidth: '80px',
-                    flexShrink: 0
-                  }}
-                >
+          <div className="modal-overlay">
+            <div className="card modal-panel">
+              <div className="modal-header">
+                <h2 className="modal-title">Editar Usuário</h2>
+                <button className="btn btn-secondary btn-nowrap" onClick={handleCloseEditModal}>
                   Fechar
                 </button>
               </div>
@@ -482,50 +439,54 @@ function Admin() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>
+                  <div className="form-group--checkbox">
                     <input
                       type="checkbox"
+                      id="edit_usuario_ativo"
                       checked={formData.ativo}
                       onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                      className="checkbox-input"
                     />
-                    {' '}Ativo
-                  </label>
+                    <label htmlFor="edit_usuario_ativo" className="checkbox-label">Ativo</label>
+                  </div>
                 </div>
                 {formData.role === 'usuario' && (
                   <div className="form-group">
-                    <label>
+                    <div className="form-group--checkbox">
                       <input
                         type="checkbox"
+                        id="edit_usuario_aprovado"
                         checked={formData.aprovado}
                         onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
+                        className="checkbox-input"
                       />
-                      {' '}Aprovado
-                    </label>
+                      <label htmlFor="edit_usuario_aprovado" className="checkbox-label">Aprovado</label>
+                    </div>
                   </div>
                 )}
                 
                 {formData.role === 'usuario' && (
                   <div className="form-group">
                     <label>Igrejas (selecione as igrejas que este usuário pode gerenciar)</label>
-                    <div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px', maxHeight: '200px', overflowY: 'auto' }}>
+                    <div className="checklist">
                       {igrejas.map(igreja => (
-                        <label key={igreja.id} style={{ display: 'block', marginBottom: '8px' }}>
+                        <label key={igreja.id} className="checklist-item">
                           <input
                             type="checkbox"
                             checked={formData.igreja_ids.includes(igreja.id)}
                             onChange={() => toggleIgreja(igreja.id)}
                           />
-                          {' '}{igreja.nome}
+                          <span>{igreja.nome}</span>
                         </label>
                       ))}
                       {igrejas.length === 0 && (
-                        <p style={{ color: '#999', fontStyle: 'italic' }}>Nenhuma igreja cadastrada</p>
+                        <p className="muted-italic">Nenhuma igreja cadastrada</p>
                       )}
                     </div>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <div className="btn-row">
                   <button type="submit" className="btn btn-primary">
                     Atualizar
                   </button>
