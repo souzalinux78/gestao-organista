@@ -28,6 +28,23 @@ if [ ! -d "server" ]; then
   exit 1
 fi
 
+# Função: health check com retry (evita falso negativo durante restart)
+health_check() {
+  local url="$1"
+  local attempts="${2:-20}"
+  local sleep_s="${3:-1}"
+  local i=1
+  while [ $i -le $attempts ]; do
+    if curl -fsS "$url" >/dev/null 2>&1; then
+      return 0
+    fi
+    echo -e "${YELLOW}⏳ Aguardando API subir... (${i}/${attempts})${NC}"
+    sleep "$sleep_s"
+    i=$((i + 1))
+  done
+  return 1
+}
+
 # Instalar dependências do backend (se existir package.json na raiz)
 if [ -f "package.json" ]; then
   echo -e "${YELLOW}📦 Instalando dependências do backend (npm install)...${NC}"
@@ -38,15 +55,23 @@ else
 fi
 
 echo -e "${YELLOW}🔄 Reiniciando PM2 (gestao-organista-api)...${NC}"
-pm2 restart gestao-organista-api
+# IMPORTANTE: startOrRestart com ecosystem garante cwd correto e aplica env atualizado
+pm2 startOrRestart ecosystem.config.js --update-env
 echo -e "${GREEN}✅ PM2 reiniciado${NC}"
 
 echo -e "${YELLOW}🩺 Validando health check...${NC}"
-if curl -fsS "http://localhost:5001/api/health" >/dev/null; then
+if health_check "http://localhost:5001/api/health" 25 1; then
   echo -e "${GREEN}✅ API respondeu no /api/health${NC}"
 else
   echo -e "${RED}❌ API não respondeu no /api/health. Veja logs:${NC}"
-  echo "   pm2 logs gestao-organista-api --lines 120"
+  echo ""
+  echo -e "${YELLOW}📌 Diagnóstico rápido:${NC}"
+  pm2 status || true
+  echo ""
+  pm2 describe gestao-organista-api | sed -n '1,120p' || true
+  echo ""
+  echo -e "${YELLOW}📄 Últimos logs:${NC}"
+  pm2 logs gestao-organista-api --lines 120
   exit 1
 fi
 
