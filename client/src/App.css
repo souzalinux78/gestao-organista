@@ -2,6 +2,9 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* Garantir scroll */
+  overflow-x: hidden;
+  position: relative;
 }
 
 /* Quando estiver na página de login, remover estilos do App */

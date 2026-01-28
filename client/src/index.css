@@ -207,6 +207,7 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  overflow-y: auto; /* Garantir scroll vertical */
   color: var(--text-main);
   font-size: clamp(0.875rem, 2.5vw, 1rem); /* 14px - 16px responsivo */
   line-height: 1.6;
@@ -215,7 +216,8 @@ body {
   word-wrap: break-word;
   overflow-wrap: break-word;
   position: relative;
-  overscroll-behavior-y: contain; /* Previne pull-to-refresh indesejado */
+  overscroll-behavior-y: auto; /* Permitir scroll normal */
+  -webkit-overflow-scrolling: touch; /* Scroll suave no iOS */
 }
 
 /* Safe area para iOS (iPhone X+) */
@@ -263,7 +265,7 @@ code {
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: clamp(1rem, 3vw, 1.25rem); /* 16px - 20px responsivo */
+  padding: var(--spacing-md);
   width: 100%;
   box-sizing: border-box;
   display: flex;
@@ -271,6 +273,9 @@ code {
   align-items: center;
   position: relative;
   z-index: 1;
+  overflow-y: visible; /* Permitir scroll */
+  overflow-x: hidden;
+  flex: 1;
 }
 
 .page-header {
