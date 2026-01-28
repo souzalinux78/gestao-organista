@@ -9,6 +9,7 @@ import LazyLoadingFallback from './components/LazyLoadingFallback';
 import ThemeToggle from './components/ThemeToggle';
 import './App.css';
 
+const Home = lazy(() => import('./pages/Home'));
 const Organistas = lazy(() => import('./pages/Organistas'));
 const Igrejas = lazy(() => import('./pages/Igrejas'));
 const Cultos = lazy(() => import('./pages/Cultos'));
@@ -63,7 +64,7 @@ function AppContent() {
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
             <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
             <Route path="/cadastro" element={!user ? <Register /> : <Navigate to="/" />} />
-            <Route path="/" element={<PrivateRoute><Home user={user} /></PrivateRoute>} />
+            <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
             <Route path="/organistas" element={<PrivateRoute><Organistas user={user} /></PrivateRoute>} />
             <Route path="/igrejas" element={<PrivateRoute><Igrejas user={user} /></PrivateRoute>} />
             <Route path="/cultos" element={<PrivateRoute><Cultos user={user} /></PrivateRoute>} />
@@ -183,37 +184,5 @@ function Header({ user, onLogout }) {
   );
 }
 
-function Home({ user }) {
-  const igrejas = JSON.parse(localStorage.getItem('igrejas') || '[]');
-  
-  return (
-    <div>
-      <div className="card">
-        <h2>Bem-vindo, {user?.nome}!</h2>
-        <p>Use o menu acima para navegar pelas funcionalidades:</p>
-        <ul className="home__features-list">
-          <li><strong>Organistas:</strong> Cadastre e gerencie as organistas</li>
-          <li><strong>Igrejas:</strong> {user?.role === 'admin' ? 'Cadastre e gerencie igrejas' : 'Visualize e gerencie sua igreja'}</li>
-          <li><strong>Cultos:</strong> Configure dias e horários de cultos</li>
-          <li><strong>Rodízios:</strong> Gere rodízios automáticos e visualize em PDF</li>
-          {user?.role === 'admin' && (
-            <li><strong>Admin:</strong> Gerencie usuários e suas associações com igrejas</li>
-          )}
-        </ul>
-        
-        {igrejas.length > 0 && (
-          <div className="home__igrejas-card">
-            <h3 className="home__igrejas-title">Suas Igrejas:</h3>
-            <ul className="home__igrejas-list">
-              {igrejas.map(igreja => (
-                <li key={igreja.id}>{igreja.nome}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default App;
