@@ -1,0 +1,91 @@
+/* ============================================
+   THEME TOGGLE BUTTON
+   Botão profissional para alternar tema
+   ============================================ */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-main);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+
+.theme-toggle:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.theme-toggle__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover .theme-toggle__icon {
+  transform: rotate(15deg);
+}
+
+.theme-toggle__label {
+  user-select: none;
+  color: var(--text-main);
+}
+
+/* Versão compacta (apenas ícone) */
+.theme-toggle--compact {
+  padding: 0.5rem;
+  min-width: 40px;
+  justify-content: center;
+}
+
+.theme-toggle--compact .theme-toggle__label {
+  display: none;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .theme-toggle {
+    padding: 0.5rem;
+    min-width: 40px;
+    justify-content: center;
+  }
+  
+  .theme-toggle__label {
+    display: none;
+  }
+}
+
+/* Estados especiais */
+.theme-toggle[aria-pressed="true"] {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.theme-toggle[aria-pressed="true"] .theme-toggle__icon {
+  color: var(--primary);
+}

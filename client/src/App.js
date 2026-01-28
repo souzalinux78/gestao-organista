@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import InstallPrompt from './components/InstallPrompt';
 import LazyLoadingFallback from './components/LazyLoadingFallback';
+import ThemeToggle from './components/ThemeToggle';
 import './App.css';
 
 const Organistas = lazy(() => import('./pages/Organistas'));
@@ -123,6 +124,7 @@ function Header({ user, onLogout }) {
           </div>
         </div>
         <div className="header__actions">
+          <ThemeToggle />
           {user && (
             <button 
               onClick={onLogout} 

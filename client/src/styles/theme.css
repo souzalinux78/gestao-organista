@@ -1,0 +1,194 @@
+/* ============================================
+   THEME SYSTEM - Dark/Light Mode
+   Sistema profissional de temas
+   ============================================ */
+
+/* === LIGHT THEME (Default) === */
+:root {
+  /* Backgrounds */
+  --bg-main: #F9FAFB;
+  --bg-card: #FFFFFF;
+  --bg-hover: #F3F4F6;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  
+  /* Text Colors */
+  --text-main: #1F2937;
+  --text-muted: #4B5563;
+  --text-light: #6B7280;
+  --text-inverse: #FFFFFF;
+  
+  /* Primary Colors */
+  --primary: #4F46E5;
+  --primary-hover: #4338CA;
+  --primary-light: #6366F1;
+  --primary-dark: #3730A3;
+  --primary-soft: rgba(79, 70, 229, 0.1);
+  --primary-glow: rgba(79, 70, 229, 0.2);
+  
+  /* Secondary Colors */
+  --secondary: #7C3AED;
+  --secondary-light: #8B5CF6;
+  --secondary-dark: #6D28D9;
+  --secondary-soft: rgba(124, 58, 237, 0.1);
+  
+  /* Accent Colors */
+  --accent: #059669;
+  --accent-light: #10B981;
+  --accent-dark: #047857;
+  --accent-soft: rgba(5, 150, 105, 0.1);
+  
+  /* Status Colors */
+  --success: #10B981;
+  --success-light: #34D399;
+  --success-dark: #059669;
+  --success-soft: rgba(16, 185, 129, 0.1);
+  --danger: #EF4444;
+  --danger-light: #F87171;
+  --danger-dark: #DC2626;
+  --danger-soft: rgba(239, 68, 68, 0.1);
+  --warning: #F59E0B;
+  --warning-light: #FBBF24;
+  --warning-dark: #D97706;
+  --info: #3B82F6;
+  --info-light: #60A5FA;
+  --info-dark: #2563EB;
+  
+  /* Borders */
+  --border: #E5E7EB;
+  --border-light: #F3F4F6;
+  --border-medium: #D1D5DB;
+  --border-dark: #9CA3AF;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --shadow-primary: 0 4px 14px rgba(79, 70, 229, 0.15);
+  --shadow-accent: 0 4px 14px rgba(5, 150, 105, 0.15);
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  
+  /* Compatibility */
+  --bg: var(--bg-main);
+  --bg-secondary: var(--bg-card);
+  --card-bg: var(--bg-card);
+  --card-border: var(--border);
+  --card-hover: var(--bg-hover);
+  --text: var(--text-main);
+  --text-secondary: var(--text-muted);
+  --white: var(--bg-card);
+  --blue-primary: var(--primary);
+  --blue-light: var(--primary-light);
+  --blue-dark: var(--primary-dark);
+  --blue-soft: var(--primary-soft);
+}
+
+/* === DARK THEME === */
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-main: #0F172A;
+  --bg-card: #1E293B;
+  --bg-hover: #334155;
+  --bg-overlay: rgba(0, 0, 0, 0.7);
+  
+  /* Text Colors */
+  --text-main: #F8FAFC;
+  --text-muted: #CBD5E1;
+  --text-light: #94A3B8;
+  --text-inverse: #0F172A;
+  
+  /* Primary Colors */
+  --primary: #6366F1;
+  --primary-hover: #818CF8;
+  --primary-light: #818CF8;
+  --primary-dark: #4F46E5;
+  --primary-soft: rgba(99, 102, 241, 0.15);
+  --primary-glow: rgba(99, 102, 241, 0.3);
+  
+  /* Secondary Colors */
+  --secondary: #8B5CF6;
+  --secondary-light: #A78BFA;
+  --secondary-dark: #7C3AED;
+  --secondary-soft: rgba(139, 92, 246, 0.15);
+  
+  /* Accent Colors */
+  --accent: #10B981;
+  --accent-light: #34D399;
+  --accent-dark: #059669;
+  --accent-soft: rgba(16, 185, 129, 0.15);
+  
+  /* Status Colors */
+  --success: #34D399;
+  --success-light: #6EE7B7;
+  --success-dark: #10B981;
+  --success-soft: rgba(52, 211, 153, 0.15);
+  --danger: #F87171;
+  --danger-light: #FCA5A5;
+  --danger-dark: #EF4444;
+  --danger-soft: rgba(248, 113, 113, 0.15);
+  --warning: #FBBF24;
+  --warning-light: #FCD34D;
+  --warning-dark: #F59E0B;
+  --info: #60A5FA;
+  --info-light: #93C5FD;
+  --info-dark: #3B82F6;
+  
+  /* Borders */
+  --border: #334155;
+  --border-light: #475569;
+  --border-medium: #64748B;
+  --border-dark: #94A3B8;
+  
+  /* Shadows (mais sutis no dark) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  --shadow-primary: 0 4px 14px rgba(99, 102, 241, 0.25);
+  --shadow-accent: 0 4px 14px rgba(16, 185, 129, 0.25);
+  
+  /* Compatibility */
+  --white: var(--bg-card);
+}
+
+/* === TRANSITIONS SUAVES === */
+* {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+/* Elementos que não devem ter transição */
+button,
+a,
+input,
+select,
+textarea,
+svg,
+img {
+  transition: background-color 0.2s ease, 
+              color 0.2s ease, 
+              border-color 0.2s ease,
+              box-shadow 0.2s ease,
+              transform 0.2s ease,
+              opacity 0.2s ease;
+}
+
+/* === DETECÇÃO DE PREFERÊNCIA DO SISTEMA === */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    /* Aplicar dark theme se usuário não escolheu manualmente */
+    /* Isso será sobrescrito pelo JavaScript se houver preferência salva */
+  }
+}

@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './styles/theme.css'; // Importar theme.css ANTES de index.css
 import './index.css';
 import App from './App';
 import { logInitialPerformance } from './utils/performance';
