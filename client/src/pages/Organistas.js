@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getOrganistas, createOrganista, updateOrganista, deleteOrganista, getIgrejas, getOrganistasIgreja } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { getErrorMessage } from '../utils/errorMessages';
 
 function Organistas({ user }) {
   const [organistas, setOrganistas] = useState([]);
@@ -45,23 +47,8 @@ function Organistas({ user }) {
       setOrganistas(response.data);
       setOrganistasFiltradas(response.data);
     } catch (error) {
-      // Mensagem de erro mais específica
-      let errorMessage = 'Erro ao carregar organistas';
-      
-      if (error.isServerError) {
-        errorMessage = 'Servidor temporariamente indisponível. Verifique se o backend está rodando.';
-      } else if (error.isTimeout) {
-        errorMessage = 'Tempo limite excedido. Tente novamente.';
-      } else if (error.isNetworkError) {
-        errorMessage = 'Erro de conexão. Verifique sua internet.';
-      } else if (error.response?.status === 502 || error.response?.status === 503) {
-        errorMessage = 'Servidor indisponível (502). Verifique se o backend está rodando na porta 5001.';
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
+      // Mensagem de erro amigável
+      const errorMessage = getErrorMessage(error);
       console.error('[Organistas] Erro ao carregar:', error);
       showAlert(errorMessage, 'error');
     } finally {
@@ -76,7 +63,7 @@ function Organistas({ user }) {
       setOrganistasFiltradas(response.data);
     } catch (error) {
       console.error('[Organistas] Erro ao carregar organistas da igreja:', error);
-      showAlert('Erro ao carregar organistas da igreja', 'error');
+      showAlert(getErrorMessage(error), 'error');
     } finally {
       setLoading(false);
     }
@@ -115,17 +102,8 @@ function Organistas({ user }) {
         loadOrganistas();
       }
     } catch (error) {
-      // Mostrar a mensagem real vinda do backend (se existir)
-      const errorMessage = (error?.code === 'ECONNABORTED')
-        ? 'Tempo limite ao salvar. O servidor demorou para responder (15s). Tente novamente.'
-        :
-        error?.response?.data?.error ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Erro ao salvar organista';
-
       console.error('[DEBUG] Erro ao salvar organista:', error);
-      showAlert(errorMessage, 'error');
+      showAlert(getErrorMessage(error), 'error');
     } finally {
       setSaving(false);
     }
@@ -155,7 +133,7 @@ function Organistas({ user }) {
           loadOrganistas();
         }
       } catch (error) {
-        showAlert('Erro ao deletar organista', 'error');
+        showAlert(getErrorMessage(error), 'error');
       }
     }
   };

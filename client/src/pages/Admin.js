@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario, aprovarUsuario, rejeitarUsuario } from '../services/api';
 import { getIgrejas } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { getErrorMessage } from '../utils/errorMessages';
 
 function Admin() {
   const [usuarios, setUsuarios] = useState([]);
@@ -35,7 +37,7 @@ function Admin() {
       setUsuarios(usuariosRes.data);
       setIgrejas(igrejasRes.data);
     } catch (error) {
-      showAlert('Erro ao carregar dados', 'error');
+      showAlert(getErrorMessage(error), 'error');
     } finally {
       setLoading(false);
     }
@@ -54,7 +56,7 @@ function Admin() {
       resetForm();
       loadData();
     } catch (error) {
-      showAlert(error.response?.data?.error || 'Erro ao criar usuário', 'error');
+      showAlert(getErrorMessage(error), 'error');
     }
   };
 
@@ -90,7 +92,7 @@ function Admin() {
       handleCloseEditModal();
       loadData();
     } catch (error) {
-      showAlert(error.response?.data?.error || 'Erro ao atualizar usuário', 'error');
+      showAlert(getErrorMessage(error), 'error');
     }
   };
 
@@ -111,7 +113,7 @@ function Admin() {
         showAlert('Usuário rejeitado');
         loadData();
       } catch (error) {
-        showAlert(error.response?.data?.error || 'Erro ao rejeitar usuário', 'error');
+        showAlert(getErrorMessage(error), 'error');
       }
     }
   };
@@ -123,7 +125,7 @@ function Admin() {
         showAlert('Usuário deletado com sucesso!');
         loadData();
       } catch (error) {
-        showAlert('Erro ao deletar usuário', 'error');
+        showAlert(getErrorMessage(error), 'error');
       }
     }
   };
@@ -152,7 +154,7 @@ function Admin() {
   };
 
   if (loading) {
-    return <div className="loading">Carregando...</div>;
+    return <LoadingSpinner fullScreen message="Carregando usuários..." />;
   }
 
   return (

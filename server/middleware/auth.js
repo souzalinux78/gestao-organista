@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const db = require('../database/db');
 const { getConfig } = require('../config/env');
+const { cached, invalidate } = require('../utils/cache');
+const logger = require('../utils/logger');
 
 // Middleware de autenticação
 const authenticate = async (req, res, next) => {
@@ -133,36 +135,57 @@ const checkIgrejaAccess = async (req, res, next) => {
   }
 };
 
-// Função auxiliar para obter igrejas do usuário
+// Função auxiliar para obter igrejas do usuário (com cache)
 const getUserIgrejas = async (userId, isAdmin) => {
-  const pool = db.getDb();
-  const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000); // Reduzido para 8s
+  const cacheKey = isAdmin ? 'igrejas:admin' : `igrejas:user:${userId}`;
+  const cacheTTL = 2 * 60 * 1000; // 2 minutos de cache
   
-  try {
-    if (isAdmin) {
-      const [igrejas] = await pool.execute({
-        sql: 'SELECT * FROM igrejas ORDER BY nome',
-        timeout: dbTimeout
+  return cached(cacheKey, async () => {
+    const pool = db.getDb();
+    const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000);
+    
+    try {
+      if (isAdmin) {
+        const [igrejas] = await pool.execute({
+          sql: 'SELECT * FROM igrejas ORDER BY nome',
+          timeout: dbTimeout
+        });
+        return igrejas || [];
+      } else {
+        // Query otimizada com índice em usuario_igreja.usuario_id
+        const [igrejas] = await pool.execute({
+          sql: `SELECT i.* 
+                FROM igrejas i
+                INNER JOIN usuario_igreja ui ON i.id = ui.igreja_id
+                WHERE ui.usuario_id = ?
+                ORDER BY i.nome
+                LIMIT 100`,
+          values: [userId],
+          timeout: dbTimeout
+        });
+        return igrejas || [];
+      }
+    } catch (error) {
+      logger.error(`Erro em getUserIgrejas para usuário ${userId}`, { 
+        userId, 
+        isAdmin, 
+        error: error.message 
       });
-      return igrejas || [];
-    } else {
-      // Query otimizada com índice em usuario_igreja.usuario_id
-      const [igrejas] = await pool.execute({
-        sql: `SELECT i.* 
-              FROM igrejas i
-              INNER JOIN usuario_igreja ui ON i.id = ui.igreja_id
-              WHERE ui.usuario_id = ?
-              ORDER BY i.nome
-              LIMIT 100`,
-        values: [userId],
-        timeout: dbTimeout
-      });
-      return igrejas || [];
+      // Retornar array vazio em caso de erro para não quebrar o fluxo
+      return [];
     }
-  } catch (error) {
-    console.error(`[DEBUG] Erro em getUserIgrejas para usuário ${userId}:`, error.message);
-    // Retornar array vazio em caso de erro para não quebrar o fluxo
-    return [];
+  }, cacheTTL);
+};
+
+/**
+ * Invalidar cache de igrejas (chamar quando igrejas forem criadas/atualizadas/deletadas)
+ */
+const invalidateIgrejasCache = (userId = null) => {
+  if (userId) {
+    invalidate(`igrejas:user:${userId}`);
+  } else {
+    // Invalidar cache de admin e todos os usuários
+    invalidate('igrejas:');
   }
 };
 
@@ -170,5 +193,6 @@ module.exports = {
   authenticate,
   isAdmin,
   checkIgrejaAccess,
-  getUserIgrejas
+  getUserIgrejas,
+  invalidateIgrejasCache
 };

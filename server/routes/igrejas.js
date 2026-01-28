@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
-const { authenticate, getUserIgrejas } = require('../middleware/auth');
+const { authenticate, getUserIgrejas, invalidateIgrejasCache } = require('../middleware/auth');
+const { asyncHandler, AppError } = require('../middleware/errorHandler');
+const logger = require('../utils/logger');
 
 // Listar igrejas (filtrado por usuário, admin vê todas)
 router.get('/', authenticate, async (req, res) => {
@@ -153,90 +155,101 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Atualizar igreja (apenas admin ou usuário da igreja)
-router.put('/:id', authenticate, async (req, res) => {
-  try {
-    // Admin pode atualizar qualquer igreja
-    if (req.user.role !== 'admin') {
-      // Usuário comum só pode atualizar suas igrejas
-      const pool = db.getDb();
-      const [associations] = await pool.execute(
-        'SELECT * FROM usuario_igreja WHERE usuario_id = ? AND igreja_id = ?',
-        [req.user.id, req.params.id]
-      );
-      
-      if (associations.length === 0) {
-        return res.status(403).json({ error: 'Acesso negado a esta igreja' });
-      }
-    }
-    
-    const { 
-      nome, 
-      endereco, 
-      encarregado_local_nome, 
-      encarregado_local_telefone,
-      encarregado_regional_nome,
-      encarregado_regional_telefone,
-      mesma_organista_ambas_funcoes
-    } = req.body;
+router.put('/:id', authenticate, asyncHandler(async (req, res) => {
+  // Admin pode atualizar qualquer igreja
+  if (req.user.role !== 'admin') {
+    // Usuário comum só pode atualizar suas igrejas
     const pool = db.getDb();
-    
-    const [result] = await pool.execute(
-      `UPDATE igrejas SET 
-        nome = ?, endereco = ?,
-        encarregado_local_nome = ?, encarregado_local_telefone = ?,
-        encarregado_regional_nome = ?, encarregado_regional_telefone = ?,
-        mesma_organista_ambas_funcoes = ?
-      WHERE id = ?`,
-      [
-        nome, 
-        endereco || null,
-        encarregado_local_nome || null,
-        encarregado_local_telefone || null,
-        encarregado_regional_nome || null,
-        encarregado_regional_telefone || null,
-        mesma_organista_ambas_funcoes ? 1 : 0,
-        req.params.id
-      ]
+    const [associations] = await pool.execute(
+      'SELECT * FROM usuario_igreja WHERE usuario_id = ? AND igreja_id = ?',
+      [req.user.id, req.params.id]
     );
     
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Igreja não encontrada' });
+    if (associations.length === 0) {
+      throw new AppError('Acesso negado a esta igreja', 403, 'ACCESS_DENIED');
     }
-    
-    res.json({ 
-      id: req.params.id, 
-      nome, 
-      endereco,
-      encarregado_local_nome,
-      encarregado_local_telefone,
-      encarregado_regional_nome,
-      encarregado_regional_telefone,
-      mesma_organista_ambas_funcoes: mesma_organista_ambas_funcoes ? 1 : 0
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
-});
+  
+  const { 
+    nome, 
+    endereco, 
+    encarregado_local_nome, 
+    encarregado_local_telefone,
+    encarregado_regional_nome,
+    encarregado_regional_telefone,
+    mesma_organista_ambas_funcoes
+  } = req.body;
+  
+  if (!nome || nome.trim() === '') {
+    throw new AppError('Nome da igreja é obrigatório', 400, 'VALIDATION_ERROR');
+  }
+  
+  const pool = db.getDb();
+  
+  const [result] = await pool.execute(
+    `UPDATE igrejas SET 
+      nome = ?, endereco = ?,
+      encarregado_local_nome = ?, encarregado_local_telefone = ?,
+      encarregado_regional_nome = ?, encarregado_regional_telefone = ?,
+      mesma_organista_ambas_funcoes = ?
+    WHERE id = ?`,
+    [
+      nome.trim(), 
+      endereco?.trim() || null,
+      encarregado_local_nome?.trim() || null,
+      encarregado_local_telefone?.trim() || null,
+      encarregado_regional_nome?.trim() || null,
+      encarregado_regional_telefone?.trim() || null,
+      mesma_organista_ambas_funcoes ? 1 : 0,
+      req.params.id
+    ]
+  );
+  
+  if (result.affectedRows === 0) {
+    throw new AppError('Igreja não encontrada', 404, 'NOT_FOUND');
+  }
+  
+  // Invalidar cache
+  if (req.user.role === 'admin') {
+    invalidateIgrejasCache();
+  } else {
+    invalidateIgrejasCache(req.user.id);
+  }
+  
+  logger.info('Igreja atualizada', { igrejaId: req.params.id, userId: req.user.id });
+  
+  res.json({ 
+    id: req.params.id, 
+    nome, 
+    endereco,
+    encarregado_local_nome,
+    encarregado_local_telefone,
+    encarregado_regional_nome,
+    encarregado_regional_telefone,
+    mesma_organista_ambas_funcoes: mesma_organista_ambas_funcoes ? 1 : 0
+  });
+}));
 
 // Deletar igreja (apenas admin)
-router.delete('/:id', authenticate, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Apenas administradores podem deletar igrejas' });
-    }
-    
-    const pool = db.getDb();
-    const [result] = await pool.execute('DELETE FROM igrejas WHERE id = ?', [req.params.id]);
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Igreja não encontrada' });
-    }
-    
-    res.json({ message: 'Igreja deletada com sucesso' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+router.delete('/:id', authenticate, asyncHandler(async (req, res) => {
+  if (req.user.role !== 'admin') {
+    throw new AppError('Apenas administradores podem deletar igrejas', 403, 'ACCESS_DENIED');
   }
-});
+  
+  const pool = db.getDb();
+  const [result] = await pool.execute('DELETE FROM igrejas WHERE id = ?', [req.params.id]);
+  
+  if (result.affectedRows === 0) {
+    throw new AppError('Igreja não encontrada', 404, 'NOT_FOUND');
+  }
+  
+  // Invalidar cache de admin
+  invalidateIgrejasCache();
+  
+  logger.info('Igreja deletada', { igrejaId: req.params.id, userId: req.user.id });
+  
+  res.json({ message: 'Igreja deletada com sucesso' });
+}));
 
 // Listar organistas oficializadas de uma igreja (com verificação de acesso)
 router.get('/:id/organistas', authenticate, async (req, res) => {
