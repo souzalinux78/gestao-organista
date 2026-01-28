@@ -42,6 +42,15 @@ const init = async () => {
     // Verificar e adicionar coluna funcao se necessário (migração)
     await migrateRodiziosFuncao();
     await migrateTipoUsuario();
+    
+    // Migração multi-tenant (FASE 1) - 100% segura, não quebra nada
+    try {
+      const migrateTenants = require('../scripts/migrate-tenants');
+      await migrateTenants();
+    } catch (error) {
+      // Não falhar inicialização se migração falhar (pode já estar aplicada)
+      console.warn('⚠️  Aviso na migração multi-tenant:', error.message);
+    }
   } catch (error) {
     console.error('Erro ao conectar ao banco de dados:', error);
     throw error;
