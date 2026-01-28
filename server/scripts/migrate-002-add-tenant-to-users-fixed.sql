@@ -1,5 +1,5 @@
 -- ============================================
--- MIGRAÇÃO 002: Adicionar tenant_id em usuarios
+-- MIGRAÇÃO 002: Adicionar tenant_id em usuarios (VERSÃO CORRIGIDA)
 -- FASE 1: Fundação Multi-Tenant
 -- ============================================
 -- 
@@ -15,24 +15,22 @@
 
 USE `gestao_organista`;
 
--- Verificar se tenant padrão existe
-SET @default_tenant_id = (SELECT id FROM tenants WHERE slug = 'default' LIMIT 1);
-
--- Se não existir, criar
+-- Verificar se tenant padrão existe, se não criar
 INSERT INTO tenants (`nome`, `slug`, `ativo`)
 VALUES ('Tenant Padrão', 'default', 1)
 ON DUPLICATE KEY UPDATE `nome` = `nome`;
 
+-- Obter ID do tenant padrão
 SET @default_tenant_id = (SELECT id FROM tenants WHERE slug = 'default' LIMIT 1);
 
--- Verificar se coluna tenant_id já existe
+-- Verificar se coluna já existe antes de adicionar
 SELECT COUNT(*) INTO @col_exists
 FROM INFORMATION_SCHEMA.COLUMNS 
 WHERE TABLE_SCHEMA = DATABASE() 
   AND TABLE_NAME = 'usuarios' 
   AND COLUMN_NAME = 'tenant_id';
 
--- Adicionar coluna tenant_id em usuarios (nullable inicialmente) apenas se não existir
+-- Adicionar coluna apenas se não existir
 SET @sql = IF(@col_exists = 0,
   'ALTER TABLE `usuarios` ADD COLUMN `tenant_id` INT NULL AFTER `id`',
   'SELECT "Coluna tenant_id já existe" AS status'
@@ -51,7 +49,7 @@ WHERE TABLE_SCHEMA = DATABASE()
 -- Adicionar índice apenas se não existir
 SET @sql = IF(@index_exists = 0,
   'ALTER TABLE `usuarios` ADD INDEX `idx_usuarios_tenant` (`tenant_id`)',
-  'SELECT "Índice idx_usuarios_tenant já existe" AS status'
+  'SELECT "Índice já existe" AS status'
 );
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
@@ -67,7 +65,7 @@ WHERE TABLE_SCHEMA = DATABASE()
 -- Adicionar foreign key apenas se não existir
 SET @sql = IF(@fk_exists = 0,
   'ALTER TABLE `usuarios` ADD CONSTRAINT `fk_usuarios_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE RESTRICT',
-  'SELECT "Foreign key fk_usuarios_tenant já existe" AS status'
+  'SELECT "Foreign key já existe" AS status'
 );
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
