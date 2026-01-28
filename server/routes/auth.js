@@ -203,11 +203,27 @@ router.post('/register', async (req, res) => {
 
     // Criar igreja automaticamente com o nome fornecido
     // IMPORTANTE: em produção (FASE 5 multi-tenant), tenant_id pode ser NOT NULL.
-    // Então, se a coluna existir, já inserir com tenant_id para não falhar o INSERT.
+    // Então, se a coluna existir, SEMPRE inserir com tenant_id para não falhar o INSERT.
     const igrejasTemTenantId = await cachedColumnExists('igrejas', 'tenant_id');
-    const tenantIdParaIgreja = defaultTenantId || null;
+    
+    // Garantir que temos um tenant_id válido se a coluna existir
+    let tenantIdParaIgreja = defaultTenantId;
+    if (igrejasTemTenantId && !tenantIdParaIgreja) {
+      // Se a coluna existe mas não temos tenant, buscar novamente
+      const [tenantsRetry] = await pool.execute(
+        'SELECT id FROM tenants WHERE slug = ? LIMIT 1',
+        ['default']
+      );
+      tenantIdParaIgreja = tenantsRetry.length > 0 ? tenantsRetry[0].id : null;
+      
+      if (!tenantIdParaIgreja) {
+        return res.status(500).json({ 
+          error: 'Erro interno: tenant padrão não encontrado. Contate o administrador.' 
+        });
+      }
+    }
 
-    const igrejaInsert = igrejasTemTenantId && tenantIdParaIgreja
+    const igrejaInsert = igrejasTemTenantId
       ? {
           sql: `INSERT INTO igrejas (
             nome, endereco,
@@ -726,28 +742,70 @@ router.post('/migrate/usuarios-igrejas', authenticate, isAdmin, async (req, res)
     let organistasAssociadas = 0;
     const resultados = [];
 
+    // Verificar se igrejas têm tenant_id e obter tenant padrão
+    const { cachedColumnExists } = require('../utils/cache');
+    const igrejasTemTenantId = await cachedColumnExists('igrejas', 'tenant_id');
+    let defaultTenantId = null;
+    if (igrejasTemTenantId) {
+      const [tenants] = await pool.execute(
+        'SELECT id FROM tenants WHERE slug = ? LIMIT 1',
+        ['default']
+      );
+      defaultTenantId = tenants.length > 0 ? tenants[0].id : null;
+      if (!defaultTenantId) {
+        return res.status(500).json({ 
+          error: 'Erro interno: tenant padrão não encontrado. Contate o administrador.' 
+        });
+      }
+    }
+
     // Para cada usuário sem igreja, criar uma igreja padrão e associar
     for (const usuario of usuariosSemIgreja) {
       try {
         // Criar igreja padrão com nome baseado no usuário
         const nomeIgreja = `${usuario.nome} - Igreja`;
         
+        const igrejaInsert = igrejasTemTenantId
+          ? {
+              sql: `INSERT INTO igrejas (
+                nome, endereco, 
+                encarregado_local_nome, encarregado_local_telefone,
+                encarregado_regional_nome, encarregado_regional_telefone,
+                mesma_organista_ambas_funcoes,
+                tenant_id
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              values: [
+                nomeIgreja,
+                null,
+                null,
+                null,
+                null,
+                null,
+                0,
+                defaultTenantId
+              ]
+            }
+          : {
+              sql: `INSERT INTO igrejas (
+                nome, endereco, 
+                encarregado_local_nome, encarregado_local_telefone,
+                encarregado_regional_nome, encarregado_regional_telefone,
+                mesma_organista_ambas_funcoes
+              ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              values: [
+                nomeIgreja,
+                null,
+                null,
+                null,
+                null,
+                null,
+                0
+              ]
+            };
+        
         const [igrejaResult] = await pool.execute({
-          sql: `INSERT INTO igrejas (
-            nome, endereco, 
-            encarregado_local_nome, encarregado_local_telefone,
-            encarregado_regional_nome, encarregado_regional_telefone,
-            mesma_organista_ambas_funcoes
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          values: [
-            nomeIgreja,
-            null,
-            null,
-            null,
-            null,
-            null,
-            0
-          ],
+          sql: igrejaInsert.sql,
+          values: igrejaInsert.values,
           timeout: dbTimeout
         });
 

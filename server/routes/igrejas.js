@@ -121,9 +121,24 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
       tenantIdParaIgreja = tenants.length > 0 ? tenants[0].id : null;
     }
     
+    // Se a coluna existe mas não temos tenant, buscar novamente ou retornar erro
+    if (temTenantId && !tenantIdParaIgreja) {
+      const [tenantsRetry] = await pool.execute(
+        'SELECT id FROM tenants WHERE slug = ? LIMIT 1',
+        ['default']
+      );
+      tenantIdParaIgreja = tenantsRetry.length > 0 ? tenantsRetry[0].id : null;
+      
+      if (!tenantIdParaIgreja) {
+        return res.status(500).json({ 
+          error: 'Erro interno: tenant padrão não encontrado. Contate o administrador.' 
+        });
+      }
+    }
+    
     // Criar igreja com tenant_id se disponível
     let sql, values;
-    if (temTenantId && tenantIdParaIgreja) {
+    if (temTenantId) {
       sql = `INSERT INTO igrejas (
         nome, endereco, 
         encarregado_local_nome, encarregado_local_telefone,
