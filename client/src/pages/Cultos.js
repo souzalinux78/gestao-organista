@@ -135,7 +135,7 @@ function Cultos({ user }) {
         )}
 
         {showForm && (
-          <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+          <form onSubmit={handleSubmit} className="form--spaced">
             {user?.role === 'admin' ? (
               <div className="form-group">
                 <label>Igreja *</label>
@@ -159,7 +159,7 @@ function Cultos({ user }) {
                   type="text"
                   value={igrejas.find(i => i.id.toString() === formData.igreja_id)?.nome || ''}
                   disabled
-                  style={{ background: '#f5f5f5' }}
+                  className="input-readonly"
                 />
               </div>
             )}

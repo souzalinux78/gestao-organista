@@ -167,7 +167,7 @@ function Igrejas({ user }) {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div className="page-header">
           <h2>Igrejas</h2>
           <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
             {showForm ? 'Cancelar' : (user?.role === 'admin' ? '+ Nova Igreja' : '+ Cadastrar minha igreja')}
@@ -181,7 +181,7 @@ function Igrejas({ user }) {
         )}
 
         {showForm && (
-          <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+          <form onSubmit={handleSubmit} className="form--spaced">
             <div className="form-group">
               <label>Nome *</label>
               <input
@@ -199,7 +199,7 @@ function Igrejas({ user }) {
                 onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
               />
             </div>
-            <h3 style={{ marginTop: '20px', marginBottom: '15px' }}>Encarregado Local</h3>
+            <h3 className="form-section-title">Encarregado Local</h3>
             <div className="form-group">
               <label>Nome</label>
               <input
@@ -217,7 +217,7 @@ function Igrejas({ user }) {
                 placeholder="(00) 00000-0000"
               />
             </div>
-            <h3 style={{ marginTop: '20px', marginBottom: '15px' }}>Encarregado Regional</h3>
+            <h3 className="form-section-title">Encarregado Regional</h3>
             <div className="form-group">
               <label>Nome</label>
               <input
@@ -235,17 +235,20 @@ function Igrejas({ user }) {
                 placeholder="(00) 00000-0000"
               />
             </div>
-            <div className="form-group" style={{ marginTop: '20px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+            <div className="form-group">
+              <div className="form-group--checkbox">
                 <input
                   type="checkbox"
+                  id="mesma_organista_ambas_funcoes"
                   checked={formData.mesma_organista_ambas_funcoes}
                   onChange={(e) => setFormData({ ...formData, mesma_organista_ambas_funcoes: e.target.checked })}
-                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                  className="checkbox-input"
                 />
-                <span>Permitir que a mesma organista faça meia hora e tocar no culto</span>
-              </label>
-              <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '5px', marginLeft: '30px' }}>
+                <label htmlFor="mesma_organista_ambas_funcoes" className="checkbox-label">
+                  Permitir que a mesma organista faça meia hora e tocar no culto
+                </label>
+              </div>
+              <p className="form-hint">
                 Se marcado, no rodízio a mesma organista fará ambas as funções. Se não marcado, uma organista fará meia hora e outra tocará no culto.
               </p>
             </div>
@@ -257,7 +260,7 @@ function Igrejas({ user }) {
 
         {igrejas.length === 0 ? (
           <div className="empty">
-            <div style={{ marginBottom: '10px' }}>Nenhuma igreja cadastrada</div>
+            <div className="empty__title">Nenhuma igreja cadastrada</div>
             <button className="btn btn-primary" onClick={() => setShowForm(true)}>
               {user?.role === 'admin' ? '+ Nova Igreja' : '+ Cadastrar minha igreja'}
             </button>
@@ -273,9 +276,9 @@ function Igrejas({ user }) {
                   <th>Encarregado Regional</th>
                   {user?.role === 'admin' && (
                     <>
-                      <th style={{ textAlign: 'center' }}>Organistas</th>
-                      <th style={{ textAlign: 'center' }}>Usuários</th>
-                      <th style={{ textAlign: 'center' }}>Cultos</th>
+                      <th className="th-center">Organistas</th>
+                      <th className="th-center">Usuários</th>
+                      <th className="th-center">Cultos</th>
                     </>
                   )}
                   <th>Ações</th>
@@ -284,48 +287,24 @@ function Igrejas({ user }) {
               <tbody>
                 {igrejas.map(igreja => (
                   <tr key={igreja.id}>
-                    <td data-label="Nome" style={{ fontWeight: '600' }}>{igreja.nome}</td>
-                    <td data-label="Endereço" style={{ maxWidth: '300px', wordBreak: 'break-word' }}>{igreja.endereco || '-'}</td>
+                    <td data-label="Nome" className="td-strong">{igreja.nome}</td>
+                    <td data-label="Endereço" className="td-wrap">{igreja.endereco || '-'}</td>
                     <td data-label="Encarregado Local">{igreja.encarregado_local_nome || '-'}</td>
                     <td data-label="Encarregado Regional">{igreja.encarregado_regional_nome || '-'}</td>
                     {user?.role === 'admin' && (
                       <>
-                        <td data-label="Organistas" style={{ textAlign: 'center' }}>
-                          <span style={{ 
-                            display: 'inline-block',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
-                            backgroundColor: igreja.total_organistas > 0 ? '#e7f3ff' : '#fff3cd',
-                            color: igreja.total_organistas > 0 ? '#0066cc' : '#856404',
-                            fontWeight: '600',
-                            fontSize: '0.9rem'
-                          }}>
+                        <td data-label="Organistas" className="td-center">
+                          <span className={`stat-pill ${igreja.total_organistas > 0 ? 'stat-pill--ok' : 'stat-pill--warn'}`}>
                             {igreja.total_organistas || 0}
                           </span>
                         </td>
-                        <td data-label="Usuários" style={{ textAlign: 'center' }}>
-                          <span style={{ 
-                            display: 'inline-block',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
-                            backgroundColor: igreja.total_usuarios > 0 ? '#e7f3ff' : '#fff3cd',
-                            color: igreja.total_usuarios > 0 ? '#0066cc' : '#856404',
-                            fontWeight: '600',
-                            fontSize: '0.9rem'
-                          }}>
+                        <td data-label="Usuários" className="td-center">
+                          <span className={`stat-pill ${igreja.total_usuarios > 0 ? 'stat-pill--ok' : 'stat-pill--warn'}`}>
                             {igreja.total_usuarios || 0}
                           </span>
                         </td>
-                        <td data-label="Cultos" style={{ textAlign: 'center' }}>
-                          <span style={{ 
-                            display: 'inline-block',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
-                            backgroundColor: igreja.total_cultos > 0 ? '#e7f3ff' : '#fff3cd',
-                            color: igreja.total_cultos > 0 ? '#0066cc' : '#856404',
-                            fontWeight: '600',
-                            fontSize: '0.9rem'
-                          }}>
+                        <td data-label="Cultos" className="td-center">
+                          <span className={`stat-pill ${igreja.total_cultos > 0 ? 'stat-pill--ok' : 'stat-pill--warn'}`}>
                             {igreja.total_cultos || 0}
                           </span>
                         </td>

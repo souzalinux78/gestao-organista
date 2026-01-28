@@ -1,0 +1,92 @@
+/* ============================================
+   UI KIT - Padrão SaaS Admin (reutilizável)
+   Pequeno e incremental (não muda lógica)
+   ============================================ */
+
+.form--spaced {
+  margin-top: var(--spacing-lg);
+}
+
+.form-section-title {
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.form-hint {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-top: 0.35rem;
+  line-height: 1.5;
+}
+
+.form-group--checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.checkbox-input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  cursor: pointer;
+  user-select: none;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.empty__title {
+  margin-bottom: var(--spacing-sm);
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: 1px solid var(--border);
+  background: var(--bg-hover);
+  color: var(--text-main);
+  min-width: 34px;
+}
+
+.stat-pill--ok {
+  background: rgba(79, 70, 229, 0.08);
+  border-color: rgba(79, 70, 229, 0.25);
+  color: var(--primary);
+}
+
+.stat-pill--warn {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #92400E; /* amber-800 */
+}
+
+.td-strong {
+  font-weight: 700;
+}
+
+.td-wrap {
+  max-width: 300px;
+  word-break: break-word;
+}
+
+.th-center,
+.td-center {
+  text-align: center;
+}
+
+.input-readonly {
+  background: var(--bg-hover) !important;
+  color: var(--text-muted) !important;
+}
+
