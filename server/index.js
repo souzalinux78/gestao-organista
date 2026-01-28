@@ -27,6 +27,10 @@ try {
 const app = express();
 const PORT = envConfig.PORT || 5001;
 
+// Importante: estamos atrás do Nginx (reverse proxy). Isso evita erros do express-rate-limit
+// e garante que IP/headers (X-Forwarded-For) sejam interpretados corretamente.
+app.set('trust proxy', 1);
+
 // Middleware de log de requisições (apenas para debug)
 app.use((req, res, next) => {
   if (req.path.includes('organistas') && req.method === 'POST') {
