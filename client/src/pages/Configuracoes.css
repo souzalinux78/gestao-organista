@@ -1,0 +1,70 @@
+.configuracoes {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.configuracoes__form {
+  margin-top: 1.5rem;
+}
+
+.configuracoes__actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.configuracoes__info {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.configuracoes__info h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.configuracoes__info p {
+  margin: 0 0 1rem 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.configuracoes__code {
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.card__description {
+  margin: 0 0 1.5rem 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .configuracoes__actions {
+    flex-direction: column;
+  }
+
+  .configuracoes__actions .btn {
+    width: 100%;
+  }
+
+  .configuracoes__code {
+    font-size: 0.75rem;
+    padding: 0.75rem;
+  }
+}

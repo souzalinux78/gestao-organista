@@ -9,13 +9,68 @@ const { validate, schemas } = require('../middleware/validation');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 
+// Função para enviar webhook de novo cadastro
+const enviarWebhookCadastro = async (dadosUsuario) => {
+  try {
+    const pool = db.getDb();
+    
+    // Buscar webhook configurado
+    const [config] = await pool.execute(
+      'SELECT valor FROM configuracoes WHERE chave = ?',
+      ['webhook_cadastro']
+    );
+    
+    const webhookUrl = config.length > 0 ? config[0].valor : null;
+    
+    if (!webhookUrl) {
+      console.log('[WEBHOOK CADASTRO] Webhook não configurado, pulando envio');
+      return;
+    }
+    
+    const axios = require('axios');
+    const payload = {
+      tipo: 'novo_cadastro',
+      timestamp: new Date().toISOString(),
+      timestamp_br: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      usuario: {
+        id: dadosUsuario.id,
+        nome: dadosUsuario.nome,
+        email: dadosUsuario.email,
+        telefone: dadosUsuario.telefone || null,
+        tipo_usuario: dadosUsuario.tipo_usuario || null,
+        igreja: dadosUsuario.igreja || null,
+        igreja_id: dadosUsuario.igreja_id || null,
+        aprovado: false,
+        created_at: dadosUsuario.created_at || new Date().toISOString()
+      },
+      mensagem: `Novo cadastro: ${dadosUsuario.nome} (${dadosUsuario.email}) aguardando aprovação`
+    };
+    
+    await axios.post(webhookUrl, payload, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000
+    });
+    
+    console.log(`✅ [WEBHOOK CADASTRO] Enviado com sucesso para: ${webhookUrl}`);
+  } catch (error) {
+    console.error('[WEBHOOK CADASTRO] Erro ao enviar webhook:', error.message);
+    // Não falha o cadastro se o webhook falhar
+  }
+};
+
 // Cadastro público (sem autenticação)
 router.post('/register', async (req, res) => {
   try {
-    const { nome, email, senha, igreja, tipo_usuario } = req.body;
+    const { nome, email, senha, igreja, tipo_usuario, telefone } = req.body;
 
     if (!nome || !email || !senha) {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
+    }
+
+    if (!telefone || telefone.trim() === '') {
+      return res.status(400).json({ error: 'O campo Celular é obrigatório para aprovação' });
     }
 
     if (!igreja || igreja.trim() === '') {
@@ -62,10 +117,23 @@ router.post('/register', async (req, res) => {
     
     // Verificar se tenant_id existe na tabela
     const temTenantId = await cachedColumnExists('usuarios', 'tenant_id');
+    const temTelefone = await cachedColumnExists('usuarios', 'telefone');
     
     // Montar query dinamicamente baseado na existência das colunas
     let sql, values;
-    if (temTipoUsuario && temTenantId && defaultTenantId) {
+    if (temTipoUsuario && temTenantId && temTelefone && defaultTenantId) {
+      sql = 'INSERT INTO usuarios (nome, email, telefone, senha_hash, role, tipo_usuario, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+      values = [nome, email, telefone.trim(), senhaHash, 'usuario', tipoUsuarioValido, defaultTenantId, 0];
+    } else if (temTipoUsuario && temTelefone) {
+      sql = 'INSERT INTO usuarios (nome, email, telefone, senha_hash, role, tipo_usuario, aprovado) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      values = [nome, email, telefone.trim(), senhaHash, 'usuario', tipoUsuarioValido, 0];
+    } else if (temTenantId && temTelefone && defaultTenantId) {
+      sql = 'INSERT INTO usuarios (nome, email, telefone, senha_hash, role, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      values = [nome, email, telefone.trim(), senhaHash, 'usuario', defaultTenantId, 0];
+    } else if (temTelefone) {
+      sql = 'INSERT INTO usuarios (nome, email, telefone, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?, ?)';
+      values = [nome, email, telefone.trim(), senhaHash, 'usuario', 0];
+    } else if (temTipoUsuario && temTenantId && defaultTenantId) {
       sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, tipo_usuario, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?, ?)';
       values = [nome, email, senhaHash, 'usuario', tipoUsuarioValido, defaultTenantId, 0];
     } else if (temTipoUsuario) {
@@ -125,6 +193,20 @@ router.post('/register', async (req, res) => {
       sql: 'INSERT INTO usuario_igreja (usuario_id, igreja_id) VALUES (?, ?)',
       values: [userId, igrejaId],
       timeout: dbTimeout
+    });
+
+    // Enviar webhook de novo cadastro (não bloqueia a resposta)
+    enviarWebhookCadastro({
+      id: userId,
+      nome,
+      email,
+      telefone: telefone ? telefone.trim() : null,
+      tipo_usuario: tipoUsuarioValido,
+      igreja: igreja.trim(),
+      igreja_id: igrejaId,
+      created_at: new Date().toISOString()
+    }).catch(err => {
+      console.error('Erro ao enviar webhook de cadastro:', err);
     });
 
     res.status(201).json({

@@ -17,6 +17,7 @@ const Rodizios = lazy(() => import('./pages/Rodizios'));
 const Admin = lazy(() => import('./pages/Admin'));
 const RelatoriosAdmin = lazy(() => import('./pages/RelatoriosAdmin'));
 const Relatorios = lazy(() => import('./pages/Relatorios'));
+const Configuracoes = lazy(() => import('./pages/Configuracoes'));
 
 function PrivateRoute({ children }) {
   const { user, loading, logout } = useAuth();
@@ -72,6 +73,7 @@ function AppContent() {
               <>
                 <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
                 <Route path="/relatorios-admin" element={<PrivateRoute><RelatoriosAdmin user={user} /></PrivateRoute>} />
+                <Route path="/configuracoes" element={<PrivateRoute><Configuracoes /></PrivateRoute>} />
               </>
             )}
             {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora' || user?.tipo_usuario === 'instrutoras') && (
@@ -166,6 +168,9 @@ function Header({ user, onLogout }) {
             </Link>
             <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
               Admin
+            </Link>
+            <Link to="/configuracoes" className={location.pathname === '/configuracoes' ? 'active' : ''} onClick={() => setMenuOpen(false)}>
+              Configurações
             </Link>
           </>
         )}

@@ -8,6 +8,7 @@ function Register() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [telefone, setTelefone] = useState('');
   const [igreja, setIgreja] = useState('');
   const [tipoUsuario, setTipoUsuario] = useState('');
   const [error, setError] = useState('');
@@ -59,7 +60,7 @@ function Register() {
     }
 
     try {
-      const response = await register(nome, email, senha, igreja.trim(), tipoUsuario || null);
+      const response = await register(nome, email, senha, igreja.trim(), tipoUsuario || null, telefone.trim());
       setSuccess(response.data.message || 'Cadastro realizado com sucesso! Aguarde a aprovação do administrador.');
       
       // Limpar formulário
@@ -67,6 +68,7 @@ function Register() {
       setEmail('');
       setSenha('');
       setConfirmarSenha('');
+      setTelefone('');
       setIgreja('');
       setTipoUsuario('');
       
@@ -128,6 +130,21 @@ function Register() {
               required
               placeholder="seu@email.com"
             />
+          </div>
+
+          <div className="form-group">
+            <label>Celular *</label>
+            <input
+              type="tel"
+              value={telefone}
+              onChange={(e) => setTelefone(e.target.value)}
+              required
+              placeholder="(00) 00000-0000"
+              pattern="[0-9()\s-]+"
+            />
+            <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+              Obrigatório para aprovação do administrador
+            </small>
           </div>
 
           <div className="form-group">

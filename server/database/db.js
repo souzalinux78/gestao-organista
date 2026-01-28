@@ -42,6 +42,7 @@ const init = async () => {
     // Verificar e adicionar coluna funcao se necessário (migração)
     await migrateRodiziosFuncao();
     await migrateTipoUsuario();
+    await migrateTelefoneUsuario();
     
     // Migração multi-tenant (FASE 1) - 100% segura, não quebra nada
     try {
@@ -221,6 +222,17 @@ const createTables = async () => {
       UNIQUE KEY unique_usuario_igreja (usuario_id, igreja_id),
       INDEX idx_usuario_igreja_usuario (usuario_id),
       INDEX idx_usuario_igreja_igreja (igreja_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+    // Tabela de Configurações do Sistema
+    `CREATE TABLE IF NOT EXISTS configuracoes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      chave VARCHAR(100) NOT NULL UNIQUE,
+      valor TEXT,
+      descricao VARCHAR(255),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_configuracoes_chave (chave)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   ];
 
@@ -281,6 +293,38 @@ const migrateTipoUsuario = async () => {
     // Não falhar se a coluna já existir ou se houver outro erro
     if (error.code !== 'ER_DUP_FIELDNAME') {
       console.warn('⚠️  Aviso na migração tipo_usuario:', error.message);
+    }
+  }
+};
+
+// Migração: adicionar coluna telefone na tabela usuarios
+const migrateTelefoneUsuario = async () => {
+  try {
+    const pool = getDb();
+    
+    // Verificar se a coluna já existe
+    const [columns] = await pool.execute(`
+      SELECT COLUMN_NAME
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = 'usuarios' 
+      AND COLUMN_NAME = 'telefone'
+    `);
+    
+    if (columns.length === 0) {
+      // Adicionar coluna telefone
+      await pool.execute(`
+        ALTER TABLE usuarios 
+        ADD COLUMN telefone VARCHAR(20) DEFAULT NULL 
+        AFTER email
+      `);
+      console.log('✅ Migração: Campo telefone adicionado com sucesso!');
+    } else {
+      console.log('ℹ️  Campo telefone já existe na tabela usuarios.');
+    }
+  } catch (error) {
+    if (error.code !== 'ER_DUP_FIELDNAME') {
+      console.warn('⚠️  Aviso na migração telefone:', error.message);
     }
   }
 };

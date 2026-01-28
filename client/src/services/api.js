@@ -122,7 +122,13 @@ api.interceptors.response.use(
 
 // Autenticação
 export const login = (email, senha) => api.post('/auth/login', { email, senha });
-export const register = (nome, email, senha, igreja, tipoUsuario = null) => api.post('/auth/register', { nome, email, senha, igreja, tipo_usuario: tipoUsuario });
+export const register = (nome, email, senha, igreja, tipoUsuario = null, telefone = null) => api.post('/auth/register', { nome, email, senha, igreja, tipo_usuario: tipoUsuario, telefone });
+
+// Configurações (apenas admin)
+export const getConfiguracoes = () => api.get('/configuracoes');
+export const getConfiguracao = (chave) => api.get(`/configuracoes/${chave}`);
+export const salvarConfiguracao = (chave, valor, descricao = null) => api.post('/configuracoes', { chave, valor, descricao });
+export const deletarConfiguracao = (chave) => api.delete(`/configuracoes/${chave}`);
 export const getMe = () => api.get('/auth/me');
 export const createUsuario = (data) => api.post('/auth/usuarios', data);
 export const getUsuarios = () => api.get('/auth/usuarios');
