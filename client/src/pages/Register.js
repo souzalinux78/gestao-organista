@@ -140,7 +140,8 @@ function Register() {
               onChange={(e) => setTelefone(e.target.value)}
               required
               placeholder="(00) 00000-0000"
-              pattern="[0-9()\s-]+"
+              inputMode="numeric"
+              pattern="[0-9() -]+"
             />
             <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
               Obrigatório para aprovação do administrador

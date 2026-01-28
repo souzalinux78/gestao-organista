@@ -202,37 +202,56 @@ router.post('/register', async (req, res) => {
     const userId = result.insertId;
 
     // Criar igreja automaticamente com o nome fornecido
+    // IMPORTANTE: em produção (FASE 5 multi-tenant), tenant_id pode ser NOT NULL.
+    // Então, se a coluna existir, já inserir com tenant_id para não falhar o INSERT.
+    const igrejasTemTenantId = await cachedColumnExists('igrejas', 'tenant_id');
+    const tenantIdParaIgreja = defaultTenantId || null;
+
+    const igrejaInsert = igrejasTemTenantId && tenantIdParaIgreja
+      ? {
+          sql: `INSERT INTO igrejas (
+            nome, endereco,
+            encarregado_local_nome, encarregado_local_telefone,
+            encarregado_regional_nome, encarregado_regional_telefone,
+            mesma_organista_ambas_funcoes,
+            tenant_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          values: [
+            igreja.trim(),
+            null,
+            null,
+            null,
+            null,
+            null,
+            0,
+            tenantIdParaIgreja
+          ]
+        }
+      : {
+          sql: `INSERT INTO igrejas (
+            nome, endereco, 
+            encarregado_local_nome, encarregado_local_telefone,
+            encarregado_regional_nome, encarregado_regional_telefone,
+            mesma_organista_ambas_funcoes
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          values: [
+            igreja.trim(),
+            null,
+            null,
+            null,
+            null,
+            null,
+            0
+          ]
+        };
+
     const [igrejaResult] = await pool.execute({
-      sql: `INSERT INTO igrejas (
-        nome, endereco, 
-        encarregado_local_nome, encarregado_local_telefone,
-        encarregado_regional_nome, encarregado_regional_telefone,
-        mesma_organista_ambas_funcoes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      values: [
-        igreja.trim(),
-        null,
-        null,
-        null,
-        null,
-        null,
-        0
-      ],
+      sql: igrejaInsert.sql,
+      values: igrejaInsert.values,
       timeout: dbTimeout
     });
 
     const igrejaId = igrejaResult.insertId;
-    
-    // Se igrejas têm tenant_id, atualizar a igreja criada com o tenant do usuário
-    const igrejasTemTenantId = await cachedColumnExists('igrejas', 'tenant_id');
-    
-    if (igrejasTemTenantId && defaultTenantId) {
-      await pool.execute({
-        sql: 'UPDATE igrejas SET tenant_id = ? WHERE id = ?',
-        values: [defaultTenantId, igrejaId],
-        timeout: dbTimeout
-      });
-    }
 
     // Associar usuário à igreja criada
     await pool.execute({
