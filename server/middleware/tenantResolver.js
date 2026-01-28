@@ -25,6 +25,15 @@ function tenantResolver(req, res, next) {
       logger.warn('tenantResolver chamado sem req.user. Middleware authenticate deve ser executado antes.');
       return res.status(401).json({ error: 'Não autenticado' });
     }
+
+    // ✅ Admin deve ter acesso global (multi-tenant): não restringir por tenant_id
+    // Motivo: admin normalmente precisa listar/gerenciar tudo.
+    // Usuários comuns continuam restritos ao próprio tenant.
+    if (req.user.role === 'admin') {
+      req.tenantId = null;
+      req.user.tenantId = null;
+      return next();
+    }
     
     // Obter tenant_id do usuário
     // Pode vir de:
@@ -33,21 +42,10 @@ function tenantResolver(req, res, next) {
     const tenantId = req.user.tenant_id || req.user.tenantId || null;
     
     if (!tenantId) {
-      // Se usuário não tem tenant_id, pode ser:
-      // - Dados legados (ainda não migrados) - FASE 5 deve ter corrigido isso
-      // - Admin global (pode acessar todos os tenants)
-      
-      // Para admin, permitir continuar sem tenant_id (acesso global)
-      if (req.user.role === 'admin') {
-        req.tenantId = null; // null = acesso a todos os tenants
-        logger.debug('Admin sem tenant_id - acesso global permitido');
-        return next();
-      }
-      
       // Para usuários comuns, tenant_id é obrigatório após FASE 5
       logger.warn(`Usuário ${req.user.id} sem tenant_id - dados podem não estar migrados`);
-      return res.status(403).json({ 
-        error: 'Usuário não associado a um tenant. Contate o administrador para migração.' 
+      return res.status(403).json({
+        error: 'Usuário não associado a um tenant. Contate o administrador para migração.'
       });
     }
     
@@ -74,10 +72,8 @@ function tenantResolver(req, res, next) {
  * @returns {number|null} - tenant_id ou null
  */
 function getTenantId(req) {
-  // Admin pode ter tenantId null (acesso global)
-  if (req.user && req.user.role === 'admin' && !req.tenantId) {
-    return null; // null = acesso a todos os tenants
-  }
+  // Admin é global
+  if (req.user && req.user.role === 'admin') return null;
   
   return req.tenantId || null;
 }
