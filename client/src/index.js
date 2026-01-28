@@ -2,6 +2,12 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import { logInitialPerformance } from './utils/performance';
+
+// Log de métricas de performance (apenas em desenvolvimento)
+if (process.env.NODE_ENV !== 'production') {
+  logInitialPerformance();
+}
 
 // Sistema de atualização automática - DESABILITADO para evitar loops infinitos
 // DESABILITADO COMPLETAMENTE - pode ser reativado se necessário com melhorias

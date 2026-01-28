@@ -1,10 +1,11 @@
 import React, { useState, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { isTokenExpired } from './utils/jwt';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import InstallPrompt from './components/InstallPrompt';
+import LazyLoadingFallback from './components/LazyLoadingFallback';
 import './App.css';
 
 const Organistas = lazy(() => import('./pages/Organistas'));
@@ -19,7 +20,7 @@ function PrivateRoute({ children }) {
   const { user, loading, logout } = useAuth();
   
   if (loading) {
-    return <div className="loading">Carregando...</div>;
+    return <LazyLoadingFallback />;
   }
   
   const token = localStorage.getItem('token');
@@ -54,7 +55,7 @@ function AppContent() {
     <div className="App">
       {user && <Header user={user} onLogout={logout} />}
       <div className="container">
-        <Suspense fallback={<div className="loading">Carregando...</div>}>
+        <Suspense fallback={<LazyLoadingFallback />}>
           <div className="page">
             <Routes>
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
