@@ -101,11 +101,11 @@ function Login() {
         <div className="login-info">
           <p><strong>Primeiro acesso?</strong></p>
           <p>
-            <Link to="/cadastro" style={{ color: '#2E86AB', fontWeight: '600', textDecoration: 'underline' }}>
+            <Link to="/cadastro" className="login-info__link">
               Clique aqui para se cadastrar
             </Link>
           </p>
-          <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '10px' }}>
+          <p className="login-info__text" style={{ marginTop: '10px' }}>
             Após o cadastro, aguarde a aprovação do administrador.
           </p>
         </div>

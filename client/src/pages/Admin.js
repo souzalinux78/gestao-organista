@@ -160,27 +160,20 @@ function Admin() {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, flex: '1 1 auto', minWidth: '200px' }}>Gerenciar Usuários</h2>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', flex: '0 1 auto' }}>
+        <div className="admin__filters">
+          <h2 className="admin__title">Gerenciar Usuários</h2>
+          <div className="admin__search-wrapper">
             <input
               type="text"
               placeholder="Pesquisar por nome..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ 
-                padding: '8px 12px', 
-                borderRadius: '10px', 
-                border: '2px solid var(--gray-medium)', 
-                fontSize: '16px', 
-                minWidth: '200px',
-                flex: '1 1 auto'
-              }}
+              className="admin__search-input"
             />
             <select
               value={filtroAprovacao}
               onChange={(e) => setFiltroAprovacao(e.target.value)}
-              style={{ padding: '8px', borderRadius: '10px', border: '2px solid var(--gray-medium)', fontSize: '16px', minWidth: '150px' }}
+              className="admin__filter-select"
             >
               <option value="todos">Todos</option>
               <option value="pendentes">Pendentes de Aprovação</option>

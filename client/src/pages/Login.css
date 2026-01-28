@@ -107,7 +107,24 @@ html.login-page {
 }
 
 .login-info p strong {
-  color: var(--text-dark);
+  color: var(--text-main);
+}
+
+.login-info__link {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: underline;
+  transition: color var(--transition-fast);
+}
+
+.login-info__link:hover {
+  color: var(--primary-hover);
+}
+
+.login-info__text {
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  color: var(--text-muted);
+  line-height: 1.5;
 }
 
 .login-card .form-group label {

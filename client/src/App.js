@@ -48,7 +48,7 @@ function AppContent() {
   const location = useLocation();
 
   if (loading) {
-    return <div className="loading">Carregando...</div>;
+    return <LazyLoadingFallback />;
   }
 
   return (
@@ -101,15 +101,11 @@ function Header({ user, onLogout }) {
   return (
     <div className="header">
       <div className="header__content">
-        <div style={{ flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div className="header__title-wrapper">
           <img 
             src={process.env.PUBLIC_URL + '/logo.png'} 
             alt="Logo" 
-            style={{ 
-              height: '50px', 
-              width: 'auto',
-              display: 'none' 
-            }}
+            className="header__logo"
             onError={(e) => {
               e.target.style.display = 'none';
             }}
@@ -117,10 +113,10 @@ function Header({ user, onLogout }) {
               e.target.style.display = 'block';
             }}
           />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontSize: 'clamp(1.2rem, 4vw, 1.75rem)', wordBreak: 'break-word', margin: 0, fontWeight: 700 }}>🎹 Sistema de Gestão de Organistas</h1>
+          <div className="header__title-container">
+            <h1 className="header__title">🎹 Sistema de Gestão de Organistas</h1>
             {user && (
-              <div style={{ fontSize: '0.875rem', marginTop: '6px', color: 'var(--text-muted)' }}>
+              <div className="header__user-info">
                 {user.nome} ({user.role === 'admin' ? 'Administrador' : 'Usuário'})
               </div>
             )}
@@ -129,8 +125,7 @@ function Header({ user, onLogout }) {
         {user && (
           <button 
             onClick={onLogout} 
-            className="btn btn-secondary" 
-            style={{ marginLeft: 'auto' }}
+            className="btn btn-secondary header__logout-btn"
           >
             Sair
           </button>
@@ -138,7 +133,6 @@ function Header({ user, onLogout }) {
         <button 
           className="btn btn-secondary mobile-menu-toggle"
           onClick={() => setMenuOpen(!menuOpen)}
-          style={{ display: 'none', minWidth: '44px', minHeight: '44px' }}
           aria-label="Toggle menu"
         >
           {menuOpen ? '✕' : '☰'}
@@ -188,7 +182,7 @@ function Home({ user }) {
       <div className="card">
         <h2>Bem-vindo, {user?.nome}!</h2>
         <p>Use o menu acima para navegar pelas funcionalidades:</p>
-        <ul style={{ marginTop: '20px', paddingLeft: '20px' }}>
+        <ul className="home__features-list">
           <li><strong>Organistas:</strong> Cadastre e gerencie as organistas</li>
           <li><strong>Igrejas:</strong> {user?.role === 'admin' ? 'Cadastre e gerencie igrejas' : 'Visualize e gerencie sua igreja'}</li>
           <li><strong>Cultos:</strong> Configure dias e horários de cultos</li>
@@ -199,9 +193,9 @@ function Home({ user }) {
         </ul>
         
         {igrejas.length > 0 && (
-          <div style={{ marginTop: '30px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' }}>
-            <h3 style={{ marginBottom: '10px' }}>Suas Igrejas:</h3>
-            <ul style={{ margin: 0, paddingLeft: '20px' }}>
+          <div className="home__igrejas-card">
+            <h3 className="home__igrejas-title">Suas Igrejas:</h3>
+            <ul className="home__igrejas-list">
               {igrejas.map(igreja => (
                 <li key={igreja.id}>{igreja.nome}</li>
               ))}

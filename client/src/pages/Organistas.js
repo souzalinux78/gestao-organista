@@ -194,7 +194,7 @@ function Organistas({ user }) {
         />
 
         {showForm && (
-          <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+          <form onSubmit={handleSubmit} className="organistas__form">
             <div className="form-group">
               <label>Numeração (ordem do rodízio)</label>
               <input
@@ -204,7 +204,7 @@ function Organistas({ user }) {
                 placeholder="Ex: 1"
                 min="1"
               />
-              <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+              <small className="form-group__hint">
                 Use 1,2,3... para definir a ordem do rodízio. Se deixar vazio, a organista fica sem numeração.
               </small>
             </div>
@@ -234,39 +234,27 @@ function Organistas({ user }) {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="form-group form-group--checkbox">
               <input
                 type="checkbox"
                 id="oficializada"
                 checked={formData.oficializada}
                 onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
-                style={{ 
-                  width: '20px', 
-                  height: '20px', 
-                  cursor: 'pointer',
-                  margin: 0,
-                  flexShrink: 0
-                }}
+                className="checkbox-input"
               />
-              <label htmlFor="oficializada" style={{ cursor: 'pointer', margin: 0, fontSize: '16px', fontWeight: '500', userSelect: 'none' }}>
+              <label htmlFor="oficializada" className="checkbox-label">
                 Oficializada
               </label>
             </div>
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="form-group form-group--checkbox">
               <input
                 type="checkbox"
                 id="ativa"
                 checked={formData.ativa}
                 onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
-                style={{ 
-                  width: '20px', 
-                  height: '20px', 
-                  cursor: 'pointer',
-                  margin: 0,
-                  flexShrink: 0
-                }}
+                className="checkbox-input"
               />
-              <label htmlFor="ativa" style={{ cursor: 'pointer', margin: 0, fontSize: '16px', fontWeight: '500', userSelect: 'none' }}>
+              <label htmlFor="ativa" className="checkbox-label">
                 Ativa
               </label>
             </div>
@@ -277,12 +265,12 @@ function Organistas({ user }) {
         )}
 
         {user?.role === 'admin' && (
-          <div className="form-group" style={{ marginTop: '20px', marginBottom: '20px' }}>
+          <div className="form-group organistas__filter">
             <label>Filtrar por Igreja</label>
             <select
               value={filtroIgreja}
               onChange={(e) => setFiltroIgreja(e.target.value)}
-              style={{ fontSize: '16px', width: '100%', maxWidth: '400px' }}
+              className="organistas__filter-select"
             >
               <option value="">Todas as igrejas</option>
               {igrejas.map(igreja => (
@@ -313,10 +301,10 @@ function Organistas({ user }) {
               <tbody>
                 {organistasFiltradas.map(organista => (
                   <tr key={organista.id}>
-                    <td data-label="Nº" style={{ fontWeight: '600' }}>{organista.ordem ?? '-'}</td>
-                    <td data-label="Nome" style={{ wordBreak: 'break-word' }}>{organista.nome}</td>
+                    <td data-label="Nº" className="table__cell--bold">{organista.ordem ?? '-'}</td>
+                    <td data-label="Nome" className="table__cell--break">{organista.nome}</td>
                     <td data-label="Telefone">{organista.telefone || '-'}</td>
-                    <td data-label="Email" style={{ wordBreak: 'break-word' }}>{organista.email || '-'}</td>
+                    <td data-label="Email" className="table__cell--break">{organista.email || '-'}</td>
                     <td data-label="Oficializada">{organista.oficializada === 1 ? 'Sim' : 'Não'}</td>
                     <td data-label="Ativa">{organista.ativa === 1 ? 'Sim' : 'Não'}</td>
                     <td data-label="Ações">
