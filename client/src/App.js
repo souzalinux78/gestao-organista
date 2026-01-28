@@ -118,9 +118,9 @@ function Header({ user, onLogout }) {
             }}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontSize: 'clamp(1.2rem, 4vw, 1.75rem)', wordBreak: 'break-word', margin: 0, fontWeight: 600 }}>🎹 Sistema de Gestão de Organistas</h1>
+            <h1 style={{ fontSize: 'clamp(1.2rem, 4vw, 1.75rem)', wordBreak: 'break-word', margin: 0, fontWeight: 600, color: '#FFFFFF' }}>🎹 Sistema de Gestão de Organistas</h1>
             {user && (
-              <div style={{ fontSize: '0.875rem', marginTop: '6px', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '0.875rem', marginTop: '6px', color: '#CBD5E1' }}>
                 {user.nome} ({user.role === 'admin' ? 'Administrador' : 'Usuário'})
               </div>
             )}
