@@ -102,8 +102,8 @@ function Relatorios({ user }) {
           </div>
         )}
 
-        <div className="btn-row" style={{ marginTop: 0 }}>
-          <div className="form-group" style={{ flex: '1 1 auto', minWidth: '200px' }}>
+        <div className="btn-row btn-row--no-margin">
+          <div className="form-group form-group--flex">
             <label>Filtrar por Igreja</label>
             <select
               value={filtros.igreja_id}
@@ -117,7 +117,7 @@ function Relatorios({ user }) {
               ))}
             </select>
           </div>
-          <div className="form-group" style={{ flex: '1 1 auto', minWidth: '150px' }}>
+          <div className="form-group form-group--flex-sm">
             <label>Período Início</label>
             <input
               type="date"
@@ -125,7 +125,7 @@ function Relatorios({ user }) {
               onChange={(e) => setFiltros({ ...filtros, periodo_inicio: e.target.value })}
             />
           </div>
-          <div className="form-group" style={{ flex: '1 1 auto', minWidth: '150px' }}>
+          <div className="form-group form-group--flex-sm">
             <label>Período Fim</label>
             <input
               type="date"

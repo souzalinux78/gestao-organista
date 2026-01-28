@@ -513,9 +513,9 @@ function Rodizios({ user }) {
       <div className="card">
         <h2>Rodízios</h2>
         
-        <div className="btn-row" style={{ marginTop: 0 }}>
+        <div className="btn-row btn-row--no-margin">
           {user?.role === 'admin' ? (
-            <div className="form-group" style={{ flex: '1 1 auto', minWidth: '200px' }}>
+            <div className="form-group form-group--flex">
               <label>Filtrar por Igreja</label>
               <select
                 value={filtros.igreja_id}
@@ -530,7 +530,7 @@ function Rodizios({ user }) {
               </select>
             </div>
           ) : null}
-          <div className="form-group" style={{ flex: '1 1 auto', minWidth: '150px' }}>
+          <div className="form-group form-group--flex-sm">
             <label>Período Início</label>
             <input
               type="date"
@@ -538,7 +538,7 @@ function Rodizios({ user }) {
               onChange={(e) => setFiltros({ ...filtros, periodo_inicio: e.target.value })}
             />
           </div>
-          <div className="form-group" style={{ flex: '1 1 auto', minWidth: '150px' }}>
+          <div className="form-group form-group--flex-sm">
             <label>Período Fim</label>
             <input
               type="date"
@@ -547,7 +547,7 @@ function Rodizios({ user }) {
             />
           </div>
           {filtros.igreja_id && (
-            <button className="btn btn-success" onClick={handleGerarPDF} style={{ whiteSpace: 'nowrap' }}>
+            <button className="btn btn-success btn-nowrap" onClick={handleGerarPDF}>
               📄 Gerar PDF
             </button>
           )}
@@ -602,7 +602,7 @@ function Rodizios({ user }) {
                     <td>{rodizio.organista_telefone || '-'}</td>
                     <td>
                       {editandoRodizio === rodizio.id ? (
-                        <div className="btn-row" style={{ marginTop: 0, gap: '5px' }}>
+                        <div className="btn-row btn-row--no-margin actions-inline">
                           <button
                             className="btn btn-success"
                             onClick={() => handleSalvarEdicao(rodizio.id)}

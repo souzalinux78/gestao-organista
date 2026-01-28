@@ -220,7 +220,7 @@ function Cultos({ user }) {
               <tbody>
                 {cultos.map(culto => (
                   <tr key={culto.id}>
-                    <td data-label="Igreja" style={{ wordBreak: 'break-word' }}>{culto.igreja_nome}</td>
+                    <td data-label="Igreja" className="td-wrap">{culto.igreja_nome}</td>
                     <td data-label="Dia da Semana">{culto.dia_semana}</td>
                     <td data-label="Hora">{culto.hora ? culto.hora.substring(0, 5) : '-'}</td>
                     <td data-label="Ativo">{culto.ativo === 1 ? 'Sim' : 'Não'}</td>

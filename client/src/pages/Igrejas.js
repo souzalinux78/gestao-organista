@@ -356,7 +356,7 @@ function Igrejas({ user }) {
             {allOrganistas.filter(o => !organistasIgreja.find(oi => oi.id === o.id)).length === 0 ? (
               <div className="callout">
                 <strong className="callout__title">⚠️ Nenhuma organista disponível</strong>
-                <p className="form-hint" style={{ marginTop: '6px' }}>
+                <p className="form-hint form-hint--spaced">
                   Todas as organistas oficializadas já estão associadas a esta igreja, ou não há organistas marcadas como "Oficializada" e "Ativa".
                   <br />
                   Vá em "Organistas" e verifique se há organistas marcadas como oficializadas.
@@ -382,15 +382,15 @@ function Igrejas({ user }) {
                     ))}
                 </select>
                 {allOrganistas.filter(o => !organistasIgreja.find(oi => oi.id === o.id)).length > 0 ? (
-                  <p className="form-hint" style={{ color: 'var(--success)', fontWeight: 700 }}>
+                  <p className="form-hint form-hint--success">
                     ✅ {allOrganistas.filter(o => !organistasIgreja.find(oi => oi.id === o.id)).length} organista(s) disponível(is) para adicionar
                   </p>
                 ) : allOrganistas.length > 0 ? (
-                  <p className="form-hint" style={{ color: '#92400E', fontWeight: 700 }}>
+                  <p className="form-hint form-hint--warn">
                     ⚠️ Todas as organistas oficializadas já estão associadas a esta igreja
                   </p>
                 ) : (
-                  <p className="form-hint" style={{ color: 'var(--danger)', fontWeight: 700 }}>
+                  <p className="form-hint form-hint--danger">
                     ❌ Nenhuma organista oficializada e ativa cadastrada no sistema
                   </p>
                 )}
@@ -401,7 +401,7 @@ function Igrejas({ user }) {
             {organistasIgreja.length === 0 ? (
               <div className="callout">
                 <strong className="callout__title">⚠️ Nenhuma organista oficializada associada a esta igreja</strong>
-                <p className="form-hint" style={{ marginTop: '8px' }}>
+                <p className="form-hint form-hint--spaced">
                   <strong>Para gerar rodízios, você precisa adicionar organistas acima.</strong>
                   <br />
                   Se não aparecer nenhuma organista no dropdown, verifique:
