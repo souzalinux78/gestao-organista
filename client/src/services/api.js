@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { isTokenExpired } from './utils/jwt';
+import { isTokenExpired } from '../utils/jwt';
 
 const api = axios.create({
   baseURL: '/api',
