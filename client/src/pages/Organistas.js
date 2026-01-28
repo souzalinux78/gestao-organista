@@ -194,7 +194,7 @@ function Organistas({ user }) {
         />
 
         {showForm && (
-          <form onSubmit={handleSubmit} className="organistas__form">
+          <form onSubmit={handleSubmit} className="form--spaced">
             <div className="form-group">
               <label>Numeração (ordem do rodízio)</label>
               <input
@@ -204,7 +204,7 @@ function Organistas({ user }) {
                 placeholder="Ex: 1"
                 min="1"
               />
-              <small className="form-group__hint">
+              <small className="form-hint">
                 Use 1,2,3... para definir a ordem do rodízio. Se deixar vazio, a organista fica sem numeração.
               </small>
             </div>
@@ -265,12 +265,12 @@ function Organistas({ user }) {
         )}
 
         {user?.role === 'admin' && (
-          <div className="form-group organistas__filter">
+          <div className="filter-row">
             <label>Filtrar por Igreja</label>
             <select
               value={filtroIgreja}
               onChange={(e) => setFiltroIgreja(e.target.value)}
-              className="organistas__filter-select"
+              className="filter-select"
             >
               <option value="">Todas as igrejas</option>
               {igrejas.map(igreja => (

@@ -363,28 +363,26 @@ function Rodizios({ user }) {
           <div className={`alert alert-${alert.type === 'error' ? 'error' : 'success'}`}>
             {alert.message}
             {alert.type === 'error' && alert.message.includes('organista oficializada associada') && gerarForm.igreja_id && (
-              <div style={{ marginTop: '15px', padding: '15px', background: 'rgba(255,255,255,0.3)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.5)' }}>
-                <strong style={{ display: 'block', marginBottom: '10px' }}>🔧 Como resolver:</strong>
-                <ol style={{ margin: '5px 0 0 20px', padding: 0, lineHeight: '1.8' }}>
+              <div className="callout">
+                <strong className="callout__title">🔧 Como resolver:</strong>
+                <ol className="callout__list">
                   <li>Vá em <strong>"Igrejas"</strong> no menu superior</li>
                   <li>Encontre a igreja <strong>"{igrejas.find(i => i.id.toString() === gerarForm.igreja_id)?.nome || 'selecionada'}"</strong></li>
                   <li>Clique no botão verde <strong>"Organistas"</strong> na coluna "Ações"</li>
                   <li>No modal, selecione a organista no dropdown</li>
                   <li>Ela será adicionada automaticamente à igreja</li>
                 </ol>
-                <button 
-                  onClick={() => navigate('/igrejas')}
-                  className="btn btn-primary"
-                  style={{ marginTop: '15px', fontSize: '14px' }}
-                >
-                  Ir para Igrejas →
-                </button>
+                <div className="callout__actions">
+                  <button onClick={() => navigate('/igrejas')} className="btn btn-primary">
+                    Ir para Igrejas →
+                  </button>
+                </div>
               </div>
             )}
           </div>
         )}
         
-        <form onSubmit={handleGerarRodizio} style={{ marginTop: '20px' }}>
+        <form onSubmit={handleGerarRodizio} className="form--spaced">
           {user?.role === 'admin' ? (
             <div className="form-group">
               <label>Igreja *</label>
@@ -408,7 +406,7 @@ function Rodizios({ user }) {
                 type="text"
                 value={igrejas.find(i => i.id.toString() === gerarForm.igreja_id)?.nome || ''}
                 disabled
-                style={{ background: '#f5f5f5' }}
+                className="input-readonly"
               />
             </div>
           )}
@@ -430,9 +428,8 @@ function Rodizios({ user }) {
               type="date"
               value={gerarForm.data_inicial}
               onChange={(e) => setGerarForm({ ...gerarForm, data_inicial: e.target.value })}
-              style={{ fontSize: '16px' }}
             />
-            <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+            <small className="form-hint">
               Selecione a data a partir da qual deseja gerar o rodízio. Se deixar em branco, começará a partir de hoje.
             </small>
           </div>
@@ -442,7 +439,6 @@ function Rodizios({ user }) {
               <select
                 value={gerarForm.organista_inicial}
                 onChange={(e) => setGerarForm({ ...gerarForm, organista_inicial: e.target.value })}
-                style={{ fontSize: '16px' }}
               >
                 <option value="">Começar pela primeira organista da sequência</option>
                 {organistasIgreja.map((organista, index) => (
@@ -451,7 +447,7 @@ function Rodizios({ user }) {
                   </option>
                 ))}
               </select>
-              <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+              <small className="form-hint">
                 Escolha qual organista da sequência deseja começar. Se deixar em branco, começará pela primeira.
               </small>
             </div>
@@ -463,7 +459,6 @@ function Rodizios({ user }) {
                 value={gerarForm.ciclo_inicial}
                 onChange={(e) => setGerarForm({ ...gerarForm, ciclo_inicial: e.target.value })}
                 required
-                style={{ fontSize: '16px' }}
               >
                 <option value="">Selecione o ciclo inicial</option>
                 {Array.from({ length: cultosIgreja.length }, (_, i) => i + 1).map(ciclo => (
@@ -472,15 +467,15 @@ function Rodizios({ user }) {
                   </option>
                 ))}
               </select>
-              <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>
+              <small className="form-hint">
                 Esta igreja tem {cultosIgreja.length} culto(s) cadastrado(s). Escolha de qual ciclo começar (1 a {cultosIgreja.length}).
                 <br />
                 <strong>Exemplo:</strong> Se escolher Ciclo 2, o rodízio começará invertendo os 2 primeiros organistas.
               </small>
             </div>
           )}
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button type="submit" className="btn btn-primary" disabled={loadingGerar} style={{ flex: '1 1 auto', minWidth: '150px' }}>
+          <div className="btn-row">
+            <button type="submit" className="btn btn-primary" disabled={loadingGerar}>
               {loadingGerar ? 'Gerando...' : 'Gerar Rodízio'}
             </button>
             {gerarForm.igreja_id && (
@@ -490,7 +485,6 @@ function Rodizios({ user }) {
                   className="btn btn-secondary" 
                   onClick={handleLimparERefazer}
                   disabled={loadingGerar}
-                  style={{ background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)', color: 'white', flex: '1 1 auto', minWidth: '150px' }}
                 >
                   {loadingGerar ? 'Processando...' : '🗑️ Limpar e Refazer'}
                 </button>
@@ -499,7 +493,6 @@ function Rodizios({ user }) {
                   className="btn btn-danger" 
                   onClick={handleLimparRodizios}
                   disabled={loadingGerar}
-                  style={{ flex: '1 1 auto', minWidth: '150px' }}
                 >
                   {loadingGerar ? 'Limpando...' : '🗑️ Limpar Rodízios'}
                 </button>
@@ -510,7 +503,6 @@ function Rodizios({ user }) {
               className="btn btn-primary" 
               onClick={handleTestarWebhook}
               disabled={loadingWebhook || loadingGerar}
-              style={{ background: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)', color: 'white', flex: '1 1 auto', minWidth: '150px' }}
             >
               {loadingWebhook ? 'Testando...' : '🔔 Testar Webhook'}
             </button>
@@ -521,14 +513,13 @@ function Rodizios({ user }) {
       <div className="card">
         <h2>Rodízios</h2>
         
-        <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div className="btn-row" style={{ marginTop: 0 }}>
           {user?.role === 'admin' ? (
             <div className="form-group" style={{ flex: '1 1 auto', minWidth: '200px' }}>
               <label>Filtrar por Igreja</label>
               <select
                 value={filtros.igreja_id}
                 onChange={(e) => setFiltros({ ...filtros, igreja_id: e.target.value })}
-                style={{ fontSize: '16px' }}
               >
                 <option value="">Todas as igrejas</option>
                 {igrejas.map(igreja => (
@@ -545,7 +536,6 @@ function Rodizios({ user }) {
               type="date"
               value={filtros.periodo_inicio}
               onChange={(e) => setFiltros({ ...filtros, periodo_inicio: e.target.value })}
-              style={{ fontSize: '16px' }}
             />
           </div>
           <div className="form-group" style={{ flex: '1 1 auto', minWidth: '150px' }}>
@@ -554,7 +544,6 @@ function Rodizios({ user }) {
               type="date"
               value={filtros.periodo_fim}
               onChange={(e) => setFiltros({ ...filtros, periodo_fim: e.target.value })}
-              style={{ fontSize: '16px' }}
             />
           </div>
           {filtros.igreja_id && (
@@ -583,33 +572,21 @@ function Rodizios({ user }) {
               <tbody>
                 {rodizios.map(rodizio => (
                   <tr key={rodizio.id}>
-                    <td style={{ fontWeight: '500', whiteSpace: 'nowrap' }}>{formatarData(rodizio.data_culto)}</td>
-                    <td style={{ textTransform: 'capitalize' }}>{rodizio.dia_semana}</td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
+                    <td className="td-strong table__nowrap">{formatarData(rodizio.data_culto)}</td>
+                    <td className="text-capitalize">{rodizio.dia_semana}</td>
+                    <td className="table__nowrap">
                       {rodizio.hora_culto ? (rodizio.hora_culto.includes(':') ? rodizio.hora_culto.split(':').slice(0, 2).join(':') : rodizio.hora_culto) : '-'}
                     </td>
                     <td>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        background: rodizio.funcao === 'meia_hora' 
-                          ? 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)' 
-                          : 'linear-gradient(135deg, #2E86AB 0%, #4A90E2 100%)',
-                        color: 'white',
-                        display: 'inline-block',
-                        whiteSpace: 'nowrap'
-                      }}>
+                      <span className={`badge ${rodizio.funcao === 'meia_hora' ? 'badge--warn' : 'badge--info'}`}>
                         {rodizio.funcao === 'meia_hora' ? '🎵 Meia Hora' : '🎹 Tocar no Culto'}
                       </span>
                     </td>
-                    <td style={{ wordBreak: 'break-word' }}>
+                    <td className="table__cell--break">
                       {editandoRodizio === rodizio.id ? (
                         <select
                           value={organistaEditando}
                           onChange={(e) => setOrganistaEditando(e.target.value)}
-                          style={{ fontSize: '14px', padding: '4px 8px', minWidth: '150px' }}
                         >
                           <option value="">Selecione...</option>
                           {organistasIgreja.map(org => (
@@ -625,18 +602,16 @@ function Rodizios({ user }) {
                     <td>{rodizio.organista_telefone || '-'}</td>
                     <td>
                       {editandoRodizio === rodizio.id ? (
-                        <div style={{ display: 'flex', gap: '5px' }}>
+                        <div className="btn-row" style={{ marginTop: 0, gap: '5px' }}>
                           <button
                             className="btn btn-success"
                             onClick={() => handleSalvarEdicao(rodizio.id)}
-                            style={{ fontSize: '12px', padding: '4px 8px' }}
                           >
                             ✓ Salvar
                           </button>
                           <button
                             className="btn btn-secondary"
                             onClick={handleCancelarEdicao}
-                            style={{ fontSize: '12px', padding: '4px 8px' }}
                           >
                             ✕ Cancelar
                           </button>
@@ -651,7 +626,6 @@ function Rodizios({ user }) {
                             }
                             handleIniciarEdicao(rodizio);
                           }}
-                          style={{ fontSize: '12px', padding: '4px 8px' }}
                         >
                           ✏️ Editar
                         </button>

@@ -22,6 +22,89 @@
   line-height: 1.5;
 }
 
+.filter-row {
+  margin-top: var(--spacing-lg);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-xs);
+  max-width: 520px;
+}
+
+.filter-select {
+  width: 100%;
+}
+
+.btn-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: var(--spacing-md);
+}
+
+.btn-row .btn {
+  flex: 1 1 auto;
+  min-width: 150px;
+}
+
+.callout {
+  margin-top: var(--spacing-md);
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-hover);
+}
+
+.callout__title {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.callout__list {
+  margin: 0.25rem 0 0 1.25rem;
+  padding: 0;
+  line-height: 1.8;
+  color: var(--text-muted);
+}
+
+.callout__actions {
+  margin-top: var(--spacing-md);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.badge--warn {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #92400E;
+}
+
+.badge--info {
+  background: rgba(59, 130, 246, 0.10);
+  border-color: rgba(59, 130, 246, 0.22);
+  color: #1E40AF;
+}
+
+.table__nowrap {
+  white-space: nowrap;
+}
+
+.text-capitalize {
+  text-transform: capitalize;
+}
+
 .form-group--checkbox {
   display: flex;
   align-items: center;
