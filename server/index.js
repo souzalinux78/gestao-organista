@@ -100,6 +100,10 @@ app.use(session({
   }
 }));
 
+// Importar middlewares de erro
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const logger = require('./utils/logger');
+
 // Importar rotas
 const authRoutes = require('./routes/auth');
 const organistasRoutes = require('./routes/organistas');
@@ -120,6 +124,19 @@ if (rateLimit && loginLimiter) {
     next();
   });
 }
+// Middleware de logging de requisições (apenas em desenvolvimento ou se LOG_LEVEL=debug)
+// Deve vir ANTES das rotas para capturar todas as requisições
+if (process.env.NODE_ENV !== 'production' || process.env.LOG_LEVEL === 'debug') {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      logger.http(req, res, duration);
+    });
+    next();
+  });
+}
+
 app.use('/api/auth', authRoutes);
 
 // Rotas protegidas (aplicar rate limit geral apenas nas rotas protegidas)
@@ -183,10 +200,16 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+// Middleware de erro 404 (deve vir ANTES do errorHandler, mas DEPOIS das rotas)
+app.use(notFoundHandler);
+
+// Middleware de tratamento de erros (deve ser o ÚLTIMO)
+app.use(errorHandler);
+
 // Inicializar banco de dados
 const db = require('./database/db');
 db.init().catch(err => {
-  console.error('Erro ao inicializar banco de dados:', err);
+  logger.error('Erro ao inicializar banco de dados', { error: err.message, stack: err.stack });
   process.exit(1);
 });
 
@@ -196,20 +219,30 @@ scheduler.init();
 
 // Iniciar servidor com tratamento de erros
 app.listen(PORT, () => {
-  console.log(`✅ Servidor rodando na porta ${PORT}`);
-  console.log(`✅ Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`Servidor rodando na porta ${PORT}`, { 
+    port: PORT, 
+    env: process.env.NODE_ENV || 'development' 
+  });
+  
   if (!helmet) {
-    console.warn('⚠️  Helmet não disponível - segurança reduzida');
+    logger.warn('Helmet não disponível - segurança reduzida');
   }
   if (!rateLimit) {
-    console.warn('⚠️  Rate limiting não disponível - execute: npm install express-rate-limit');
+    logger.warn('Rate limiting não disponível - execute: npm install express-rate-limit');
   }
 }).on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Erro: Porta ${PORT} já está em uso!`);
-    console.error('   Solução: Pare o processo que está usando a porta ou mude a porta no .env');
+    logger.error(`Porta ${PORT} já está em uso`, { 
+      port: PORT, 
+      code: err.code 
+    });
+    logger.info('Solução: Pare o processo que está usando a porta ou mude a porta no .env');
   } else {
-    console.error('❌ Erro ao iniciar servidor:', err);
+    logger.error('Erro ao iniciar servidor', { 
+      error: err.message, 
+      code: err.code,
+      stack: err.stack 
+    });
   }
   process.exit(1);
 });

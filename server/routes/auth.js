@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken');
 const db = require('../database/db');
 const { authenticate, isAdmin, getUserIgrejas } = require('../middleware/auth');
 const { getConfig } = require('../config/env');
+const { validate, schemas } = require('../middleware/validation');
+const { asyncHandler, AppError } = require('../middleware/errorHandler');
+const logger = require('../utils/logger');
 
 // Cadastro público (sem autenticação)
 router.post('/register', async (req, res) => {
@@ -126,74 +129,69 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login
-router.post('/login', async (req, res) => {
-  try {
-    const { email, senha } = req.body;
+// Login (com validação e errorHandler)
+router.post('/login', validate(schemas.login), asyncHandler(async (req, res) => {
+  const { email, senha } = req.body; // Já validado e sanitizado
 
-    if (!email || !senha) {
-      return res.status(400).json({ error: 'Email e senha são obrigatórios' });
-    }
+  const pool = db.getDb();
+  const [users] = await pool.execute(
+    'SELECT * FROM usuarios WHERE email = ?',
+    [email]
+  );
 
-    const pool = db.getDb();
-    const [users] = await pool.execute(
-      'SELECT * FROM usuarios WHERE email = ?',
-      [email]
-    );
-
-    if (users.length === 0) {
-      return res.status(401).json({ error: 'Email ou senha inválidos' });
-    }
-
-    const user = users[0];
-
-    if (!user.ativo) {
-      return res.status(401).json({ error: 'Usuário inativo' });
-    }
-
-    // Verificar se usuário está aprovado (exceto admin que sempre está aprovado)
-    if (user.role !== 'admin' && !user.aprovado) {
-      return res.status(403).json({ 
-        error: 'Sua conta ainda não foi aprovada pelo administrador. Aguarde a aprovação para acessar o sistema.' 
-      });
-    }
-
-    const senhaValida = await bcrypt.compare(senha, user.senha_hash);
-
-    if (!senhaValida) {
-      return res.status(401).json({ error: 'Email ou senha inválidos' });
-    }
-
-    // Buscar igrejas do usuário
-    const igrejas = await getUserIgrejas(user.id, user.role === 'admin');
-
-    // Gerar token com JWT_SECRET validado
-    const envConfig = getConfig();
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role, tipo_usuario: user.tipo_usuario },
-      envConfig.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    // Remover senha_hash da resposta
-    delete user.senha_hash;
-
-    res.json({
-      token,
-      user: {
-        id: user.id,
-        nome: user.nome,
-        email: user.email,
-        role: user.role,
-        tipo_usuario: user.tipo_usuario
-      },
-      igrejas
-    });
-  } catch (error) {
-    console.error('Erro no login:', error);
-    res.status(500).json({ error: 'Erro ao fazer login' });
+  if (users.length === 0) {
+    throw new AppError('Email ou senha inválidos', 401, 'INVALID_CREDENTIALS');
   }
-});
+
+  const user = users[0];
+
+  if (!user.ativo) {
+    throw new AppError('Usuário inativo', 401, 'USER_INACTIVE');
+  }
+
+  // Verificar se usuário está aprovado (exceto admin que sempre está aprovado)
+  if (user.role !== 'admin' && !user.aprovado) {
+    throw new AppError(
+      'Sua conta ainda não foi aprovada pelo administrador. Aguarde a aprovação para acessar o sistema.',
+      403,
+      'USER_NOT_APPROVED'
+    );
+  }
+
+  const senhaValida = await bcrypt.compare(senha, user.senha_hash);
+
+  if (!senhaValida) {
+    throw new AppError('Email ou senha inválidos', 401, 'INVALID_CREDENTIALS');
+  }
+
+  // Buscar igrejas do usuário
+  const igrejas = await getUserIgrejas(user.id, user.role === 'admin');
+
+  // Gerar token com JWT_SECRET validado
+  const envConfig = getConfig();
+  const token = jwt.sign(
+    { userId: user.id, email: user.email, role: user.role, tipo_usuario: user.tipo_usuario },
+    envConfig.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  // Remover senha_hash da resposta
+  delete user.senha_hash;
+
+  logger.info('Login realizado com sucesso', { userId: user.id, email: user.email });
+
+  res.json({
+    token,
+    user: {
+      id: user.id,
+      nome: user.nome,
+      email: user.email,
+      role: user.role,
+      tipo_usuario: user.tipo_usuario
+    },
+    igrejas
+  });
+}));
 
 // Verificar token (usado pelo frontend)
 router.get('/me', authenticate, async (req, res) => {
