@@ -122,21 +122,23 @@ function Header({ user, onLogout }) {
             )}
           </div>
         </div>
-        {user && (
+        <div className="header__actions">
+          {user && (
+            <button 
+              onClick={onLogout} 
+              className="btn btn-secondary header__logout-btn"
+            >
+              Sair
+            </button>
+          )}
           <button 
-            onClick={onLogout} 
-            className="btn btn-secondary header__logout-btn"
+            className="btn btn-secondary mobile-menu-toggle"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
           >
-            Sair
+            {menuOpen ? '✕' : '☰'}
           </button>
-        )}
-        <button 
-          className="btn btn-secondary mobile-menu-toggle"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
-        >
-          {menuOpen ? '✕' : '☰'}
-        </button>
+        </div>
       </div>
       <nav className={`nav ${menuOpen ? 'nav-open' : ''}`}>
         <Link to="/" className={location.pathname === '/' ? 'active' : ''} onClick={() => setMenuOpen(false)}>

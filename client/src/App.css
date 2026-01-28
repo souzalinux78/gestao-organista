@@ -34,31 +34,27 @@ body.login-page .App .container {
 
 /* Responsividade para Header */
 @media (max-width: 768px) {
-  .header > div {
+  .header__content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+  
+  .header__title-wrapper {
+    width: 100%;
+  }
+
+  .header__actions {
+    width: 100%;
     flex-direction: row;
-    align-items: center !important;
-    gap: 10px;
-    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-left: 0;
+    justify-content: flex-end;
   }
-
-  .header > div > div:first-child {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .header > div > div:first-child > div {
-    min-width: 0;
-  }
-
-  .header button:not(.mobile-menu-toggle) {
-    margin-left: auto !important;
-    flex-shrink: 0;
+  
+  .header__actions .btn {
+    flex: 0 0 auto;
     min-width: 80px;
-  }
-
-  .mobile-menu-toggle {
-    order: 3;
-    margin-left: 10px !important;
   }
 }
 
@@ -109,8 +105,15 @@ body.login-page .App .container {
   line-height: 1.5;
 }
 
-.header__logout-btn {
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   margin-left: auto;
+}
+
+.header__logout-btn {
+  flex-shrink: 0;
 }
 
 /* Home Page - Classes para remover estilos inline */
@@ -159,11 +162,44 @@ body.login-page .App .container {
   font-size: 1.5rem;
   align-items: center;
   justify-content: center;
+  background: var(--secondary) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--secondary) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.75rem 1rem !important;
+  font-weight: 600 !important;
+}
+
+.mobile-menu-toggle:hover:not(:disabled),
+.mobile-menu-toggle:focus:not(:disabled) {
+  background: var(--secondary-dark) !important;
+  color: #FFFFFF !important;
+  box-shadow: var(--shadow-md) !important;
+  border-color: var(--secondary-dark) !important;
+  transform: translateY(-1px);
+}
+
+.mobile-menu-toggle:active:not(:disabled) {
+  background: var(--secondary-dark) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transform: scale(0.98);
+  color: #FFFFFF !important;
 }
 
 @media (max-width: 768px) {
   .mobile-menu-toggle {
     display: flex !important;
+  }
+  
+  .header__actions {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    align-items: stretch;
+  }
+  
+  .header__actions .btn {
+    width: 100%;
   }
   
   .nav {

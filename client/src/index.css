@@ -1058,30 +1058,9 @@ button {
   line-height: 1.6;
 }
 
-/* Menu Mobile */
-.mobile-menu-toggle {
-  display: none !important;
-  min-width: 44px;
-  min-height: 44px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  color: var(--white);
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* Menu Mobile - Estilos movidos para App.css */
 
 @media (max-width: 768px) {
-  .mobile-menu-toggle {
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-  }
-
   .nav {
     max-height: 0;
     overflow: hidden;
