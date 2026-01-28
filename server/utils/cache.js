@@ -138,9 +138,63 @@ function invalidate(pattern) {
   cache.clearPattern(pattern);
 }
 
+/**
+ * Cache específico para metadados de schema (TTL longo: 1 hora)
+ * Evita queries repetidas a INFORMATION_SCHEMA
+ */
+const schemaCache = new SimpleCache(60 * 60 * 1000); // 1 hora
+
+/**
+ * Verificar se coluna existe (com cache)
+ * @param {string} tableName - Nome da tabela
+ * @param {string} columnName - Nome da coluna
+ * @returns {Promise<boolean>} - true se coluna existe
+ */
+async function cachedColumnExists(tableName, columnName) {
+  const cacheKey = `schema:${tableName}:${columnName}`;
+  const cached = schemaCache.get(cacheKey);
+  if (cached !== null) {
+    return cached;
+  }
+  
+  const db = require('../database/db');
+  const pool = db.getDb();
+  
+  try {
+    const [columns] = await pool.execute(`
+      SELECT COLUMN_NAME
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() 
+        AND TABLE_NAME = ? 
+        AND COLUMN_NAME = ?
+    `, [tableName, columnName]);
+    
+    const exists = columns.length > 0;
+    schemaCache.set(cacheKey, exists);
+    return exists;
+  } catch (error) {
+    // Em caso de erro, assumir que não existe e não cachear
+    console.warn(`[CACHE] Erro ao verificar coluna ${tableName}.${columnName}:`, error.message);
+    return false;
+  }
+}
+
+/**
+ * Invalidar cache de schema (chamar quando estrutura de tabela mudar)
+ */
+function invalidateSchemaCache(tableName = null) {
+  if (tableName) {
+    schemaCache.clearPattern(`schema:${tableName}:`);
+  } else {
+    schemaCache.clearPattern('schema:');
+  }
+}
+
 module.exports = {
   cache,
   cached,
   invalidate,
-  SimpleCache
+  SimpleCache,
+  cachedColumnExists,
+  invalidateSchemaCache
 };

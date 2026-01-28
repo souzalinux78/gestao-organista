@@ -43,21 +43,8 @@ router.post('/register', async (req, res) => {
     const senhaHash = await bcrypt.hash(senha, 10);
 
     // Criar usuário (não aprovado por padrão)
-    // Verificar se a coluna tipo_usuario existe
-    let temTipoUsuario = false;
-    try {
-      const [columns] = await pool.execute(`
-        SELECT COLUMN_NAME 
-        FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE TABLE_SCHEMA = DATABASE() 
-        AND TABLE_NAME = 'usuarios' 
-        AND COLUMN_NAME = 'tipo_usuario'
-      `);
-      temTipoUsuario = columns.length > 0;
-    } catch (error) {
-      // Se der erro, assumir que não existe
-      temTipoUsuario = false;
-    }
+    // Verificar se a coluna tipo_usuario existe (com cache)
+    const temTipoUsuario = await cachedColumnExists('usuarios', 'tipo_usuario');
     
     // Validar tipo_usuario se fornecido e se a coluna existe
     let tipoUsuarioValido = null;
@@ -246,14 +233,17 @@ router.post('/usuarios', authenticate, isAdmin, async (req, res) => {
 
     const userId = result.insertId;
 
-    // Associar usuário às igrejas se fornecido
+    // Associar usuário às igrejas se fornecido (paralelizado)
     if (igreja_ids && Array.isArray(igreja_ids) && igreja_ids.length > 0) {
-      for (const igrejaId of igreja_ids) {
-        await pool.execute(
-          'INSERT IGNORE INTO usuario_igreja (usuario_id, igreja_id) VALUES (?, ?)',
-          [userId, igrejaId]
-        );
-      }
+      // Usar Promise.all para paralelizar inserts
+      await Promise.all(
+        igreja_ids.map(igrejaId =>
+          pool.execute(
+            'INSERT IGNORE INTO usuario_igreja (usuario_id, igreja_id) VALUES (?, ?)',
+            [userId, igrejaId]
+          )
+        )
+      );
     }
 
     res.json({
@@ -363,14 +353,16 @@ router.put('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
       // Remover associações existentes
       await pool.execute('DELETE FROM usuario_igreja WHERE usuario_id = ?', [req.params.id]);
 
-      // Adicionar novas associações
+      // Adicionar novas associações (paralelizado)
       if (Array.isArray(igreja_ids) && igreja_ids.length > 0) {
-        for (const igrejaId of igreja_ids) {
-          await pool.execute(
-            'INSERT INTO usuario_igreja (usuario_id, igreja_id) VALUES (?, ?)',
-            [req.params.id, igrejaId]
-          );
-        }
+        await Promise.all(
+          igreja_ids.map(igrejaId =>
+            pool.execute(
+              'INSERT INTO usuario_igreja (usuario_id, igreja_id) VALUES (?, ?)',
+              [req.params.id, igrejaId]
+            )
+          )
+        );
       }
     }
 

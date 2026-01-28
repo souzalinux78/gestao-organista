@@ -354,18 +354,31 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
     try {
       const resultados = [];
 
-      // 1) Enviar webhook para cada organista (meia_hora e tocar_culto)
-      for (const r of rodiziosDoDia) {
-        await notificacaoService.enviarNotificacaoDiaCulto(r, false);
-        resultados.push({
-          organista: r.organista_nome,
-          telefone: r.organista_telefone,
-          data: r.data_culto,
-          hora: r.hora_culto,
-          funcao: r.funcao,
-          igreja: r.igreja_nome
-        });
-      }
+      // 1) Enviar webhook para cada organista (meia_hora e tocar_culto) - paralelizado
+      const notificacoesPromises = rodiziosDoDia.map(async (r) => {
+        try {
+          await notificacaoService.enviarNotificacaoDiaCulto(r, false);
+          return {
+            organista: r.organista_nome,
+            telefone: r.organista_telefone,
+            data: r.data_culto,
+            hora: r.hora_culto,
+            funcao: r.funcao,
+            igreja: r.igreja_nome,
+            sucesso: true
+          };
+        } catch (error) {
+          console.error(`Erro ao enviar notificação para ${r.organista_nome}:`, error.message);
+          return {
+            organista: r.organista_nome,
+            data: r.data_culto,
+            sucesso: false,
+            erro: error.message
+          };
+        }
+      });
+      
+      const resultados = await Promise.all(notificacoesPromises);
 
       // 2) Enviar 1 webhook consolidado para encarregados
       await notificacaoService.enviarNotificacaoEncarregados(rodiziosDoDia);
