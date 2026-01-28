@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getOrganistas, createOrganista, updateOrganista, deleteOrganista, getIgrejas, getOrganistasIgreja } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Toast from '../components/Toast';
+import useToast from '../hooks/useToast';
 import { getErrorMessage } from '../utils/errorMessages';
+import { validateForm, validateRequired, validateEmail, validatePhone, validateMinLength } from '../utils/formValidation';
 
 function Organistas({ user }) {
   const [organistas, setOrganistas] = useState([]);
@@ -20,7 +23,7 @@ function Organistas({ user }) {
     oficializada: false,
     ativa: true
   });
-  const [alert, setAlert] = useState(null);
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   useEffect(() => {
     loadOrganistas();
@@ -50,7 +53,7 @@ function Organistas({ user }) {
       // Mensagem de erro amigável
       const errorMessage = getErrorMessage(error);
       console.error('[Organistas] Erro ao carregar:', error);
-      showAlert(errorMessage, 'error');
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -63,7 +66,7 @@ function Organistas({ user }) {
       setOrganistasFiltradas(response.data);
     } catch (error) {
       console.error('[Organistas] Erro ao carregar organistas da igreja:', error);
-      showAlert(getErrorMessage(error), 'error');
+      showError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -78,22 +81,40 @@ function Organistas({ user }) {
     }
   };
 
-  const showAlert = (message, type = 'success') => {
-    setAlert({ message, type });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  // showAlert substituído por useToast
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (saving) return;
+    
+    // Validação no frontend
+    const validation = validateForm(formData, {
+      nome: [
+        (v) => validateRequired(v, 'Nome'),
+        (v) => validateMinLength(v, 3, 'Nome')
+      ],
+      email: [
+        (v) => validateEmail(v)
+      ],
+      telefone: [
+        (v) => validatePhone(v)
+      ]
+    });
+    
+    if (!validation.valid) {
+      const firstError = Object.values(validation.errors)[0];
+      showError(firstError);
+      return;
+    }
+    
     try {
       setSaving(true);
       if (editing) {
         await updateOrganista(editing.id, formData);
-        showAlert('Organista atualizada com sucesso!');
+        showSuccess('Organista atualizada com sucesso!');
       } else {
         await createOrganista(formData);
-        showAlert('Organista cadastrada com sucesso!');
+        showSuccess('Organista cadastrada com sucesso!');
       }
       resetForm();
       if (filtroIgreja) {
@@ -103,7 +124,7 @@ function Organistas({ user }) {
       }
     } catch (error) {
       console.error('[DEBUG] Erro ao salvar organista:', error);
-      showAlert(getErrorMessage(error), 'error');
+      showError(getErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -133,7 +154,7 @@ function Organistas({ user }) {
           loadOrganistas();
         }
       } catch (error) {
-        showAlert(getErrorMessage(error), 'error');
+        showError(getErrorMessage(error));
       }
     }
   };
@@ -165,11 +186,12 @@ function Organistas({ user }) {
           </button>
         </div>
 
-        {alert && (
-          <div className={`alert alert-${alert.type === 'error' ? 'error' : 'success'}`}>
-            {alert.message}
-          </div>
-        )}
+        <Toast 
+          message={toast?.message} 
+          type={toast?.type} 
+          onClose={hideToast}
+          duration={toast?.duration}
+        />
 
         {showForm && (
           <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
