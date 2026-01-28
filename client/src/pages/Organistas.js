@@ -147,7 +147,7 @@ function Organistas({ user }) {
     if (window.confirm('Tem certeza que deseja deletar esta organista?')) {
       try {
         await deleteOrganista(id);
-        showAlert('Organista deletada com sucesso!');
+        showSuccess('Organista deletada com sucesso!');
         if (filtroIgreja) {
           loadOrganistasPorIgreja(filtroIgreja);
         } else {
