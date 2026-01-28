@@ -123,34 +123,68 @@ function InstallPrompt() {
   return (
     <div className="install-prompt">
       <div className="install-prompt-content">
-        <div className="install-prompt-icon">
-          <span>📱</span>
-        </div>
-        <div className="install-prompt-text">
-          <h3>Instalar App</h3>
-          {isIOS ? (
-            <p>Toque em compartilhar e depois em "Adicionar à Tela de Início".</p>
-          ) : (
-            <p>Instale o app para acesso rápido e uso offline!</p>
-          )}
-        </div>
-        <div className="install-prompt-actions">
-          {!isIOS && (
-            <button 
-              className="btn-install"
-              onClick={handleInstallClick}
-            >
-              Instalar
-            </button>
-          )}
+        <div className="install-prompt-header">
+          <div className="install-prompt-icon">
+            <span>📱</span>
+          </div>
+          <div className="install-prompt-title-section">
+            <h3 className="install-prompt-title">📲 Instalar no Celular</h3>
+            <p className="install-prompt-subtitle">
+              {isIOS ? (
+                <>
+                  <div className="instruction-step">
+                    <strong>1️⃣</strong> Toque no botão <strong>"Compartilhar"</strong> (ícone quadrado com seta) na parte inferior da tela
+                  </div>
+                  <div className="instruction-step">
+                    <strong>2️⃣</strong> Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong>
+                  </div>
+                  <div className="instruction-step">
+                    <strong>3️⃣</strong> Toque em <strong>"Adicionar"</strong> para confirmar
+                  </div>
+                </>
+              ) : (
+                <>
+                  <strong>Instale este app no seu celular!</strong><br/>
+                  Assim você terá acesso rápido direto da tela inicial,<br/>
+                  <strong>sem precisar abrir o navegador toda vez.</strong>
+                </>
+              )}
+            </p>
+          </div>
           <button 
             className="btn-dismiss"
             onClick={handleDismiss}
             aria-label="Fechar"
+            title="Fechar"
           >
             ✕
           </button>
         </div>
+        
+        <div className="install-prompt-benefits">
+          <div className="benefit-item">
+            <span className="benefit-icon">⚡</span>
+            <span>Acesso rápido</span>
+          </div>
+          <div className="benefit-item">
+            <span className="benefit-icon">📴</span>
+            <span>Funciona offline</span>
+          </div>
+          <div className="benefit-item">
+            <span className="benefit-icon">🔔</span>
+            <span>Notificações</span>
+          </div>
+        </div>
+
+        {!isIOS && (
+          <button 
+            className="btn-install-primary"
+            onClick={handleInstallClick}
+          >
+            <span className="btn-icon">⬇️</span>
+            <span>Instalar Agora</span>
+          </button>
+        )}
       </div>
     </div>
   );
