@@ -4,49 +4,36 @@
    ============================================ */
 
 :root {
-  /* === PALETA PRINCIPAL - SAAS MODERNO (Stripe/Linear/Notion) === */
-  /* Base clara elegante */
-  --bg-main: #F8FAFC;
+  /* === PALETA PRINCIPAL - SAAS PROFISSIONAL (Stripe Admin) === */
+  --bg-main: #F1F5F9;
   --bg-card: #FFFFFF;
-  
-  /* Texto */
-  --text-main: #0F172A;
-  --text-muted: #64748B;
-  
-  /* Primária - Azul Moderno */
+  --text-main: #020617;
+  --text-muted: #475569;
   --primary: #2563EB;
-  --primary-hover: #1D4ED8;
+  --primary-hover: #1E40AF;
+  --secondary: #7C3AED;
+  --success: #16A34A;
+  --danger: #DC2626;
+  --border: #CBD5E1;
+  --radius: 12px;
+  
+  /* Variantes para compatibilidade */
   --primary-light: #3B82F6;
-  --primary-lighter: #60A5FA;
   --primary-dark: #1E40AF;
   --primary-soft: #DBEAFE;
-  
-  /* Secundária - Roxo Suave */
-  --secondary: #A78BFA;
-  --secondary-light: #C4B5FD;
-  --secondary-dark: #8B5CF6;
+  --secondary-light: #8B5CF6;
+  --secondary-dark: #6D28D9;
   --secondary-soft: #EDE9FE;
-  
-  /* Acento - Verde Moderno */
-  --accent: #22C55E;
-  --accent-light: #4ADE80;
-  --accent-dark: #16A34A;
+  --accent: var(--success);
+  --accent-light: #22C55E;
+  --accent-dark: #15803D;
   --accent-soft: #D1FAE5;
-  
-  /* Perigo */
-  --danger: #EF4444;
-  --danger-light: #F87171;
+  --danger-light: #EF4444;
   --danger-dark: #DC2626;
   --danger-soft: #FEE2E2;
-  
-  /* Bordas */
-  --border: #E2E8F0;
-  --border-light: #F1F5F9;
+  --border-light: #E2E8F0;
   --border-medium: #CBD5E1;
   --border-dark: #94A3B8;
-  
-  /* Raio de borda */
-  --radius: 12px;
   --radius-sm: 8px;
   --radius-lg: 16px;
   
@@ -264,6 +251,7 @@ code {
   max-width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--border);
+  border-width: 1px 0;
 }
 
 .header h1 {
@@ -467,7 +455,7 @@ button {
 
 .btn-primary {
   background: var(--primary);
-  color: var(--bg-card);
+  color: #FFFFFF;
   box-shadow: 0 1px 2px 0 rgba(37, 99, 235, 0.2);
   font-weight: 500;
   border: none;
@@ -480,48 +468,47 @@ button {
 }
 
 .btn-secondary {
-  background: var(--bg-card);
-  color: var(--text-main);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  background: var(--secondary);
+  color: #FFFFFF;
+  box-shadow: 0 1px 2px 0 rgba(124, 58, 237, 0.2);
   font-weight: 500;
-  border: 1px solid var(--border);
+  border: none;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--bg-main);
-  border-color: var(--border-medium);
+  background: var(--secondary-dark);
+  box-shadow: 0 2px 4px 0 rgba(124, 58, 237, 0.3);
   transform: translateY(-1px);
 }
 
 .btn-danger {
   background: var(--danger);
-  color: var(--bg-card);
-  box-shadow: 0 1px 2px 0 rgba(239, 68, 68, 0.2);
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 2px 0 rgba(220, 38, 38, 0.2);
   border: none;
-  font-weight: 600;
-  border: 1px solid var(--danger-dark);
+  font-weight: 500;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--danger-dark) 0%, var(--danger) 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.5);
-  border-color: var(--danger);
+  background: #B91C1C;
+  box-shadow: 0 2px 4px 0 rgba(220, 38, 38, 0.3);
+  transform: translateY(-1px);
+  color: #FFFFFF !important;
 }
 
 .btn-success {
-  background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
-  color: var(--white);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  font-weight: 600;
-  border: 1px solid var(--success-dark);
+  background: var(--success);
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 2px 0 rgba(22, 163, 74, 0.2);
+  font-weight: 500;
+  border: none;
 }
 
 .btn-success:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--success-dark) 0%, var(--success) 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
-  border-color: var(--success);
+  background: #15803D;
+  box-shadow: 0 2px 4px 0 rgba(22, 163, 74, 0.3);
+  transform: translateY(-1px);
+  color: #FFFFFF !important;
 }
 
 .table-wrapper {
@@ -584,30 +571,31 @@ button {
 }
 
 .table th {
-  background: var(--bg-main);
+  background: var(--bg-card);
   color: var(--text-main);
   font-weight: 600;
   position: sticky;
   top: 0;
   z-index: 10;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
   letter-spacing: 0.01em;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.table tr:hover {
-  background: var(--bg-main);
+.table tbody tr:nth-child(even) {
+  background: #F8FAFC;
+}
+
+.table tbody tr:nth-child(odd) {
+  background: var(--bg-card);
+}
+
+.table tbody tr:hover {
+  background: #E2E8F0;
   transition: background var(--transition-fast);
-}
-
-.table tr:nth-child(even) {
-  background: #FAFBFC;
-}
-
-.table tr:nth-child(even):hover {
-  background: var(--bg-main);
+  cursor: pointer;
 }
 
 .table tr:last-child td {
