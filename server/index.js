@@ -3,7 +3,17 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const path = require('path');
-require('dotenv').config();
+
+// Validar variáveis de ambiente ANTES de qualquer coisa
+const { getConfig } = require('./config/env');
+let envConfig;
+try {
+  envConfig = getConfig();
+  console.log('✅ Variáveis de ambiente validadas com sucesso');
+} catch (error) {
+  console.error('❌ Erro na validação de variáveis de ambiente:', error.message);
+  process.exit(1);
+}
 
 // Dependências opcionais (segurança) - não quebram se não estiverem instaladas
 let helmet, rateLimit, loginLimiter, apiLimiter;
@@ -15,7 +25,7 @@ try {
 }
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = envConfig.PORT || 5001;
 
 // Middleware de log de requisições (apenas para debug)
 app.use((req, res, next) => {
@@ -79,10 +89,15 @@ app.use(cors({
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'sua-chave-secreta-session',
+  secret: envConfig.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 dias
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production', // HTTPS em produção
+    httpOnly: true, 
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+    sameSite: 'strict' // Proteção CSRF
+  }
 }));
 
 // Importar rotas

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const db = require('../database/db');
+const { getConfig } = require('../config/env');
 
 // Middleware de autenticação
 const authenticate = async (req, res, next) => {
@@ -20,7 +21,9 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({ error: 'Token não fornecido' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'sua-chave-secreta-aqui');
+    // Obter JWT_SECRET validado (sem fallback inseguro)
+    const envConfig = getConfig();
+    const decoded = jwt.verify(token, envConfig.JWT_SECRET);
     
     if (path.includes('organistas') && req.method === 'POST') {
       console.log(`[AUTH] Token válido - UserId: ${decoded.userId}`);

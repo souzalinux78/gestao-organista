@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../database/db');
 const { authenticate, isAdmin, getUserIgrejas } = require('../middleware/auth');
+const { getConfig } = require('../config/env');
 
 // Cadastro público (sem autenticação)
 router.post('/register', async (req, res) => {
@@ -166,10 +167,11 @@ router.post('/login', async (req, res) => {
     // Buscar igrejas do usuário
     const igrejas = await getUserIgrejas(user.id, user.role === 'admin');
 
-    // Gerar token
+    // Gerar token com JWT_SECRET validado
+    const envConfig = getConfig();
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role, tipo_usuario: user.tipo_usuario },
-      process.env.JWT_SECRET || 'sua-chave-secreta-aqui',
+      envConfig.JWT_SECRET,
       { expiresIn: '7d' }
     );
 

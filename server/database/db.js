@@ -1,20 +1,23 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+const { getConfig } = require('../config/env');
 
 let pool = null;
 
 const init = async () => {
   try {
+    // Obter configuração validada (sem fallbacks inseguros)
+    const envConfig = getConfig();
+    
     // Criar banco de dados se não existir (antes de criar o pool)
-    await createDatabaseIfNotExists();
+    await createDatabaseIfNotExists(envConfig);
     
     // Criar pool de conexões com configurações otimizadas
     const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT_MS || 10000);
     pool = mysql.createPool({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || 'FLoc25GD!',
-      database: process.env.DB_NAME || 'gestao_organista',
+      host: envConfig.DB_HOST,
+      user: envConfig.DB_USER,
+      password: envConfig.DB_PASSWORD, // Sem fallback - obrigatório
+      database: envConfig.DB_NAME,
       // Evita ficar pendurado esperando conexão com MySQL (importante em produção atrás de proxy)
       connectTimeout: connectTimeout,
       waitForConnections: true,
@@ -45,14 +48,14 @@ const init = async () => {
   }
 };
 
-const createDatabaseIfNotExists = async () => {
-  const dbName = process.env.DB_NAME || 'gestao_organista';
+const createDatabaseIfNotExists = async (envConfig) => {
+  const dbName = envConfig.DB_NAME;
   
   // Criar conexão sem especificar o banco
   const tempPool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'FLoc25GD!',
+    host: envConfig.DB_HOST,
+    user: envConfig.DB_USER,
+    password: envConfig.DB_PASSWORD, // Sem fallback - obrigatório
     connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT_MS || 10000),
     waitForConnections: true,
     connectionLimit: 1
