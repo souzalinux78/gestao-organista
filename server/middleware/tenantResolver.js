@@ -34,7 +34,7 @@ function tenantResolver(req, res, next) {
     
     if (!tenantId) {
       // Se usuário não tem tenant_id, pode ser:
-      // - Dados legados (ainda não migrados)
+      // - Dados legados (ainda não migrados) - FASE 5 deve ter corrigido isso
       // - Admin global (pode acessar todos os tenants)
       
       // Para admin, permitir continuar sem tenant_id (acesso global)
@@ -44,10 +44,10 @@ function tenantResolver(req, res, next) {
         return next();
       }
       
-      // Para usuários comuns, tenant_id é obrigatório
-      logger.warn(`Usuário ${req.user.id} sem tenant_id`);
+      // Para usuários comuns, tenant_id é obrigatório após FASE 5
+      logger.warn(`Usuário ${req.user.id} sem tenant_id - dados podem não estar migrados`);
       return res.status(403).json({ 
-        error: 'Usuário não associado a um tenant. Contate o administrador.' 
+        error: 'Usuário não associado a um tenant. Contate o administrador para migração.' 
       });
     }
     

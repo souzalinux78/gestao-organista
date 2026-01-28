@@ -60,6 +60,19 @@ const init = async () => {
       // Não falhar inicialização se migração falhar (pode já estar aplicada)
       console.warn('⚠️  Aviso na migração multi-tenant FASE 2:', error.message);
     }
+    
+    // Migração multi-tenant (FASE 5) - Tornar tenant_id obrigatório
+    // NOTA: Esta migração é executada automaticamente, mas pode ser desabilitada
+    // se preferir executar manualmente para mais controle
+    if (process.env.AUTO_MIGRATE_FASE5 !== 'false') {
+      try {
+        const migrateFase5 = require('../scripts/migrate-fase5');
+        await migrateFase5();
+      } catch (error) {
+        // Não falhar inicialização se migração falhar (pode já estar aplicada)
+        console.warn('⚠️  Aviso na migração multi-tenant FASE 5:', error.message);
+      }
+    }
   } catch (error) {
     console.error('Erro ao conectar ao banco de dados:', error);
     throw error;

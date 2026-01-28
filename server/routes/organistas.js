@@ -165,12 +165,29 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
     const temTenantIdOrganistas = await cachedColumnExists('organistas', 'tenant_id');
     const tenantId = getTenantId(req);
     
+    // Validar tenant_id (obrigatório após FASE 5)
+    if (temTenantIdOrganistas && !tenantId && req.user.role !== 'admin') {
+      return res.status(400).json({ 
+        error: 'tenant_id é obrigatório. Usuário deve estar associado a um tenant.' 
+      });
+    }
+    
+    // Obter tenant padrão se admin sem tenant (acesso global)
+    let tenantIdParaOrganista = tenantId;
+    if (temTenantIdOrganistas && !tenantId && req.user.role === 'admin') {
+      const [tenants] = await pool.execute(
+        'SELECT id FROM tenants WHERE slug = ? LIMIT 1',
+        ['default']
+      );
+      tenantIdParaOrganista = tenants.length > 0 ? tenants[0].id : null;
+    }
+    
     // Criar organista com tenant_id se disponível
     console.log(`[DEBUG] Criando organista no banco...`);
     const insertStart = Date.now();
     
     let sqlOrganista, valuesOrganista;
-    if (temTenantIdOrganistas && tenantId) {
+    if (temTenantIdOrganistas && tenantIdParaOrganista) {
       sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa, tenant_id) VALUES (?, ?, ?, ?, ?, ?)';
       valuesOrganista = [
         nome.trim(),
@@ -178,7 +195,7 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
         email || null,
         oficializada ? 1 : 0,
         ativa !== undefined ? (ativa ? 1 : 0) : 1,
-        tenantId
+        tenantIdParaOrganista
       ];
     } else {
       sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?)';

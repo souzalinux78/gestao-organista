@@ -104,9 +104,26 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
     const { cachedColumnExists } = require('../utils/cache');
     const temTenantId = await cachedColumnExists('igrejas', 'tenant_id');
     
+    // Validar tenant_id (obrigatório após FASE 5)
+    if (temTenantId && !tenantId && req.user.role !== 'admin') {
+      return res.status(400).json({ 
+        error: 'tenant_id é obrigatório. Usuário deve estar associado a um tenant.' 
+      });
+    }
+    
+    // Obter tenant padrão se admin sem tenant (acesso global)
+    let tenantIdParaIgreja = tenantId;
+    if (temTenantId && !tenantId && req.user.role === 'admin') {
+      const [tenants] = await pool.execute(
+        'SELECT id FROM tenants WHERE slug = ? LIMIT 1',
+        ['default']
+      );
+      tenantIdParaIgreja = tenants.length > 0 ? tenants[0].id : null;
+    }
+    
     // Criar igreja com tenant_id se disponível
     let sql, values;
-    if (temTenantId && tenantId) {
+    if (temTenantId && tenantIdParaIgreja) {
       sql = `INSERT INTO igrejas (
         nome, endereco, 
         encarregado_local_nome, encarregado_local_telefone,
@@ -121,7 +138,7 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
         encarregado_regional_nome || null,
         encarregado_regional_telefone || null,
         mesma_organista_ambas_funcoes ? 1 : 0,
-        tenantId
+        tenantIdParaIgreja
       ];
     } else {
       sql = `INSERT INTO igrejas (
