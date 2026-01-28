@@ -87,3 +87,5 @@ Todas as alterações importantes do projeto.
 ## v2.0.13 - 2026-01-28
 
 ## v2.0.14 - 2026-01-28
+
+## v2.0.15 - 2026-01-28

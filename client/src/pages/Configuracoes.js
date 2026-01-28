@@ -11,6 +11,7 @@ function Configuracoes() {
   const [loading, setLoading] = useState(true);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [webhookDescricao, setWebhookDescricao] = useState('Webhook para receber notificações de novos cadastros');
+  const [saving, setSaving] = useState(false);
   const { toast, showSuccess, showError, hideToast } = useToast();
 
   useEffect(() => {
@@ -46,13 +47,25 @@ function Configuracoes() {
     e.preventDefault();
     
     try {
-      await salvarConfiguracao('webhook_cadastro', webhookUrl, webhookDescricao);
+      if (saving) return;
+      setSaving(true);
+      const url = (webhookUrl || '').trim();
+      const desc = (webhookDescricao || '').trim();
+
+      if (!url) {
+        showError('Informe a URL do webhook.');
+        return;
+      }
+
+      await salvarConfiguracao('webhook_cadastro', url, desc);
       showSuccess('Webhook salvo com sucesso!');
       
       // Recarregar configurações
       await loadConfiguracoes();
     } catch (error) {
-      showError(getErrorMessage(error));
+      showError(getErrorMessage(error) || 'Não foi possível salvar o webhook. Verifique sua conexão e permissões.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -140,14 +153,14 @@ function Configuracoes() {
           </div>
 
           <div className="configuracoes__actions">
-            <button type="submit" className="btn btn-primary">
-              Salvar Webhook
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? 'Salvando...' : 'Salvar Webhook'}
             </button>
             <button 
               type="button" 
               className="btn btn-secondary"
               onClick={handleTestarWebhook}
-              disabled={!webhookUrl}
+              disabled={!webhookUrl || saving}
             >
               Testar Webhook
             </button>
