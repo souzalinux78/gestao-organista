@@ -60,6 +60,52 @@ const enviarWebhookCadastro = async (dadosUsuario) => {
   }
 };
 
+// Função para enviar webhook quando um usuário for aprovado (admin)
+// Reutiliza a configuração "webhook_cadastro" (mesmo endpoint) para centralizar integrações.
+const enviarWebhookAprovacao = async ({ aprovadoPor, usuario, igrejas }) => {
+  try {
+    const pool = db.getDb();
+
+    const [config] = await pool.execute(
+      'SELECT valor FROM configuracoes WHERE chave = ?',
+      ['webhook_cadastro']
+    );
+
+    const webhookUrl = config.length > 0 ? config[0].valor : null;
+    if (!webhookUrl) {
+      console.log('[WEBHOOK APROVACAO] Webhook não configurado, pulando envio');
+      return;
+    }
+
+    const axios = require('axios');
+    const payload = {
+      tipo: 'usuario_aprovado',
+      timestamp: new Date().toISOString(),
+      timestamp_br: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      aprovado_por: {
+        id: aprovadoPor?.id || null,
+        nome: aprovadoPor?.nome || null,
+        email: aprovadoPor?.email || null
+      },
+      usuario: usuario || null,
+      igrejas: Array.isArray(igrejas) ? igrejas : [],
+      mensagem: usuario?.nome
+        ? `Usuário aprovado: ${usuario.nome} (${usuario.email || 'sem email'})`
+        : 'Usuário aprovado pelo administrador'
+    };
+
+    await axios.post(webhookUrl, payload, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
+
+    console.log(`✅ [WEBHOOK APROVACAO] Enviado com sucesso para: ${webhookUrl}`);
+  } catch (error) {
+    console.error('[WEBHOOK APROVACAO] Erro ao enviar webhook:', error.message);
+    // Não falha a aprovação se o webhook falhar
+  }
+};
+
 // Cadastro público (sem autenticação)
 router.post('/register', async (req, res) => {
   try {
@@ -525,6 +571,58 @@ router.put('/usuarios/:id/aprovar', authenticate, isAdmin, async (req, res) => {
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Buscar dados do usuário aprovado + igrejas para enviar webhook (não bloqueia a resposta)
+    try {
+      const { cachedColumnExists } = require('../utils/cache');
+      const temTipoUsuario = await cachedColumnExists('usuarios', 'tipo_usuario');
+      const temTelefone = await cachedColumnExists('usuarios', 'telefone');
+
+      const selectExtra = [
+        temTipoUsuario ? 'u.tipo_usuario' : 'NULL as tipo_usuario',
+        temTelefone ? 'u.telefone' : 'NULL as telefone'
+      ].join(', ');
+
+      const [rows] = await pool.execute(
+        `SELECT u.id, u.nome, u.email, u.role, u.ativo, u.aprovado, u.created_at, ${selectExtra},
+                GROUP_CONCAT(i.nome) as igrejas_nomes,
+                GROUP_CONCAT(ui.igreja_id) as igrejas_ids
+         FROM usuarios u
+         LEFT JOIN usuario_igreja ui ON u.id = ui.usuario_id
+         LEFT JOIN igrejas i ON ui.igreja_id = i.id
+         WHERE u.id = ?
+         GROUP BY u.id
+         LIMIT 1`,
+        [req.params.id]
+      );
+
+      if (rows.length > 0) {
+        const u = rows[0];
+        const ids = u.igrejas_ids ? u.igrejas_ids.split(',') : [];
+        const nomes = u.igrejas_nomes ? u.igrejas_nomes.split(',') : [];
+        const igrejas = ids
+          .map((id, idx) => ({ id: Number(id), nome: nomes[idx] || null }))
+          .filter(x => Number.isFinite(x.id));
+
+        enviarWebhookAprovacao({
+          aprovadoPor: { id: req.user?.id, nome: req.user?.nome, email: req.user?.email },
+          usuario: {
+            id: u.id,
+            nome: u.nome,
+            email: u.email,
+            telefone: u.telefone || null,
+            tipo_usuario: u.tipo_usuario || null,
+            role: u.role,
+            ativo: !!u.ativo,
+            aprovado: true,
+            created_at: u.created_at
+          },
+          igrejas
+        }).catch(() => {});
+      }
+    } catch (webhookErr) {
+      console.warn('⚠️  Aviso ao preparar/enviar webhook de aprovação:', webhookErr.message);
     }
 
     res.json({ message: 'Usuário aprovado com sucesso' });
