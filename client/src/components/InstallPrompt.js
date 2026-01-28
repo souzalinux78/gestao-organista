@@ -124,33 +124,6 @@ function InstallPrompt() {
     <div className="install-prompt">
       <div className="install-prompt-content">
         <div className="install-prompt-header">
-          <div className="install-prompt-icon">
-            <span>📱</span>
-          </div>
-          <div className="install-prompt-title-section">
-            <h3 className="install-prompt-title">📲 Instalar no Celular</h3>
-            <p className="install-prompt-subtitle">
-              {isIOS ? (
-                <>
-                  <div className="instruction-step">
-                    <strong>1️⃣</strong> Toque no botão <strong>"Compartilhar"</strong> (ícone quadrado com seta) na parte inferior da tela
-                  </div>
-                  <div className="instruction-step">
-                    <strong>2️⃣</strong> Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong>
-                  </div>
-                  <div className="instruction-step">
-                    <strong>3️⃣</strong> Toque em <strong>"Adicionar"</strong> para confirmar
-                  </div>
-                </>
-              ) : (
-                <>
-                  <strong>Instale este app no seu celular!</strong><br/>
-                  Assim você terá acesso rápido direto da tela inicial,<br/>
-                  <strong>sem precisar abrir o navegador toda vez.</strong>
-                </>
-              )}
-            </p>
-          </div>
           <button 
             className="btn-dismiss"
             onClick={handleDismiss}
@@ -159,20 +132,36 @@ function InstallPrompt() {
           >
             ✕
           </button>
+          <div className="install-prompt-icon">📱</div>
+          <h3 className="install-prompt-title">Instalar no Celular</h3>
+          <p className="install-prompt-description">
+            {isIOS ? (
+              <>
+                <strong>Como instalar:</strong><br/>
+                1. Toque no botão <strong>"Compartilhar"</strong> na parte inferior da tela<br/>
+                2. Role e toque em <strong>"Adicionar à Tela de Início"</strong><br/>
+                3. Toque em <strong>"Adicionar"</strong> para confirmar
+              </>
+            ) : (
+              <>
+                Instale este app no seu celular para ter acesso rápido direto da tela inicial, sem precisar abrir o navegador toda vez.
+              </>
+            )}
+          </p>
         </div>
         
         <div className="install-prompt-benefits">
           <div className="benefit-item">
             <span className="benefit-icon">⚡</span>
-            <span>Acesso rápido</span>
+            <span className="benefit-text">Acesso rápido</span>
           </div>
           <div className="benefit-item">
             <span className="benefit-icon">📴</span>
-            <span>Funciona offline</span>
+            <span className="benefit-text">Funciona offline</span>
           </div>
           <div className="benefit-item">
             <span className="benefit-icon">🔔</span>
-            <span>Notificações</span>
+            <span className="benefit-text">Notificações</span>
           </div>
         </div>
 
@@ -181,7 +170,7 @@ function InstallPrompt() {
             className="btn-install-primary"
             onClick={handleInstallClick}
           >
-            <span className="btn-icon">⬇️</span>
+            <span>⬇️</span>
             <span>Instalar Agora</span>
           </button>
         )}
