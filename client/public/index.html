@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
-    <meta name="theme-color" content="#2E86AB" />
+    <meta name="theme-color" content="#4F46E5" />
     <meta name="description" content="Sistema completo para gerenciar organistas, igrejas, cultos e rodízios" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -23,7 +23,7 @@
     
     <!-- PWA Meta Tags -->
     <meta name="application-name" content="Gestão Organistas" />
-    <meta name="msapplication-TileColor" content="#2E86AB" />
+    <meta name="msapplication-TileColor" content="#4F46E5" />
     <meta name="msapplication-config" content="%PUBLIC_URL%/browserconfig.xml" />
     
     <!-- Google Fonts - Inter -->
@@ -36,7 +36,11 @@
   <body>
     <noscript>Você precisa habilitar JavaScript para executar este aplicativo.</noscript>
     <div id="app-loader">
-      <div class="loader">🎹</div>
+      <div class="loader-container">
+        <div class="loader-logo">🎹</div>
+        <div class="loader-text">Sistema de Gestão de Organistas</div>
+        <div class="loader-spinner"></div>
+      </div>
     </div>
     <div id="root"></div>
     <script>

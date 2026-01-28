@@ -2256,24 +2256,79 @@ textarea:disabled {
   }
 }
 
+/* Splash Screen / App Loader - Design Moderno */
 #app-loader {
   position: fixed;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg);
+  background: var(--bg-main);
   z-index: 9999;
+  transition: opacity 0.3s ease;
 }
 
-.loader {
-  font-size: 2rem;
-  opacity: 0.8;
-  /* Animação removida para melhor performance */
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  text-align: center;
+}
+
+.loader-logo {
+  font-size: 4rem;
+  line-height: 1;
+  animation: fadeInScale 0.6s ease-out;
+}
+
+.loader-text {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+  animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+
+.loader-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--primary-soft);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-top: var(--spacing-sm);
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .page {
   /* Animação removida para melhor performance */
 }
-
-/* Animações removidas para melhor performance */

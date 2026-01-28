@@ -1,8 +1,9 @@
-// Service Worker - Network First Strategy (Sempre atualizado)
-// Versão fixa para evitar loops de reload no mobile
-// A versão será atualizada apenas quando houver novo deploy
-const CACHE_VERSION = 'v1.0.0';
+// Service Worker - Estratégia Híbrida (Network First + Cache First)
+// Cache version dinâmico baseado em timestamp do build
+// A versão será atualizada automaticamente em novos deploys
+const CACHE_VERSION = 'v' + new Date().getTime();
 const CACHE_NAME = `gestao-organistas-${CACHE_VERSION}`;
+const STATIC_CACHE_NAME = 'gestao-organistas-static-v1';
 
 const OFFLINE_URL = '/offline.html';
 
@@ -19,8 +20,14 @@ self.addEventListener('install', (event) => {
         })
       );
     }).then(async () => {
+      // Cache de páginas (HTML)
       const cache = await caches.open(CACHE_NAME);
       await cache.addAll([OFFLINE_URL, '/']);
+      
+      // Cache de assets estáticos (JS, CSS, imagens, fonts)
+      const staticCache = await caches.open(STATIC_CACHE_NAME);
+      // Assets serão cacheados sob demanda na primeira requisição
+      
       // Não forçar ativação imediata - evitar reloads desnecessários
       // return self.skipWaiting();
     })
@@ -34,8 +41,8 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // Remover todos os caches antigos
-          if (cacheName !== CACHE_NAME) {
+          // Remover todos os caches antigos (exceto static cache e cache atual)
+          if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME) {
             console.log('[SW] Removendo cache antigo:', cacheName);
             return caches.delete(cacheName);
           }
@@ -64,22 +71,71 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Para todos os arquivos, sempre buscar da rede primeiro (SEM CACHE)
+  // Estratégia: Cache First para assets estáticos (JS, CSS, imagens, fonts)
+  const isStaticAsset = 
+    url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/i) ||
+    url.pathname.startsWith('/static/');
+
+  if (isStaticAsset) {
+    // Cache First: Buscar do cache primeiro, depois da rede
+    event.respondWith(
+      caches.match(event.request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            // Atualizar cache em background (stale-while-revalidate)
+            fetch(event.request).then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                const staticCache = caches.open(STATIC_CACHE_NAME);
+                staticCache.then(cache => cache.put(event.request, networkResponse.clone()));
+              }
+            }).catch(() => {});
+            return cachedResponse;
+          }
+          // Se não estiver no cache, buscar da rede e cachear
+          return fetch(event.request)
+            .then((response) => {
+              if (response && response.status === 200) {
+                const responseToCache = response.clone();
+                caches.open(STATIC_CACHE_NAME).then(cache => {
+                  cache.put(event.request, responseToCache);
+                });
+              }
+              return response;
+            })
+            .catch(() => {
+              // Se falhar, retornar resposta vazia
+              return new Response('', {
+                status: 503,
+                statusText: 'Service Unavailable'
+              });
+            });
+        })
+    );
+    return;
+  }
+
+  // Estratégia: Network First para HTML e outros recursos
   event.respondWith(
     fetch(event.request, { cache: 'no-store' })
       .then((response) => {
         if (response && response.status === 200) {
+          // Cachear resposta HTML válida
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
+          });
           return response;
         }
         throw new Error('Network response was not ok');
       })
       .catch(() => {
-        // Se a rede falhar, tentar buscar do cache como último recurso
+        // Se a rede falhar, tentar buscar do cache
         return caches.match(event.request)
           .then((cachedResponse) => {
             if (cachedResponse) {
               return cachedResponse;
             }
+            // Se for uma requisição de documento e não houver cache, mostrar offline page
             if (event.request.destination === 'document') {
               return caches.match(OFFLINE_URL);
             }
