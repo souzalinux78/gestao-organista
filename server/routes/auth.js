@@ -564,9 +564,13 @@ router.put('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
 router.put('/usuarios/:id/aprovar', authenticate, isAdmin, async (req, res) => {
   try {
     const pool = db.getDb();
+    const userId = Number(req.params.id);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'ID do usuário inválido' });
+    }
     const [result] = await pool.execute(
       'UPDATE usuarios SET aprovado = 1 WHERE id = ?',
-      [req.params.id]
+      [userId]
     );
 
     if (result.affectedRows === 0) {
@@ -594,7 +598,7 @@ router.put('/usuarios/:id/aprovar', authenticate, isAdmin, async (req, res) => {
          WHERE u.id = ?
          GROUP BY u.id
          LIMIT 1`,
-        [req.params.id]
+        [userId]
       );
 
       if (rows.length > 0) {
@@ -627,7 +631,7 @@ router.put('/usuarios/:id/aprovar', authenticate, isAdmin, async (req, res) => {
 
     res.json({ message: 'Usuário aprovado com sucesso' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message || 'Erro ao aprovar usuário' });
   }
 });
 
@@ -635,9 +639,13 @@ router.put('/usuarios/:id/aprovar', authenticate, isAdmin, async (req, res) => {
 router.put('/usuarios/:id/rejeitar', authenticate, isAdmin, async (req, res) => {
   try {
     const pool = db.getDb();
+    const userId = Number(req.params.id);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'ID do usuário inválido' });
+    }
     const [result] = await pool.execute(
       'UPDATE usuarios SET aprovado = 0 WHERE id = ?',
-      [req.params.id]
+      [userId]
     );
 
     if (result.affectedRows === 0) {
@@ -646,7 +654,7 @@ router.put('/usuarios/:id/rejeitar', authenticate, isAdmin, async (req, res) => 
 
     res.json({ message: 'Usuário rejeitado' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message || 'Erro ao rejeitar usuário' });
   }
 });
 
