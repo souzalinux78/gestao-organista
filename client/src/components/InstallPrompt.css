@@ -15,7 +15,7 @@
   pointer-events: auto;
   background: var(--bg-card);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-2xl);
   overflow: hidden;
   border: 2px solid var(--primary);
   display: flex;
@@ -35,7 +35,7 @@
 
 .install-prompt-header {
   padding: 20px;
-  background: linear-gradient(135deg, var(--primary-soft) 0%, rgba(79, 70, 229, 0.03) 100%);
+  background: linear-gradient(135deg, var(--primary-soft) 0%, var(--bg-hover) 100%);
   border-bottom: 1px solid var(--border);
   position: relative;
 }
@@ -142,7 +142,7 @@
 
 .btn-install-primary {
   background: var(--primary);
-  color: #FFFFFF;
+  color: var(--text-inverse);
   border: none;
   padding: 16px 20px;
   font-weight: 700;
@@ -155,14 +155,14 @@
   gap: 10px;
   width: 100%;
   min-height: 56px;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  box-shadow: var(--shadow-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .btn-install-primary:hover {
   background: var(--primary-hover);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 .btn-install-primary:active {

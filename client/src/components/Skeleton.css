@@ -7,7 +7,7 @@
   background: linear-gradient(
     90deg,
     var(--bg-hover) 0%,
-    rgba(255, 255, 255, 0.5) 50%,
+    var(--bg-card) 50%,
     var(--bg-hover) 100%
   );
   background-size: 200% 100%;
@@ -27,7 +27,7 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.4) 50%,
+    var(--bg-card) 50%,
     transparent 100%
   );
   animation: skeleton-shine 2s ease-in-out infinite;

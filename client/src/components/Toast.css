@@ -99,7 +99,7 @@
 }
 
 .toast__close:hover {
-  background: rgba(0, 0, 0, 0.08);
+  background: var(--bg-hover);
   color: var(--text);
   transform: scale(1.1);
 }
@@ -116,8 +116,8 @@
 /* Toast Types */
 .toast--success {
   border-left-color: var(--success);
-  background: linear-gradient(to right, rgba(16, 185, 129, 0.08), var(--card-bg));
-  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(16, 185, 129, 0.1);
+  background: linear-gradient(to right, var(--success-soft), var(--card-bg));
+  box-shadow: var(--shadow-xl), 0 0 0 1px var(--success-soft);
 }
 
 .toast--success .toast__icon {
@@ -127,8 +127,8 @@
 
 .toast--error {
   border-left-color: var(--danger);
-  background: linear-gradient(to right, rgba(239, 68, 68, 0.08), var(--card-bg));
-  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(239, 68, 68, 0.1);
+  background: linear-gradient(to right, var(--danger-soft), var(--card-bg));
+  box-shadow: var(--shadow-xl), 0 0 0 1px var(--danger-soft);
 }
 
 .toast--error .toast__icon {
@@ -138,8 +138,8 @@
 
 .toast--warning {
   border-left-color: var(--warning);
-  background: linear-gradient(to right, rgba(245, 158, 11, 0.08), var(--card-bg));
-  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(245, 158, 11, 0.1);
+  background: linear-gradient(to right, var(--warning-soft), var(--card-bg));
+  box-shadow: var(--shadow-xl), 0 0 0 1px var(--warning-soft);
 }
 
 .toast--warning .toast__icon {
@@ -149,8 +149,8 @@
 
 .toast--info {
   border-left-color: var(--info);
-  background: linear-gradient(to right, rgba(59, 130, 246, 0.08), var(--card-bg));
-  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(59, 130, 246, 0.1);
+  background: linear-gradient(to right, var(--info-soft), var(--card-bg));
+  box-shadow: var(--shadow-xl), 0 0 0 1px var(--info-soft);
 }
 
 .toast--info .toast__icon {
@@ -186,6 +186,6 @@
   }
 
   .toast__close:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
   }
 }

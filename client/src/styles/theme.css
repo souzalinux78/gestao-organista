@@ -49,9 +49,11 @@
   --warning: #F59E0B;
   --warning-light: #FBBF24;
   --warning-dark: #D97706;
+  --warning-soft: rgba(245, 158, 11, 0.1);
   --info: #3B82F6;
   --info-light: #60A5FA;
   --info-dark: #2563EB;
+  --info-soft: rgba(59, 130, 246, 0.1);
   
   /* Borders */
   --border: #E5E7EB;
