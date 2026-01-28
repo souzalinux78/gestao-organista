@@ -179,36 +179,40 @@ function Home() {
 
       {/* Cards KPI */}
       <div className="dashboard__kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-card__icon kpi-card__icon--organistas">🎹</div>
+        <div className="kpi-card kpi-card--organistas">
           <div className="kpi-card__content">
-            <div className="kpi-card__value">{stats.organistas}</div>
             <div className="kpi-card__label">Organistas</div>
+            <div className="kpi-card__value">{stats.organistas}</div>
+            <div className="kpi-card__meta">{stats.organistas} no período</div>
           </div>
+          <div className="kpi-card__decor" aria-hidden="true">🎹</div>
         </div>
 
-        <div className="kpi-card">
-          <div className="kpi-card__icon kpi-card__icon--igrejas">🏢</div>
+        <div className="kpi-card kpi-card--igrejas">
           <div className="kpi-card__content">
-            <div className="kpi-card__value">{stats.igrejas}</div>
             <div className="kpi-card__label">Igrejas</div>
+            <div className="kpi-card__value">{stats.igrejas}</div>
+            <div className="kpi-card__meta">{stats.igrejas} no período</div>
           </div>
+          <div className="kpi-card__decor" aria-hidden="true">🏢</div>
         </div>
 
-        <div className="kpi-card">
-          <div className="kpi-card__icon kpi-card__icon--rodizios">📅</div>
+        <div className="kpi-card kpi-card--rodizios">
           <div className="kpi-card__content">
-            <div className="kpi-card__value">{stats.rodizios}</div>
             <div className="kpi-card__label">Rodízios</div>
+            <div className="kpi-card__value">{stats.rodizios}</div>
+            <div className="kpi-card__meta">{stats.rodizios} no período</div>
           </div>
+          <div className="kpi-card__decor" aria-hidden="true">📅</div>
         </div>
 
-        <div className="kpi-card">
-          <div className="kpi-card__icon kpi-card__icon--cultos">📖</div>
+        <div className="kpi-card kpi-card--cultos">
           <div className="kpi-card__content">
-            <div className="kpi-card__value">{stats.cultos}</div>
             <div className="kpi-card__label">Cultos</div>
+            <div className="kpi-card__value">{stats.cultos}</div>
+            <div className="kpi-card__meta">{stats.cultos} no período</div>
           </div>
+          <div className="kpi-card__decor" aria-hidden="true">📖</div>
         </div>
       </div>
 
