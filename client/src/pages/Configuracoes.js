@@ -135,7 +135,7 @@ function Configuracoes() {
               required
               className="form-control"
             />
-            <small className="form-group__hint">
+            <small className="form-hint">
               URL completa do endpoint que receberá as notificações de cadastro
             </small>
           </div>

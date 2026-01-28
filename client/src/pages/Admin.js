@@ -180,7 +180,7 @@ function Admin() {
               <option value="aprovados">Aprovados</option>
             </select>
             <button 
-              className="btn btn-primary" 
+              className="btn btn-primary btn-nowrap" 
               onClick={() => {
                 if (showForm) {
                   resetForm();
@@ -188,7 +188,6 @@ function Admin() {
                   setShowForm(true);
                 }
               }} 
-              style={{ whiteSpace: 'nowrap' }}
             >
               {showForm ? 'Cancelar' : '+ Novo Usuário'}
             </button>
@@ -202,7 +201,7 @@ function Admin() {
         )}
 
         {showForm && !editing && (
-          <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+          <form onSubmit={handleSubmit} className="form--spaced">
             <div className="form-group">
               <label>Nome *</label>
               <input
@@ -242,44 +241,48 @@ function Admin() {
               </select>
             </div>
             <div className="form-group">
-              <label>
+              <div className="form-group--checkbox">
                 <input
                   type="checkbox"
+                  id="usuario_ativo"
                   checked={formData.ativo}
                   onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                  className="checkbox-input"
                 />
-                {' '}Ativo
-              </label>
+                <label htmlFor="usuario_ativo" className="checkbox-label">Ativo</label>
+              </div>
             </div>
             {formData.role === 'usuario' && (
               <div className="form-group">
-                <label>
+                <div className="form-group--checkbox">
                   <input
                     type="checkbox"
+                    id="usuario_aprovado"
                     checked={formData.aprovado}
                     onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
+                    className="checkbox-input"
                   />
-                  {' '}Aprovado
-                </label>
+                  <label htmlFor="usuario_aprovado" className="checkbox-label">Aprovado</label>
+                </div>
               </div>
             )}
             
             {formData.role === 'usuario' && (
               <div className="form-group">
                 <label>Igrejas (selecione as igrejas que este usuário pode gerenciar)</label>
-                <div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px', maxHeight: '200px', overflowY: 'auto' }}>
+                <div className="checklist">
                   {igrejas.map(igreja => (
-                    <label key={igreja.id} style={{ display: 'block', marginBottom: '8px' }}>
+                    <label key={igreja.id} className="checklist-item">
                       <input
                         type="checkbox"
                         checked={formData.igreja_ids.includes(igreja.id)}
                         onChange={() => toggleIgreja(igreja.id)}
                       />
-                      {' '}{igreja.nome}
+                      <span>{igreja.nome}</span>
                     </label>
                   ))}
                   {igrejas.length === 0 && (
-                    <p style={{ color: '#999', fontStyle: 'italic' }}>Nenhuma igreja cadastrada</p>
+                    <p className="muted-italic">Nenhuma igreja cadastrada</p>
                   )}
                 </div>
               </div>
@@ -330,66 +333,48 @@ function Admin() {
                 </thead>
                 <tbody>
                   {usuariosFiltrados.map(usuario => (
-                    <tr key={usuario.id} style={usuario.aprovado === 0 ? { backgroundColor: '#fff3cd' } : {}}>
-                      <td data-label="Nome" style={{ wordBreak: 'break-word' }}>{usuario.nome}</td>
-                      <td data-label="Email" style={{ wordBreak: 'break-word' }}>{usuario.email}</td>
+                    <tr key={usuario.id} className={usuario.aprovado === 0 ? 'row-highlight' : ''}>
+                      <td data-label="Nome" className="table__cell--break">{usuario.nome}</td>
+                      <td data-label="Email" className="table__cell--break">{usuario.email}</td>
                       <td data-label="Perfil">{usuario.role === 'admin' ? 'Administrador' : 'Usuário'}</td>
-                      <td data-label="Igrejas" style={{ wordBreak: 'break-word', maxWidth: '200px' }}>{usuario.igrejas_nomes || '-'}</td>
+                      <td data-label="Igrejas" className="table__cell--break">{usuario.igrejas_nomes || '-'}</td>
                       <td data-label="Status">
                         {usuario.role === 'admin' ? (
-                          <span style={{ color: '#28a745', fontWeight: '600' }}>Aprovado</span>
+                          <span className="td-strong">Aprovado</span>
                         ) : usuario.aprovado === 1 ? (
-                          <span style={{ color: '#28a745', fontWeight: '600' }}>✓ Aprovado</span>
+                          <span className="td-strong">✓ Aprovado</span>
                         ) : (
-                          <span style={{ color: '#dc3545', fontWeight: '600' }}>⏳ Pendente</span>
+                          <span className="td-strong">⏳ Pendente</span>
                         )}
                       </td>
                       <td data-label="Ativo">{usuario.ativo === 1 ? 'Sim' : 'Não'}</td>
                       <td>
-                        <div className="actions" style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                        <div className="actions actions-inline">
                           {usuario.role !== 'admin' && usuario.aprovado === 0 && (
                             <>
                               <button
-                                className="btn"
+                                className="btn btn-compact-wide btn-solid-success"
                                 onClick={() => handleAprovar(usuario.id)}
-                                style={{ 
-                                  fontSize: '12px', 
-                                  padding: '5px 10px',
-                                  backgroundColor: '#28a745',
-                                  color: 'white',
-                                  border: 'none',
-                                  minWidth: '80px'
-                                }}
                               >
                                 ✓ Aprovar
                               </button>
                               <button
-                                className="btn"
+                                className="btn btn-compact-wide btn-solid-danger"
                                 onClick={() => handleRejeitar(usuario.id)}
-                                style={{ 
-                                  fontSize: '12px', 
-                                  padding: '5px 10px',
-                                  backgroundColor: '#dc3545',
-                                  color: 'white',
-                                  border: 'none',
-                                  minWidth: '80px'
-                                }}
                               >
                                 ✗ Rejeitar
                               </button>
                             </>
                           )}
                           <button
-                            className="btn btn-secondary"
+                            className="btn btn-secondary btn-compact"
                             onClick={() => handleEdit(usuario)}
-                            style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
                           >
                             Editar
                           </button>
                           <button
-                            className="btn btn-danger"
+                            className="btn btn-danger btn-compact"
                             onClick={() => handleDelete(usuario.id)}
-                            style={{ fontSize: '12px', padding: '5px 10px', minWidth: '70px' }}
                           >
                             Deletar
                           </button>

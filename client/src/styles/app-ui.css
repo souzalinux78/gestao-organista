@@ -105,6 +105,115 @@
   text-transform: capitalize;
 }
 
+.lead {
+  margin-top: 0.25rem;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.filters-bar {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-nowrap {
+  white-space: nowrap;
+}
+
+/* Modal padrão */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 15px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow: auto;
+  margin: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.checklist {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  max-height: 200px;
+  overflow: auto;
+  background: var(--bg-card);
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 6px 0;
+}
+
+.muted-italic {
+  color: var(--text-light);
+  font-style: italic;
+}
+
+.actions-inline {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-compact {
+  font-size: 12px;
+  padding: 5px 10px;
+  min-width: 70px;
+}
+
+.btn-compact-wide {
+  font-size: 12px;
+  padding: 5px 10px;
+  min-width: 80px;
+}
+
+.btn-solid-success {
+  background: var(--success) !important;
+  color: #fff !important;
+}
+
+.btn-solid-danger {
+  background: var(--danger) !important;
+  color: #fff !important;
+}
+
+.row-highlight {
+  background: rgba(245, 158, 11, 0.12);
+}
+
 .form-group--checkbox {
   display: flex;
   align-items: center;

@@ -79,7 +79,7 @@ function RelatoriosAdmin({ user }) {
     <div>
       <div className="card">
         <h2>📊 Relatórios - Administrador</h2>
-        <p style={{ marginBottom: '20px', color: '#666' }}>
+        <p className="lead">
           Visualize todas as igrejas cadastradas e gere relatórios em PDF por igreja.
         </p>
 
@@ -89,13 +89,12 @@ function RelatoriosAdmin({ user }) {
           </div>
         )}
 
-        <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div className="btn-row" style={{ marginTop: 0 }}>
           <div className="form-group" style={{ flex: '1 1 auto', minWidth: '200px' }}>
             <label>Filtrar por Igreja</label>
             <select
               value={filtros.igreja_id}
               onChange={(e) => setFiltros({ ...filtros, igreja_id: e.target.value })}
-              style={{ fontSize: '16px' }}
             >
               <option value="">Todas as igrejas</option>
               {igrejas.map(igreja => (
@@ -111,7 +110,6 @@ function RelatoriosAdmin({ user }) {
               type="date"
               value={filtros.periodo_inicio}
               onChange={(e) => setFiltros({ ...filtros, periodo_inicio: e.target.value })}
-              style={{ fontSize: '16px' }}
             />
           </div>
           <div className="form-group" style={{ flex: '1 1 auto', minWidth: '150px' }}>
@@ -120,7 +118,6 @@ function RelatoriosAdmin({ user }) {
               type="date"
               value={filtros.periodo_fim}
               onChange={(e) => setFiltros({ ...filtros, periodo_fim: e.target.value })}
-              style={{ fontSize: '16px' }}
             />
           </div>
         </div>
@@ -145,16 +142,15 @@ function RelatoriosAdmin({ user }) {
                   .filter(igreja => !filtros.igreja_id || igreja.id.toString() === filtros.igreja_id)
                   .map(igreja => (
                     <tr key={igreja.id}>
-                      <td style={{ fontWeight: '500' }}>{igreja.nome}</td>
+                      <td className="td-strong">{igreja.nome}</td>
                       <td>{igreja.endereco || '-'}</td>
                       <td>{igreja.total_organistas || 0}</td>
                       <td>{igreja.total_cultos || 0}</td>
                       <td>{igreja.total_usuarios || 0}</td>
                       <td>
                         <button
-                          className="btn btn-success"
+                          className="btn btn-success btn-nowrap"
                           onClick={() => handleGerarPDF(igreja.id)}
-                          style={{ whiteSpace: 'nowrap', fontSize: '14px', padding: '6px 12px' }}
                         >
                           📄 Gerar PDF
                         </button>
