@@ -9,7 +9,6 @@ import './Configuracoes.css';
 
 function Configuracoes() {
   const [loading, setLoading] = useState(true);
-  const [configuracoes, setConfiguracoes] = useState([]);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [webhookDescricao, setWebhookDescricao] = useState('Webhook para receber notificações de novos cadastros');
   const { toast, showSuccess, showError, hideToast } = useToast();
@@ -21,14 +20,20 @@ function Configuracoes() {
   const loadConfiguracoes = async () => {
     try {
       setLoading(true);
-      const response = await getConfiguracoes();
-      setConfiguracoes(response.data || []);
-      
-      // Buscar webhook_cadastro se existir
-      const webhookConfig = response.data?.find(c => c.chave === 'webhook_cadastro');
-      if (webhookConfig) {
-        setWebhookUrl(webhookConfig.valor || '');
-        setWebhookDescricao(webhookConfig.descricao || 'Webhook para receber notificações de novos cadastros');
+      // Buscar diretamente a configuração do webhook (mais confiável do que listar tudo)
+      try {
+        const response = await getConfiguracao('webhook_cadastro');
+        if (response?.data) {
+          setWebhookUrl(response.data.valor || '');
+          setWebhookDescricao(response.data.descricao || 'Webhook para receber notificações de novos cadastros');
+        }
+      } catch (err) {
+        // Se ainda não existir, backend retorna 404 -> manter vazio sem tratar como erro
+        if (err?.response?.status !== 404) {
+          throw err;
+        }
+        setWebhookUrl('');
+        setWebhookDescricao('Webhook para receber notificações de novos cadastros');
       }
     } catch (error) {
       showError(getErrorMessage(error));
