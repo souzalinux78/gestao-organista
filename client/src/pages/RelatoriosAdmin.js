@@ -142,11 +142,11 @@ function RelatoriosAdmin({ user }) {
                   .filter(igreja => !filtros.igreja_id || igreja.id.toString() === filtros.igreja_id)
                   .map(igreja => (
                     <tr key={igreja.id}>
-                      <td className="td-strong">{igreja.nome}</td>
-                      <td>{igreja.endereco || '-'}</td>
-                      <td>{igreja.total_organistas || 0}</td>
-                      <td>{igreja.total_cultos || 0}</td>
-                      <td>{igreja.total_usuarios || 0}</td>
+                      <td className="td-strong" data-label="Igreja">{igreja.nome}</td>
+                      <td data-label="Endereço">{igreja.endereco || '-'}</td>
+                      <td data-label="Organistas">{igreja.total_organistas || 0}</td>
+                      <td data-label="Cultos">{igreja.total_cultos || 0}</td>
+                      <td data-label="Usuários">{igreja.total_usuarios || 0}</td>
                       <td>
                         <button
                           className="btn btn-success btn-nowrap"
