@@ -154,20 +154,19 @@
 }
 
 .app-header__menu-toggle {
-  display: none;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: var(--header-text);
-  padding: 0.375rem;
-  border-radius: var(--radius-sm);
+  display: flex;
+  background: #344A64;
+  border: 1px solid #60A5FA;
+  color: #FFFFFF;
+  padding: 0.5rem;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;
-  min-width: 32px;
-  min-height: 32px;
-  width: 32px;
-  height: 32px;
-  display: flex;
+  min-width: 40px;
+  min-height: 40px;
+  width: 40px;
+  height: 40px;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
@@ -175,8 +174,8 @@
 }
 
 .app-header__menu-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: #3D5670;
+  border-color: #93C5FD;
 }
 
 .app-header__left > div,
@@ -216,9 +215,7 @@
 }
 
 .app-header__user {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: none; /* Esconder email no header */
 }
 
 .app-header__email {
@@ -235,7 +232,7 @@
 /* ThemeToggle no header azul - estilo circular cinza claro */
 .app-header .theme-toggle {
   background: #E5E7EB;
-  border: 1px solid #D1D5DB;
+  border: 1px solid #9CA3AF;
   border-radius: 50%;
   color: var(--header-text);
   padding: 0.5rem;
@@ -251,7 +248,7 @@
 
 .app-header .theme-toggle:hover {
   background: #D1D5DB;
-  border-color: #9CA3AF;
+  border-color: #6B7280;
   transform: scale(1.05);
 }
 
@@ -263,6 +260,32 @@
 
 .app-header .theme-toggle__label {
   display: none; /* Sempre esconder texto no header */
+}
+
+/* Botão Sair no header */
+.app-header .btn-danger {
+  background: #DC2626;
+  color: #FFFFFF !important;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  min-height: 40px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.app-header .btn-danger:hover {
+  background: #B91C1C;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.app-header .btn-danger:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* ============================================
@@ -284,12 +307,12 @@
 
   .app-header__menu-toggle {
     display: flex;
-    min-width: 32px;
-    min-height: 32px;
-    width: 32px;
-    height: 32px;
-    padding: 0.375rem;
-    font-size: 0.875rem;
+    min-width: 40px;
+    min-height: 40px;
+    width: 40px;
+    height: 40px;
+    padding: 0.5rem;
+    font-size: 1rem;
   }
 
   .app-header__left > div {
@@ -334,10 +357,11 @@
   }
 
   .app-header .btn-sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.8125rem;
-    min-height: 32px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    min-height: 40px;
     white-space: nowrap;
+    border-radius: 8px;
   }
 
   .sidebar-overlay {

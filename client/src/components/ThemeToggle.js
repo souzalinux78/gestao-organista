@@ -39,13 +39,13 @@ function ThemeToggle() {
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
           </svg>
         ) : (
-          // Ícone de lua (dark mode) - branco/cinza claro
+          // Ícone de lua (dark mode) - cinza escuro
           <svg
             width="20"
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#6B7280"
+            stroke="#374151"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
