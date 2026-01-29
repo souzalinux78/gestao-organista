@@ -202,33 +202,31 @@ function TopHeader({ user, onLogout }) {
   };
   
   return (
-    <div className="app-header">
-      <div className="app-header__top">
-        <button 
-          className="app-header__menu-toggle"
-          onClick={toggleSidebar}
-          aria-label="Toggle sidebar"
-        >
-          ☰
-        </button>
-        <div className="app-header__spacer"></div>
-        <div className="app-header__text">
-          <div className="app-header__title">Painel Admin</div>
-          <div className="app-header__subtitle">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</div>
+    <>
+      <header className="app-bar">
+        <div className="left">
+          <button
+            className="app-bar__menu"
+            onClick={toggleSidebar}
+            aria-label="Toggle sidebar"
+          >
+            ☰
+          </button>
         </div>
-        <div className="app-header__spacer"></div>
-        <ThemeToggle />
-        <button onClick={onLogout} className="btn btn-danger btn-sm app-header__logout">
+        <div className="center">
+          Painel Admin
+        </div>
+        <div className="right">
+          <ThemeToggle />
+        </div>
+      </header>
+      <section className="user-bar">
+        <span className="user-name">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</span>
+        <button onClick={onLogout} className="logout">
           Sair
         </button>
-      </div>
-      <div className="app-header__bottom">
-        <div className="app-header__subtitle-mobile">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</div>
-        <button onClick={onLogout} className="btn btn-danger btn-sm app-header__logout-mobile">
-          Sair
-        </button>
-      </div>
-    </div>
+      </section>
+    </>
   );
 }
 
