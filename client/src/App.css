@@ -56,13 +56,13 @@
   top: 0;
   background: var(--header-bg);
   color: var(--header-text);
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1.25rem;
   z-index: 90;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 56px;
+  min-height: 64px;
   width: 100%;
   box-sizing: border-box;
   gap: 1rem;
@@ -150,7 +150,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: visible;
 }
@@ -183,47 +183,44 @@
 .app-header__text {
   display: flex !important;
   flex-direction: column;
-  gap: 0.0625rem;
-  min-width: 120px;
-  max-width: 180px;
+  gap: 0.125rem;
+  min-width: 150px;
   flex: 0 0 auto;
-  overflow: hidden;
+  overflow: visible;
   visibility: visible !important;
   opacity: 1 !important;
-  margin-right: 0.5rem;
+  margin-right: 1rem;
 }
 
 .app-header__title {
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #FFFFFF !important;
-  line-height: 1.2;
+  line-height: 1.3;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  max-width: 180px;
 }
 
 .app-header__subtitle {
-  font-size: 0.6875rem;
-  color: rgba(255, 255, 255, 0.8) !important;
-  line-height: 1.2;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.85) !important;
+  line-height: 1.3;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  max-width: 180px;
 }
 
 .app-header__right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex: 0 0 auto;
   flex-shrink: 0;
   margin-left: auto;
@@ -244,21 +241,22 @@
   min-height: 36px;
 }
 
-/* ThemeToggle no header azul - estilo circular cinza claro compacto */
+/* ThemeToggle no header azul - estilo circular cinza claro */
 .app-header .theme-toggle {
   background: #E5E7EB;
   border: 1px solid #9CA3AF;
   border-radius: 50%;
   color: var(--header-text);
-  padding: 0.375rem;
-  min-width: 36px;
-  min-height: 36px;
-  width: 36px;
-  height: 36px;
+  padding: 0.5rem;
+  min-width: 40px;
+  min-height: 40px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .app-header .theme-toggle:hover {
@@ -269,28 +267,34 @@
 
 .app-header .theme-toggle__icon {
   color: inherit;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .app-header .theme-toggle__label {
   display: none; /* Sempre esconder texto no header */
 }
 
-/* Botão Sair no header - compacto */
+/* Botão Sair no header - vermelho destacado */
 .app-header .btn-danger {
   background: #DC2626;
   color: #FFFFFF !important;
   border: none;
   border-radius: 8px;
-  padding: 0.375rem 0.75rem;
-  font-size: 0.8125rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  min-height: 36px;
+  min-height: 40px;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .app-header .btn-danger:hover {
@@ -321,22 +325,34 @@
   }
 
   .app-header__text {
-    min-width: 100px;
-    max-width: 150px;
+    min-width: 120px;
+    margin-right: 0.5rem;
   }
 
   .app-header__title {
     font-size: 0.875rem;
-    max-width: 150px;
   }
 
   .app-header__subtitle {
-    font-size: 0.625rem;
-    max-width: 150px;
+    font-size: 0.6875rem;
   }
 
   .app-header__right {
-    gap: 0.375rem;
+    gap: 0.5rem;
+  }
+
+  .app-header .theme-toggle {
+    min-width: 36px;
+    min-height: 36px;
+    width: 36px;
+    height: 36px;
+    padding: 0.375rem;
+  }
+
+  .app-header .btn-danger {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    min-height: 36px;
   }
 
   .app-header__user {
