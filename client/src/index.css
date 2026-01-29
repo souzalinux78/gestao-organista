@@ -7,6 +7,22 @@
    Este arquivo apenas define variáveis de compatibilidade e estilos */
 
 :root {
+  /* Design tokens globais */
+  --bg-page: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-muted: #f1f5f9;
+
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-inverse: #ffffff;
+
+  --accent-primary: #d4af37;
+  --accent-secondary: #c9a24d;
+
+  --dark-primary: #0f172a;
+  --dark-secondary: #1e293b;
+
+  --border-default: #e5e7eb;
   --pe-black: #0b0b0b;
   --pe-black-soft: #1a1a1a;
   --pe-gold: #d4af37;
@@ -18,24 +34,24 @@
   --pe-border: #e5e7eb;
 
   /* Menu tokens - LIGHT MODE */
-  --menu-bg: #f8fafc;
-  --menu-surface: #ffffff;
-  --menu-text: #1f2937;
-  --menu-text-muted: #6b7280;
-  --menu-border: #e5e7eb;
-  --menu-dark: #0f172a;
-  --menu-dark-soft: #1e293b;
-  --menu-accent: #d4af37;
-  --menu-accent-soft: #c9a24d;
+  --menu-bg: var(--bg-page);
+  --menu-surface: var(--bg-surface);
+  --menu-text: var(--text-primary);
+  --menu-text-muted: var(--text-secondary);
+  --menu-border: var(--border-default);
+  --menu-dark: var(--dark-primary);
+  --menu-dark-soft: var(--dark-secondary);
+  --menu-accent: var(--accent-primary);
+  --menu-accent-soft: var(--accent-secondary);
   --menu-active-bg: rgba(212, 175, 55, 0.12);
 
-  --app-bg: var(--pe-bg);
-  --app-text: var(--pe-text);
-  --app-secondary: var(--pe-border);
-  --app-gold: var(--pe-gold);
-  --app-dark: var(--pe-black);
-  --app-primary: var(--pe-black);
-  --app-accent: var(--pe-gold);
+  --app-bg: var(--bg-page);
+  --app-text: var(--text-primary);
+  --app-secondary: var(--border-default);
+  --app-gold: var(--accent-primary);
+  --app-dark: var(--dark-primary);
+  --app-primary: var(--dark-primary);
+  --app-accent: var(--accent-primary);
   /* Variáveis de compatibilidade (usam variáveis do theme.css) */
   /* As cores principais estão definidas em theme.css */
   
@@ -156,15 +172,24 @@
 
 /* Menu tokens - DARK MODE */
 [data-theme="dark"] {
-  --menu-bg: #020617;
-  --menu-surface: #0f172a;
-  --menu-text: #e5e7eb;
-  --menu-text-muted: #9ca3af;
-  --menu-border: #1f2937;
-  --menu-dark: #020617;
-  --menu-dark-soft: #020617;
-  --menu-accent: #d4af37;
-  --menu-accent-soft: #c9a24d;
+  --bg-page: #020617;
+  --bg-surface: #0f172a;
+  --bg-muted: #020617;
+
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+
+  --border-default: #1f2937;
+
+  --menu-bg: var(--bg-page);
+  --menu-surface: var(--bg-surface);
+  --menu-text: var(--text-primary);
+  --menu-text-muted: var(--text-secondary);
+  --menu-border: var(--border-default);
+  --menu-dark: var(--bg-page);
+  --menu-dark-soft: var(--bg-page);
+  --menu-accent: var(--accent-primary);
+  --menu-accent-soft: var(--accent-secondary);
   --menu-active-bg: rgba(212, 175, 55, 0.18);
 }
 
@@ -753,7 +778,7 @@ button {
 
 .btn-primary {
   background: var(--primary);
-  color: var(--app-text) !important;
+  color: var(--dark-primary) !important;
   box-shadow: var(--shadow-sm);
   font-weight: 600;
   border: 1px solid var(--primary);
@@ -769,7 +794,7 @@ button {
   background: var(--primary-hover);
   box-shadow: var(--shadow-md), 0 0 0 4px var(--primary-soft);
   border-color: var(--primary-hover);
-  color: var(--app-text) !important;
+  color: var(--dark-primary) !important;
   transform: translateY(-2px);
   transition: all var(--transition-smooth);
 }
@@ -778,13 +803,13 @@ button {
   background: var(--primary-hover);
   box-shadow: var(--shadow-sm);
   transform: scale(0.97) translateY(0);
-  color: var(--app-text) !important;
+  color: var(--dark-primary) !important;
   transition: all 100ms ease;
 }
 
 .btn-secondary {
   background: var(--secondary);
-  color: var(--app-text) !important;
+  color: var(--text-primary) !important;
   box-shadow: var(--shadow-sm);
   font-weight: 600;
   border: 1px solid var(--secondary);
@@ -800,7 +825,7 @@ button {
   background: var(--secondary-dark);
   box-shadow: var(--shadow-md);
   border-color: var(--secondary-dark);
-  color: var(--app-text) !important;
+  color: var(--text-primary) !important;
   transform: translateY(-1px);
 }
 
@@ -808,7 +833,7 @@ button {
   background: var(--secondary-dark);
   box-shadow: var(--shadow-sm);
   transform: scale(0.98);
-  color: var(--app-text) !important;
+  color: var(--text-primary) !important;
 }
 
 .btn-danger {
@@ -958,7 +983,7 @@ button {
 }
 
 .table tbody tr:hover {
-  background: var(--primary-soft) !important;
+  background: rgba(212, 175, 55, 0.08) !important;
   cursor: pointer;
   transform: scale(1.01);
   box-shadow: 0 2px 8px var(--app-secondary);
@@ -1426,8 +1451,8 @@ button {
   .table tr:hover {
     box-shadow: var(--shadow-lg) !important;
     transform: translateY(-2px) !important;
-    background: var(--white) !important;
-    border-color: var(--blue-soft) !important;
+    background: rgba(212, 175, 55, 0.08) !important;
+    border-color: var(--accent-secondary) !important;
   }
 
   .table td {

@@ -211,7 +211,8 @@
 }
 
 .row-highlight {
-  background: var(--app-bg);
+  background: rgba(212, 175, 55, 0.12);
+  border-left: 3px solid var(--accent-primary);
 }
 
 .form-group--checkbox {

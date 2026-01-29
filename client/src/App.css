@@ -70,8 +70,8 @@
   justify-content: space-between;
   flex-wrap: nowrap;
   padding: 0 12px;
-  background: var(--app-primary);
-  color: var(--app-text);
+  background: linear-gradient(90deg, var(--dark-primary), var(--dark-secondary));
+  color: var(--text-inverse);
   z-index: 1000;
   width: 100%;
   max-width: 100vw;
@@ -110,7 +110,7 @@
 
 .app-bar__subtitle {
   font-size: 0.75rem;
-  color: var(--app-text);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

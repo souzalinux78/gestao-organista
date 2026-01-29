@@ -6,67 +6,67 @@
 /* === LIGHT THEME (Default) === */
 :root {
   /* Backgrounds */
-  --bg-main: var(--pe-bg);
-  --bg-card: var(--pe-card);
-  --bg-hover: var(--pe-bg);
-  --bg-overlay: var(--pe-bg);
+  --bg-main: var(--bg-page);
+  --bg-card: var(--bg-surface);
+  --bg-hover: var(--bg-muted);
+  --bg-overlay: var(--bg-muted);
   
   /* Text Colors */
-  --text-main: var(--pe-text);
-  --text-muted: var(--pe-text-muted);
-  --text-light: var(--pe-text-muted);
-  --text-inverse: #ffffff;
+  --text-main: var(--text-primary);
+  --text-muted: var(--text-secondary);
+  --text-light: var(--text-secondary);
+  --text-inverse: var(--text-inverse);
   
   /* Primary Colors */
-  --primary: var(--pe-gold);
-  --primary-hover: var(--pe-gold-soft);
-  --primary-light: var(--pe-gold-soft);
-  --primary-dark: var(--pe-gold);
-  --primary-soft: var(--pe-gold-soft);
-  --primary-glow: var(--pe-gold-soft);
+  --primary: var(--accent-primary);
+  --primary-hover: var(--accent-secondary);
+  --primary-light: var(--accent-secondary);
+  --primary-dark: var(--accent-primary);
+  --primary-soft: var(--accent-secondary);
+  --primary-glow: var(--accent-secondary);
   
   /* Layout Colors (Admin Panel Style) */
-  --sidebar-bg: var(--pe-black);
-  --sidebar-hover: var(--pe-black-soft);
-  --sidebar-active: var(--pe-black-soft);
-  --header-bg: linear-gradient(90deg, var(--pe-black), var(--pe-black-soft), var(--pe-gold-soft));
-  --header-text: #ffffff;
+  --sidebar-bg: var(--dark-primary);
+  --sidebar-hover: var(--dark-secondary);
+  --sidebar-active: var(--dark-secondary);
+  --header-bg: linear-gradient(90deg, var(--dark-primary), var(--dark-secondary));
+  --header-text: var(--text-inverse);
   
   /* Secondary Colors */
-  --secondary: var(--pe-border);
-  --secondary-light: var(--pe-border);
-  --secondary-dark: var(--pe-border);
-  --secondary-soft: var(--pe-border);
+  --secondary: var(--bg-muted);
+  --secondary-light: var(--bg-muted);
+  --secondary-dark: var(--border-default);
+  --secondary-soft: var(--bg-muted);
   
   /* Accent Colors */
-  --accent: var(--app-text);
-  --accent-light: var(--app-text);
-  --accent-dark: var(--app-text);
-  --accent-soft: var(--app-text);
+  --accent: var(--accent-primary);
+  --accent-light: var(--accent-secondary);
+  --accent-dark: var(--accent-primary);
+  --accent-soft: var(--accent-secondary);
   
   /* Status Colors */
-  --success: var(--app-text);
-  --success-light: var(--app-text);
-  --success-dark: var(--app-text);
-  --success-soft: var(--app-text);
-  --danger: var(--app-text);
-  --danger-light: var(--app-text);
-  --danger-dark: var(--app-text);
-  --danger-soft: var(--app-text);
-  --warning: var(--app-text);
-  --warning-light: var(--app-text);
-  --warning-dark: var(--app-text);
-  --warning-soft: var(--app-text);
-  --info: var(--app-text);
-  --info-light: var(--app-text);
-  --info-dark: var(--app-text);
-  --info-soft: var(--app-text);
+  --success: var(--accent-secondary);
+  --success-light: var(--accent-secondary);
+  --success-dark: var(--accent-secondary);
+  --success-soft: var(--accent-secondary);
+  --danger: var(--accent-secondary);
+  --danger-light: var(--accent-secondary);
+  --danger-dark: var(--accent-secondary);
+  --danger-soft: var(--accent-secondary);
+  --warning: var(--accent-secondary);
+  --warning-light: var(--accent-secondary);
+  --warning-dark: var(--accent-secondary);
+  --warning-soft: var(--accent-secondary);
+  --info: var(--accent-secondary);
+  --info-light: var(--accent-secondary);
+  --info-dark: var(--accent-secondary);
+  --info-soft: var(--accent-secondary);
   
   /* Borders */
-  --border: var(--app-secondary);
-  --border-light: var(--app-secondary);
-  --border-medium: var(--app-secondary);
-  --border-dark: var(--app-secondary);
+  --border: var(--border-default);
+  --border-light: var(--border-default);
+  --border-medium: var(--border-default);
+  --border-dark: var(--border-default);
   
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 var(--app-secondary);
@@ -140,58 +140,58 @@
 /* === DARK THEME === */
 [data-theme="dark"] {
   /* Backgrounds */
-  --bg-main: var(--app-text);
-  --bg-card: var(--app-text);
-  --bg-hover: var(--app-text);
-  --bg-overlay: var(--app-text);
+  --bg-main: var(--bg-page);
+  --bg-card: var(--bg-surface);
+  --bg-hover: var(--bg-muted);
+  --bg-overlay: var(--bg-muted);
   
   /* Text Colors */
-  --text-main: var(--app-text);
-  --text-muted: var(--app-text);
-  --text-light: var(--app-text);
-  --text-inverse: var(--app-text);
+  --text-main: var(--text-primary);
+  --text-muted: var(--text-secondary);
+  --text-light: var(--text-secondary);
+  --text-inverse: var(--text-inverse);
   
   /* Primary Colors */
-  --primary: var(--app-text);
-  --primary-hover: var(--app-text);
-  --primary-light: var(--app-text);
-  --primary-dark: var(--app-text);
-  --primary-soft: var(--app-text);
-  --primary-glow: var(--app-text);
+  --primary: var(--accent-primary);
+  --primary-hover: var(--accent-secondary);
+  --primary-light: var(--accent-secondary);
+  --primary-dark: var(--accent-primary);
+  --primary-soft: var(--accent-secondary);
+  --primary-glow: var(--accent-secondary);
   
   /* Secondary Colors */
-  --secondary: var(--app-text);
-  --secondary-light: var(--app-text);
-  --secondary-dark: var(--app-text);
-  --secondary-soft: var(--app-text);
+  --secondary: var(--bg-muted);
+  --secondary-light: var(--bg-muted);
+  --secondary-dark: var(--border-default);
+  --secondary-soft: var(--bg-muted);
   
   /* Accent Colors */
-  --accent: var(--app-text);
-  --accent-light: var(--app-text);
-  --accent-dark: var(--app-text);
-  --accent-soft: var(--app-text);
+  --accent: var(--accent-primary);
+  --accent-light: var(--accent-secondary);
+  --accent-dark: var(--accent-primary);
+  --accent-soft: var(--accent-secondary);
   
   /* Status Colors */
-  --success: var(--app-text);
-  --success-light: var(--app-text);
-  --success-dark: var(--app-text);
-  --success-soft: var(--app-text);
-  --danger: var(--app-text);
-  --danger-light: var(--app-text);
-  --danger-dark: var(--app-text);
-  --danger-soft: var(--app-text);
-  --warning: var(--app-text);
-  --warning-light: var(--app-text);
-  --warning-dark: var(--app-text);
-  --info: var(--app-text);
-  --info-light: var(--app-text);
-  --info-dark: var(--app-text);
+  --success: var(--accent-secondary);
+  --success-light: var(--accent-secondary);
+  --success-dark: var(--accent-secondary);
+  --success-soft: var(--accent-secondary);
+  --danger: var(--accent-secondary);
+  --danger-light: var(--accent-secondary);
+  --danger-dark: var(--accent-secondary);
+  --danger-soft: var(--accent-secondary);
+  --warning: var(--accent-secondary);
+  --warning-light: var(--accent-secondary);
+  --warning-dark: var(--accent-secondary);
+  --info: var(--accent-secondary);
+  --info-light: var(--accent-secondary);
+  --info-dark: var(--accent-secondary);
   
   /* Borders */
-  --border: var(--app-secondary);
-  --border-light: var(--app-secondary);
-  --border-medium: var(--app-secondary);
-  --border-dark: var(--app-secondary);
+  --border: var(--border-default);
+  --border-light: var(--border-default);
+  --border-medium: var(--border-default);
+  --border-dark: var(--border-default);
   
   /* Shadows (mais sutis no dark) */
   --shadow-sm: 0 1px 2px 0 var(--app-secondary);
