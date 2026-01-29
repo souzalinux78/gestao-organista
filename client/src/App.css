@@ -268,7 +268,7 @@
   top: 0;
   height: 56px;
   display: grid;
-  grid-template-columns: 48px 1fr 48px;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   padding: 0 8px;
   background: #243b53;
@@ -287,6 +287,14 @@
   text-align: center;
   font-weight: 600;
   justify-content: center;
+}
+
+.app-bar .right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 48px;
+  gap: 8px;
 }
 
 .menu-toggle {
@@ -318,6 +326,21 @@
 .logout {
   padding: 4px 12px;
   border-radius: 6px;
+}
+
+.desktop-actions {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .user-bar {
+    display: none;
+  }
+
+  .desktop-actions {
+    display: flex;
+    gap: 8px;
+  }
 }
 
 @media (max-width: 1024px) {

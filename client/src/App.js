@@ -218,6 +218,11 @@ function TopHeader({ user, onLogout }) {
         </div>
         <div className="right">
           <ThemeToggle />
+          <div className="desktop-actions">
+            <button onClick={onLogout} className="logout">
+              Sair
+            </button>
+          </div>
         </div>
       </header>
       <section className="user-bar">
