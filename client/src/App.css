@@ -349,21 +349,31 @@
 
 @media (max-width: 1024px) {
   .main-header {
-    height: auto;
-    min-height: 64px;
-    padding: calc(6px + env(safe-area-inset-top)) 12px 6px;
+    height: 56px;
+    padding: calc(4px + env(safe-area-inset-top)) 10px 4px;
     gap: 6px;
+    overflow: hidden;
   }
 
   .header-branding {
-    overflow: visible;
+    overflow: hidden;
   }
 
   .brand-title,
   .main-header .user-name {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .brand-title {
+    font-size: 0.9rem;
+    line-height: 1.1;
+  }
+
+  .main-header .user-name {
+    font-size: 0.7rem;
+    line-height: 1.1;
   }
 
   .main-header .theme-toggle {
@@ -378,7 +388,7 @@
 
   .logout-btn {
     padding: 4px 8px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     flex-shrink: 0;
     white-space: nowrap;
   }
