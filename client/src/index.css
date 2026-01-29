@@ -17,6 +17,13 @@
   --pe-text-muted: #6b7280;
   --pe-border: #e5e7eb;
 
+  --menu-bg: #0e0e0e;
+  --menu-bg-soft: #141414;
+  --menu-text: #9ca3af;
+  --menu-text-active: #ffffff;
+  --menu-gold: #d4af37;
+  --menu-hover: #1c1c1c;
+
   --app-bg: var(--pe-bg);
   --app-text: var(--pe-text);
   --app-secondary: var(--pe-border);
