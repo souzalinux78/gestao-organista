@@ -349,9 +349,21 @@
 
 @media (max-width: 1024px) {
   .main-header {
-    height: 60px;
-    padding: 0 12px;
+    height: auto;
+    min-height: 64px;
+    padding: calc(6px + env(safe-area-inset-top)) 12px 6px;
     gap: 6px;
+  }
+
+  .header-branding {
+    overflow: visible;
+  }
+
+  .brand-title,
+  .main-header .user-name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
   }
 
   .main-header .theme-toggle {
@@ -367,6 +379,8 @@
   .logout-btn {
     padding: 4px 8px;
     font-size: 0.75rem;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 }
 
