@@ -71,7 +71,7 @@ function AppContent() {
   }
 
   return (
-    <div className="App">
+    <div className="App App--with-sidebar">
       {user && <Sidebar user={user} location={location} />}
       <div className="app-main">
         {user && <TopHeader user={user} onLogout={logout} />}

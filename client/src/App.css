@@ -29,6 +29,7 @@
   overflow-x: hidden;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   -webkit-overflow-scrolling: touch;
+  display: block;
 }
 
 .sidebar-overlay {
@@ -46,6 +47,8 @@
   flex-direction: column;
   flex: 1;
   min-height: 100vh;
+  width: calc(100% - 260px);
+  box-sizing: border-box;
 }
 
 .app-header {
@@ -60,6 +63,8 @@
   align-items: center;
   justify-content: space-between;
   min-height: 64px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .app-content {
