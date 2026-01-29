@@ -65,7 +65,7 @@
   min-height: 56px;
   width: 100%;
   box-sizing: border-box;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .app-content {
@@ -149,8 +149,9 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
 }
 
 .app-header__menu-toggle {
@@ -179,37 +180,46 @@
 
 .app-header__left > div,
 .app-header__text {
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   gap: 0.0625rem;
   min-width: 0;
-  flex: 1;
-  overflow: hidden;
+  flex: 0 1 auto;
+  overflow: visible;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .app-header__title {
   font-size: 0.9375rem;
   font-weight: 700;
-  color: var(--header-text);
+  color: #FFFFFF !important;
   line-height: 1.2;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .app-header__subtitle {
   font-size: 0.6875rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.8) !important;
   line-height: 1.2;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .app-header__right {
   display: flex;
   align-items: center;
   gap: 0.375rem;
+  flex: 0 0 auto;
   flex-shrink: 0;
 }
 
