@@ -64,14 +64,17 @@
   justify-content: space-between;
   min-height: 64px;
   width: 100%;
-  max-width: 100%;
+  max-width: 100vw;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
+  gap: 1rem;
 }
 
 .app-header > * {
   position: relative;
   z-index: 1;
+  flex-shrink: 0;
 }
 
 .app-content {
@@ -155,10 +158,10 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex: 0 0 auto;
+  flex: 1 1 0;
   min-width: 0;
   overflow: visible;
-  margin-right: 1rem;
+  margin-right: 0.5rem;
 }
 
 .app-header__menu-toggle {
@@ -190,7 +193,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 0;
   overflow: visible;
   visibility: visible;
   opacity: 1;
@@ -209,6 +213,7 @@
   opacity: 1;
   margin: 0;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .app-header__subtitle {
@@ -223,6 +228,7 @@
   opacity: 1;
   margin: 0;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .app-header__right {
@@ -231,8 +237,9 @@
   gap: 0.75rem;
   flex: 0 0 auto;
   flex-shrink: 0;
-  margin-left: auto;
+  margin-left: 0.5rem;
   overflow: visible;
+  min-width: fit-content;
 }
 
 .app-header__user {
@@ -321,24 +328,55 @@
 }
 
 /* ============================================
-   RESPONSIVIDADE
+   RESPONSIVIDADE MOBILE E PWA
    ============================================ */
 
+/* Tablets e telas médias (até 768px) */
 @media screen and (max-width: 768px) {
+  .app-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .app-sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .sidebar-overlay.sidebar-overlay--open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .app-main {
+    margin-left: 0;
+    width: 100%;
+  }
+
   .app-header {
     padding: 0.75rem 1rem;
     min-height: 56px;
     flex-wrap: nowrap;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: visible;
     width: 100%;
-    max-width: 100%;
+    max-width: 100vw;
+    gap: 0.5rem;
   }
 
   .app-header__left {
     gap: 0.5rem;
     flex: 1 1 auto;
     min-width: 0;
-    overflow: hidden;
+    overflow: visible;
+    margin-right: 0.5rem;
   }
 
   .app-header__menu-toggle {
@@ -353,28 +391,35 @@
 
   .app-header__text {
     min-width: 0;
-    max-width: calc(100vw - 200px);
-    margin-right: 0.5rem;
-    overflow: hidden;
+    flex: 1 1 auto;
+    overflow: visible;
+    margin-right: 0;
+    max-width: 100%;
   }
 
   .app-header__title {
     font-size: 0.875rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
     white-space: nowrap;
+    max-width: 100%;
+    display: block;
   }
 
   .app-header__subtitle {
     font-size: 0.6875rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
     white-space: nowrap;
+    max-width: 100%;
+    display: block;
   }
 
   .app-header__right {
     gap: 0.5rem;
     flex-shrink: 0;
+    margin-left: 0;
+    min-width: fit-content;
   }
 
   .app-header .theme-toggle {
@@ -409,11 +454,14 @@
     padding: 0.625rem 0.75rem;
     min-height: 52px;
     gap: 0.375rem;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .app-header__left {
     gap: 0.375rem;
-    overflow: hidden;
+    overflow: visible;
+    margin-right: 0.375rem;
   }
 
   .app-header__menu-toggle {
@@ -428,29 +476,34 @@
 
   .app-header__text {
     min-width: 0;
-    max-width: calc(100vw - 160px);
-    margin-right: 0.25rem;
-    overflow: hidden;
+    flex: 1 1 auto;
+    overflow: visible;
+    margin-right: 0;
   }
 
   .app-header__title {
     font-size: 0.8125rem;
     line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
     white-space: nowrap;
+    max-width: 100%;
   }
 
   .app-header__subtitle {
     font-size: 0.625rem;
     line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
     white-space: nowrap;
+    max-width: 100%;
   }
 
   .app-header__right {
     gap: 0.375rem;
+    flex-shrink: 0;
+    margin-left: 0;
+    min-width: fit-content;
   }
 
   .app-header .theme-toggle {
@@ -480,18 +533,36 @@
   .app-header {
     padding: 0.5rem 0.625rem;
     min-height: 48px;
+    gap: 0.25rem;
+  }
+
+  .app-header__left {
+    margin-right: 0.25rem;
   }
 
   .app-header__text {
-    max-width: calc(100vw - 140px);
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: visible;
   }
 
   .app-header__title {
     font-size: 0.75rem;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
   }
 
   .app-header__subtitle {
     font-size: 0.5625rem;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
+
+  .app-header__right {
+    gap: 0.25rem;
+    min-width: fit-content;
   }
 
   .app-header .btn-danger {
@@ -501,256 +572,17 @@
   }
 }
 
-@media (max-width: 768px) {
-  .sidebar-overlay {
-    display: block;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-  
-  .sidebar-overlay.sidebar-overlay--open {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  
-  .app-sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
-  }
-  
-  .app-sidebar.sidebar-open {
-    transform: translateX(0);
-  }
-  
-  .app-main {
-    margin-left: 0;
-  }
-  
-  .app-content {
-    padding: 1rem;
-  }
-  
-  /* Estilos mobile já definidos acima, removendo duplicação */
-}
-
 /* Quando estiver na página de login, remover estilos do App */
 body.login-page .App {
   min-height: 100vh;
-  display: block;
-  background: transparent;
+  display: flex;
   flex-direction: column;
-}
-
-body.login-page .App .app-sidebar,
-body.login-page .App .app-main {
-  display: none;
-}
-
-body.login-page .App .container {
-  padding: 0;
-  margin: 0;
-  max-width: 100%;
-}
-
-.nav a.active {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-  color: var(--white);
-  font-weight: 600;
-  box-shadow: var(--shadow-accent);
-}
-
-.header__content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-md);
-}
-
-/* Responsividade para Header */
-@media (max-width: 768px) {
-  .header__content {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--spacing-sm);
-  }
-  
-  .header__title-wrapper {
-    width: 100%;
-  }
-
-  .header__actions {
-    width: 100%;
-    flex-direction: row;
-    gap: var(--spacing-sm);
-    margin-left: 0;
-    justify-content: flex-end;
-  }
-  
-  .header__actions .btn {
-    flex: 0 0 auto;
-    min-width: 80px;
-  }
-}
-
-/* Melhorias de acessibilidade */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Header - Classes para remover estilos inline */
-.header__title-wrapper {
-  flex: 1;
-  min-width: 200px;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
-.header__logo {
-  height: 32px;
-  width: auto;
-  max-width: 120px;
-  display: none;
-  object-fit: contain;
-}
-
-.header__title-container {
-  flex: 1;
-  min-width: 0;
-}
-
-.header__title {
-  font-size: clamp(1.2rem, 4vw, 1.75rem);
-  word-break: break-word;
-  margin: 0;
-  font-weight: 700;
-  color: var(--text-main);
-  line-height: 1.4;
-}
-
-.header__user-info {
-  font-size: var(--font-size-sm);
-  margin-top: 0.375rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.header__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  margin-left: auto;
-}
-
-.header__logout-btn {
-  flex-shrink: 0;
-}
-
-/* Home Page - Classes para remover estilos inline */
-.home__features-list {
-  margin-top: var(--spacing-lg);
-  padding-left: var(--spacing-lg);
-  line-height: 1.6;
-}
-
-.home__features-list li {
-  margin-bottom: var(--spacing-sm);
-  color: var(--text-muted);
-}
-
-.home__igrejas-card {
-  margin-top: var(--spacing-xl);
-  padding: var(--spacing-md);
-  background: var(--bg-hover);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-}
-
-.home__igrejas-title {
-  margin-bottom: var(--spacing-sm);
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.home__igrejas-list {
-  margin: 0;
-  padding-left: var(--spacing-lg);
-  line-height: 1.6;
-}
-
-.home__igrejas-list li {
-  color: var(--text-muted);
-  margin-bottom: var(--spacing-xs);
-}
-
-/* Mobile Menu Toggle */
-.mobile-menu-toggle {
-  display: none;
-  min-width: 44px;
-  min-height: 44px;
-  font-size: 1.5rem;
   align-items: center;
   justify-content: center;
-  background: var(--secondary) !important;
-  color: #FFFFFF !important;
-  border: 1px solid var(--secondary) !important;
-  box-shadow: var(--shadow-sm) !important;
-  border-radius: var(--radius-sm) !important;
-  padding: 0.75rem 1rem !important;
-  font-weight: 600 !important;
 }
 
-.mobile-menu-toggle:hover:not(:disabled),
-.mobile-menu-toggle:focus:not(:disabled) {
-  background: var(--secondary-dark) !important;
-  color: #FFFFFF !important;
-  box-shadow: var(--shadow-md) !important;
-  border-color: var(--secondary-dark) !important;
-  transform: translateY(-1px);
-}
-
-.mobile-menu-toggle:active:not(:disabled) {
-  background: var(--secondary-dark) !important;
-  box-shadow: var(--shadow-sm) !important;
-  transform: scale(0.98);
-  color: #FFFFFF !important;
-}
-
-@media (max-width: 768px) {
-  .mobile-menu-toggle {
-    display: flex !important;
-  }
-  
-  .header__actions {
-    flex-direction: column;
-    gap: var(--spacing-xs);
-    align-items: stretch;
-  }
-  
-  .header__actions .btn {
-    width: 100%;
-  }
-  
-  .nav {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-  }
-  
-  .nav.nav-open {
-    max-height: 500px;
-  }
-}
-
-/* Modo escuro (opcional, para futuro) */
-@media (prefers-color-scheme: dark) {
-  /* Pode ser implementado no futuro */
+body.login-page .app-sidebar,
+body.login-page .app-header,
+body.login-page .app-main {
+  display: none;
 }
