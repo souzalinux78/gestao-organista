@@ -201,11 +201,6 @@ function TopHeader({ user, onLogout }) {
     overlay?.classList.toggle('sidebar-overlay--open');
   };
 
-  const shouldRenderMobileLogout = !!user;
-  if (shouldRenderMobileLogout) {
-    console.log('mobile logout rendered');
-  }
-  
   return (
     <>
       <header className="app-bar">
@@ -223,21 +218,11 @@ function TopHeader({ user, onLogout }) {
         </div>
         <div className="right">
           <ThemeToggle />
-          <div className="desktop-actions">
-            <button onClick={onLogout} className="logout">
-              Sair
-            </button>
-          </div>
-        </div>
-      </header>
-      <section className="user-bar">
-        <span className="user-name">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</span>
-        {shouldRenderMobileLogout && (
-          <button onClick={onLogout} className="logout mobile-only">
+          <button onClick={onLogout} className="logout">
             Sair
           </button>
-        )}
-      </section>
+        </div>
+      </header>
     </>
   );
 }
