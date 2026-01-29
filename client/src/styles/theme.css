@@ -13,30 +13,30 @@
   
   /* Text Colors */
   --text-main: var(--app-text);
-  --text-muted: var(--app-text-muted);
-  --text-light: var(--app-text-muted);
+  --text-muted: var(--app-text);
+  --text-light: var(--app-text);
   --text-inverse: var(--app-text);
   
   /* Primary Colors */
-  --primary: var(--app-text);
-  --primary-hover: var(--app-text);
-  --primary-light: var(--app-text);
-  --primary-dark: var(--app-text);
-  --primary-soft: var(--app-text);
-  --primary-glow: var(--app-text);
+  --primary: var(--app-gold);
+  --primary-hover: var(--app-gold);
+  --primary-light: var(--app-gold);
+  --primary-dark: var(--app-gold);
+  --primary-soft: var(--app-gold);
+  --primary-glow: var(--app-gold);
   
   /* Layout Colors (Admin Panel Style) */
-  --sidebar-bg: var(--app-primary);
-  --sidebar-hover: var(--app-primary);
-  --sidebar-active: var(--app-primary);
-  --header-bg: var(--app-primary);
+  --sidebar-bg: var(--app-dark);
+  --sidebar-hover: var(--app-dark);
+  --sidebar-active: var(--app-dark);
+  --header-bg: var(--app-dark);
   --header-text: var(--app-text);
   
   /* Secondary Colors */
-  --secondary: var(--app-text);
-  --secondary-light: var(--app-text);
-  --secondary-dark: var(--app-text);
-  --secondary-soft: var(--app-text);
+  --secondary: var(--app-secondary);
+  --secondary-light: var(--app-secondary);
+  --secondary-dark: var(--app-secondary);
+  --secondary-soft: var(--app-secondary);
   
   /* Accent Colors */
   --accent: var(--app-text);
