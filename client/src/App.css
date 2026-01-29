@@ -25,7 +25,7 @@
   top: 0;
   bottom: 0;
   width: 260px;
-  background: var(--menu-bg);
+  background: linear-gradient(180deg, var(--menu-dark), var(--menu-dark-soft));
   color: var(--menu-text);
   border-right: 1px solid var(--menu-border);
   z-index: 100;
@@ -590,10 +590,11 @@
   transition: all 0.2s ease;
   border-left: 3px solid transparent;
   font-weight: 400;
+  background: transparent;
 }
 
 .sidebar-nav__item:hover {
-  background: var(--menu-bg-soft);
+  background: rgba(212, 175, 55, 0.08);
   color: var(--menu-text);
   border-left-color: transparent;
 }
@@ -601,7 +602,7 @@
 .sidebar-nav__item.active {
   background: var(--menu-active-bg);
   color: var(--menu-text);
-  border-left-color: var(--menu-active-border);
+  border-left: 4px solid var(--menu-accent);
   font-weight: 600;
 }
 
@@ -610,11 +611,11 @@
   line-height: 1;
   width: 24px;
   text-align: center;
-  color: var(--menu-icon);
+  color: var(--menu-text-muted);
 }
 
 .sidebar-nav__item.active .sidebar-nav__icon {
-  color: var(--menu-icon-active);
+  color: var(--menu-accent);
 }
 
 .sidebar-nav__text {
