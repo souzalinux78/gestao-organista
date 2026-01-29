@@ -6,15 +6,15 @@
 /* === LIGHT THEME (Default) === */
 :root {
   /* Backgrounds */
-  --bg-main: var(--app-text);
-  --bg-card: var(--app-text);
-  --bg-hover: var(--app-text);
-  --bg-overlay: var(--app-text);
+  --bg-main: var(--app-bg);
+  --bg-card: var(--app-bg);
+  --bg-hover: var(--app-bg);
+  --bg-overlay: var(--app-bg);
   
   /* Text Colors */
   --text-main: var(--app-text);
-  --text-muted: var(--app-text);
-  --text-light: var(--app-text);
+  --text-muted: var(--app-text-muted);
+  --text-light: var(--app-text-muted);
   --text-inverse: var(--app-text);
   
   /* Primary Colors */
@@ -25,12 +25,11 @@
   --primary-soft: var(--app-text);
   --primary-glow: var(--app-text);
   
-  /* Layout Colors (Admin Panel Style) - Azul Escuro Profissional */
-  /* Cor base: var(--app-text) (RGB: 44, 64, 90) */
-  --sidebar-bg: var(--app-text);
-  --sidebar-hover: var(--app-text);
-  --sidebar-active: var(--app-text);
-  --header-bg: var(--app-text);
+  /* Layout Colors (Admin Panel Style) */
+  --sidebar-bg: var(--app-primary);
+  --sidebar-hover: var(--app-primary);
+  --sidebar-active: var(--app-primary);
+  --header-bg: var(--app-primary);
   --header-text: var(--app-text);
   
   /* Secondary Colors */

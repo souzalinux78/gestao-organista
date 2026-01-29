@@ -11,7 +11,8 @@
   --app-secondary: #c3cfe2;
   --app-accent: #f5f7fa;
   --app-bg: #f5f7fa;
-  --app-text: #f5f7fa;
+  --app-text: #1f2937;
+  --app-text-muted: #4b5563;
   /* Variáveis de compatibilidade (usam variáveis do theme.css) */
   /* As cores principais estão definidas em theme.css */
   
