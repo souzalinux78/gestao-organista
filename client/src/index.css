@@ -34,16 +34,14 @@
   --pe-border: #e5e7eb;
 
   /* Menu tokens - LIGHT MODE */
-  --menu-bg: var(--bg-page);
-  --menu-surface: var(--bg-surface);
-  --menu-text: var(--text-primary);
-  --menu-text-muted: var(--text-secondary);
-  --menu-border: var(--border-default);
-  --menu-dark: var(--dark-primary);
-  --menu-dark-soft: var(--dark-secondary);
-  --menu-accent: var(--accent-primary);
-  --menu-accent-soft: var(--accent-secondary);
-  --menu-active-bg: rgba(212, 175, 55, 0.12);
+  --menu-bg-top: #0b0b0b;
+  --menu-bg-bottom: #1a1a1a;
+  --menu-text: #d1d5db;
+  --menu-text-muted: #9ca3af;
+  --menu-text-active: #ffffff;
+  --menu-accent: #d4af37;
+  --menu-accent-soft: rgba(212, 175, 55, 0.15);
+  --menu-hover: rgba(255, 255, 255, 0.06);
 
   --app-bg: var(--bg-page);
   --app-text: var(--text-primary);
@@ -181,16 +179,14 @@
 
   --border-default: #1f2937;
 
-  --menu-bg: var(--bg-page);
-  --menu-surface: var(--bg-surface);
-  --menu-text: var(--text-primary);
-  --menu-text-muted: var(--text-secondary);
-  --menu-border: var(--border-default);
-  --menu-dark: var(--bg-page);
-  --menu-dark-soft: var(--bg-page);
-  --menu-accent: var(--accent-primary);
-  --menu-accent-soft: var(--accent-secondary);
-  --menu-active-bg: rgba(212, 175, 55, 0.18);
+  --menu-bg-top: #0b0b0b;
+  --menu-bg-bottom: #1a1a1a;
+  --menu-text: #d1d5db;
+  --menu-text-muted: #9ca3af;
+  --menu-text-active: #ffffff;
+  --menu-accent: #d4af37;
+  --menu-accent-soft: rgba(212, 175, 55, 0.15);
+  --menu-hover: rgba(255, 255, 255, 0.06);
 }
 
 * {

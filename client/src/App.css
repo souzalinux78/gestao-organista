@@ -25,9 +25,9 @@
   top: 0;
   bottom: 0;
   width: 260px;
-  background: linear-gradient(180deg, var(--menu-dark), var(--menu-dark-soft));
+  background: linear-gradient(180deg, var(--menu-bg-top), var(--menu-bg-bottom));
   color: var(--menu-text);
-  border-right: 1px solid var(--menu-border);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   z-index: 100;
   overflow-y: auto;
   overflow-x: hidden;
@@ -70,8 +70,8 @@
   justify-content: space-between;
   flex-wrap: nowrap;
   padding: 0 12px;
-  background: linear-gradient(90deg, var(--dark-primary), var(--dark-secondary));
-  color: var(--text-inverse);
+  background: linear-gradient(180deg, var(--menu-bg-top), var(--menu-bg-bottom));
+  color: var(--menu-text);
   z-index: 1000;
   width: 100%;
   max-width: 100vw;
@@ -110,7 +110,7 @@
 
 .app-bar__subtitle {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--menu-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -594,14 +594,14 @@
 }
 
 .sidebar-nav__item:hover {
-  background: rgba(212, 175, 55, 0.08);
+  background: var(--menu-hover);
   color: var(--menu-text);
   border-left-color: transparent;
 }
 
 .sidebar-nav__item.active {
-  background: var(--menu-active-bg);
-  color: var(--menu-text);
+  background: var(--menu-accent-soft);
+  color: var(--menu-text-active);
   border-left: 4px solid var(--menu-accent);
   font-weight: 600;
 }
