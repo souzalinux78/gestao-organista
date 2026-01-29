@@ -7,11 +7,23 @@
    Este arquivo apenas define variáveis de compatibilidade e estilos */
 
 :root {
-  --app-bg: #f5f7fa;
-  --app-text: #1f2937;
-  --app-secondary: #c3cfe2;
-  --app-gold: #c9a24d;
-  --app-dark: #0f172a;
+  --pe-black: #0b0b0b;
+  --pe-black-soft: #1a1a1a;
+  --pe-gold: #d4af37;
+  --pe-gold-soft: #c9a24d;
+  --pe-bg: #f8fafc;
+  --pe-card: #ffffff;
+  --pe-text: #1f2937;
+  --pe-text-muted: #6b7280;
+  --pe-border: #e5e7eb;
+
+  --app-bg: var(--pe-bg);
+  --app-text: var(--pe-text);
+  --app-secondary: var(--pe-border);
+  --app-gold: var(--pe-gold);
+  --app-dark: var(--pe-black);
+  --app-primary: var(--pe-black);
+  --app-accent: var(--pe-gold);
   /* Variáveis de compatibilidade (usam variáveis do theme.css) */
   /* As cores principais estão definidas em theme.css */
   

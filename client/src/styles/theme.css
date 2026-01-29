@@ -6,37 +6,37 @@
 /* === LIGHT THEME (Default) === */
 :root {
   /* Backgrounds */
-  --bg-main: var(--app-bg);
-  --bg-card: var(--app-bg);
-  --bg-hover: var(--app-bg);
-  --bg-overlay: var(--app-bg);
+  --bg-main: var(--pe-bg);
+  --bg-card: var(--pe-card);
+  --bg-hover: var(--pe-bg);
+  --bg-overlay: var(--pe-bg);
   
   /* Text Colors */
-  --text-main: var(--app-text);
-  --text-muted: var(--app-text);
-  --text-light: var(--app-text);
-  --text-inverse: var(--app-text);
+  --text-main: var(--pe-text);
+  --text-muted: var(--pe-text-muted);
+  --text-light: var(--pe-text-muted);
+  --text-inverse: #ffffff;
   
   /* Primary Colors */
-  --primary: var(--app-gold);
-  --primary-hover: var(--app-gold);
-  --primary-light: var(--app-gold);
-  --primary-dark: var(--app-gold);
-  --primary-soft: var(--app-gold);
-  --primary-glow: var(--app-gold);
+  --primary: var(--pe-gold);
+  --primary-hover: var(--pe-gold-soft);
+  --primary-light: var(--pe-gold-soft);
+  --primary-dark: var(--pe-gold);
+  --primary-soft: var(--pe-gold-soft);
+  --primary-glow: var(--pe-gold-soft);
   
   /* Layout Colors (Admin Panel Style) */
-  --sidebar-bg: var(--app-dark);
-  --sidebar-hover: var(--app-dark);
-  --sidebar-active: var(--app-dark);
-  --header-bg: var(--app-dark);
-  --header-text: var(--app-text);
+  --sidebar-bg: var(--pe-black);
+  --sidebar-hover: var(--pe-black-soft);
+  --sidebar-active: var(--pe-black-soft);
+  --header-bg: linear-gradient(90deg, var(--pe-black), var(--pe-black-soft), var(--pe-gold-soft));
+  --header-text: #ffffff;
   
   /* Secondary Colors */
-  --secondary: var(--app-secondary);
-  --secondary-light: var(--app-secondary);
-  --secondary-dark: var(--app-secondary);
-  --secondary-soft: var(--app-secondary);
+  --secondary: var(--pe-border);
+  --secondary-light: var(--pe-border);
+  --secondary-dark: var(--pe-border);
+  --secondary-soft: var(--pe-border);
   
   /* Accent Colors */
   --accent: var(--app-text);
