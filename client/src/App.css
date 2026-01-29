@@ -119,6 +119,21 @@
   white-space: nowrap;
 }
 
+.app-bar__logout {
+  display: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: transparent;
+  color: #FFFFFF;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.app-bar__logout:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .user-bar {
   display: flex;
   justify-content: space-between;
@@ -172,6 +187,12 @@
 
   .user-bar {
     display: none;
+  }
+
+  .app-bar__logout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
