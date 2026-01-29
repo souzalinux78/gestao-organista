@@ -17,14 +17,14 @@ function ThemeToggle() {
     >
       <span className="theme-toggle__icon">
         {isDark ? (
-          // Ícone de sol (light mode)
+          // Ícone de sol (light mode) - amarelo
           <svg
             width="20"
             height="20"
             viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+            fill="#FBBF24"
+            stroke="#F59E0B"
+            strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -39,13 +39,13 @@ function ThemeToggle() {
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
           </svg>
         ) : (
-          // Ícone de lua (dark mode)
+          // Ícone de lua (dark mode) - branco/cinza claro
           <svg
             width="20"
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="currentColor"
+            stroke="#6B7280"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
