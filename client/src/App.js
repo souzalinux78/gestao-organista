@@ -200,6 +200,11 @@ function TopHeader({ user, onLogout }) {
     sidebar?.classList.toggle('sidebar-open');
     overlay?.classList.toggle('sidebar-overlay--open');
   };
+
+  const shouldRenderMobileLogout = !!user;
+  if (shouldRenderMobileLogout) {
+    console.log('mobile logout rendered');
+  }
   
   return (
     <>
@@ -227,9 +232,11 @@ function TopHeader({ user, onLogout }) {
       </header>
       <section className="user-bar">
         <span className="user-name">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</span>
-        <button onClick={onLogout} className="logout mobile-only">
-          Sair
-        </button>
+        {shouldRenderMobileLogout && (
+          <button onClick={onLogout} className="logout mobile-only">
+            Sair
+          </button>
+        )}
       </section>
     </>
   );
