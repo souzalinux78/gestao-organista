@@ -328,6 +328,16 @@
   border-radius: 6px;
 }
 
+.mobile-only {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+}
+
 .desktop-actions {
   display: none;
 }
