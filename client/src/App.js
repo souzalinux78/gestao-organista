@@ -203,24 +203,22 @@ function TopHeader({ user, onLogout }) {
   
   return (
     <>
-      <header className="header-container">
-        <div className="left-section">
+      <header className="main-header">
+        <div className="header-left-group">
           <button
-            className="menu-btn"
+            className="menu-toggle"
             onClick={toggleSidebar}
             aria-label="Toggle sidebar"
           >
             ☰
           </button>
-          <div className="titles-wrapper">
-            <span className="main-title">Painel Admin</span>
-            <span className="sub-title">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</span>
+          <div className="header-branding">
+            <h1 className="brand-title">Painel Admin</h1>
+            <span className="user-name">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</span>
           </div>
         </div>
-        <div className="right-section">
-          <div className="theme-btn">
-            <ThemeToggle />
-          </div>
+        <div className="header-right-group">
+          <ThemeToggle />
           <button onClick={onLogout} className="logout-btn">
             Sair
           </button>
