@@ -86,15 +86,15 @@
 }
 
 .badge--warn {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.25);
-  color: #92400E;
+  background: var(--app-bg);
+  border-color: var(--app-text);
+  color: var(--app-text);
 }
 
 .badge--info {
-  background: rgba(59, 130, 246, 0.10);
-  border-color: rgba(59, 130, 246, 0.22);
-  color: #1E40AF;
+  background: var(--app-bg);
+  border-color: var(--app-text);
+  color: var(--app-text);
 }
 
 .table__nowrap {
@@ -127,7 +127,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--app-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -202,16 +202,16 @@
 
 .btn-solid-success {
   background: var(--success) !important;
-  color: #fff !important;
+  color: var(--app-text) !important;
 }
 
 .btn-solid-danger {
   background: var(--danger) !important;
-  color: #fff !important;
+  color: var(--app-text) !important;
 }
 
 .row-highlight {
-  background: rgba(245, 158, 11, 0.12);
+  background: var(--app-bg);
 }
 
 .form-group--checkbox {
@@ -252,15 +252,15 @@
 }
 
 .stat-pill--ok {
-  background: rgba(79, 70, 229, 0.08);
-  border-color: rgba(79, 70, 229, 0.25);
+  background: var(--app-bg);
+  border-color: var(--app-text);
   color: var(--primary);
 }
 
 .stat-pill--warn {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.25);
-  color: #92400E; /* amber-800 */
+  background: var(--app-bg);
+  border-color: var(--app-text);
+  color: var(--app-text); /* amber-800 */
 }
 
 .td-strong {
@@ -289,7 +289,7 @@
 }
 
 .form-hint--warn {
-  color: #92400E !important;
+  color: var(--app-text) !important;
   font-weight: 700;
 }
 

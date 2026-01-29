@@ -7,24 +7,29 @@
    Este arquivo apenas define variáveis de compatibilidade e estilos */
 
 :root {
+  --app-primary: #f5f7fa;
+  --app-secondary: #c3cfe2;
+  --app-accent: #f5f7fa;
+  --app-bg: #f5f7fa;
+  --app-text: #f5f7fa;
   /* Variáveis de compatibilidade (usam variáveis do theme.css) */
   /* As cores principais estão definidas em theme.css */
   
   /* Variantes para compatibilidade */
-  --primary-soft: rgba(79, 70, 229, 0.1);
-  --primary-glow: rgba(79, 70, 229, 0.2);
-  --secondary-light: #8B5CF6;
-  --secondary-dark: #6D28D9;
-  --secondary-soft: rgba(124, 58, 237, 0.1);
-  --accent-light: #10B981;
-  --accent-dark: #047857;
-  --accent-soft: rgba(5, 150, 105, 0.1);
-  --success-light: #34D399;
-  --success-dark: #059669;
-  --success-soft: rgba(16, 185, 129, 0.1);
-  --danger-light: #F87171;
-  --danger-dark: #DC2626;
-  --danger-soft: rgba(239, 68, 68, 0.1);
+  --primary-soft: var(--app-text);
+  --primary-glow: var(--app-text);
+  --secondary-light: var(--app-text);
+  --secondary-dark: var(--app-text);
+  --secondary-soft: var(--app-text);
+  --accent-light: var(--app-text);
+  --accent-dark: var(--app-text);
+  --accent-soft: var(--app-text);
+  --success-light: var(--app-text);
+  --success-dark: var(--app-text);
+  --success-soft: var(--app-text);
+  --danger-light: var(--app-text);
+  --danger-dark: var(--app-text);
+  --danger-soft: var(--app-text);
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 16px;
@@ -49,17 +54,17 @@
   --blue-dark: var(--primary-dark);
   --blue-soft: var(--primary-soft);
   --white: var(--bg-card);
-  --gray-50: #F8FAFC;
-  --gray-100: #F1F5F9;
+  --gray-50: var(--app-text);
+  --gray-100: var(--app-text);
   --gray-200: var(--border);
   --gray-300: var(--border-medium);
   --gray-medium: var(--border-dark);
   --gray-400: var(--text-light);
   --gray-500: var(--text-muted);
-  --gray-600: #475569;
-  --gray-700: #334155;
-  --gray-800: #1E293B;
-  --gray-900: #0F172A;
+  --gray-600: var(--app-text);
+  --gray-700: var(--app-text);
+  --gray-800: var(--app-text);
+  --gray-900: var(--app-text);
   --text-dark: var(--text-main);
   --text-medium: var(--text-muted);
   --text-lighter: var(--text-light);
@@ -75,17 +80,17 @@
   --info-dark: var(--info-dark);
   
   /* === SOMBRAS SUAVES E MODERNAS === */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --shadow-sm: 0 1px 2px 0 var(--app-secondary);
+  --shadow: 0 1px 3px 0 var(--app-secondary), 0 1px 2px 0 var(--app-secondary);
+  --shadow-md: 0 4px 6px -1px var(--app-secondary), 0 2px 4px -1px var(--app-secondary);
+  --shadow-lg: 0 10px 15px -3px var(--app-secondary), 0 4px 6px -2px var(--app-secondary);
+  --shadow-xl: 0 20px 25px -5px var(--app-secondary), 0 10px 10px -5px var(--app-secondary);
+  --shadow-2xl: 0 25px 50px -12px var(--app-secondary);
   
   /* Sombras coloridas suaves */
-  --shadow-primary: 0 4px 14px rgba(79, 70, 229, 0.15);
-  --shadow-secondary: 0 4px 14px rgba(124, 58, 237, 0.15);
-  --shadow-accent: 0 4px 14px rgba(5, 150, 105, 0.15);
+  --shadow-primary: 0 4px 14px var(--app-secondary);
+  --shadow-secondary: 0 4px 14px var(--app-secondary);
+  --shadow-accent: 0 4px 14px var(--app-secondary);
   --shadow-gold: var(--shadow-accent);
   --shadow-blue: var(--shadow-primary);
   
@@ -198,7 +203,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
-  background: #243b53;
+  background: var(--app-bg);
   min-height: 100vh;
   min-height: -webkit-fill-available; /* iOS Safari */
   margin: 0;
@@ -413,7 +418,7 @@ code {
 
 .nav a.active {
   background: var(--primary);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   font-weight: 600;
   box-shadow: var(--shadow-primary);
   border-color: var(--primary);
@@ -650,13 +655,13 @@ input {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-soft), 0 0 20px var(--primary-glow);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--app-bg);
 }
 
 .form-group small {
   display: block;
   margin-top: clamp(0.25rem, 1.5vw, 0.375rem); /* 4px - 6px responsivo */
-  color: #CBD5E1;
+  color: var(--app-text);
   font-size: clamp(0.75rem, 2vw, 0.8125rem); /* 12px - 13px responsivo */
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -710,7 +715,7 @@ button {
 
 .btn-primary {
   background: var(--primary);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   box-shadow: var(--shadow-sm);
   font-weight: 600;
   border: 1px solid var(--primary);
@@ -726,7 +731,7 @@ button {
   background: var(--primary-hover);
   box-shadow: var(--shadow-md), 0 0 0 4px var(--primary-soft);
   border-color: var(--primary-hover);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   transform: translateY(-2px);
   transition: all var(--transition-smooth);
 }
@@ -735,13 +740,13 @@ button {
   background: var(--primary-hover);
   box-shadow: var(--shadow-sm);
   transform: scale(0.97) translateY(0);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   transition: all 100ms ease;
 }
 
 .btn-secondary {
   background: var(--secondary);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   box-shadow: var(--shadow-sm);
   font-weight: 600;
   border: 1px solid var(--secondary);
@@ -757,7 +762,7 @@ button {
   background: var(--secondary-dark);
   box-shadow: var(--shadow-md);
   border-color: var(--secondary-dark);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   transform: translateY(-1px);
 }
 
@@ -765,12 +770,12 @@ button {
   background: var(--secondary-dark);
   box-shadow: var(--shadow-sm);
   transform: scale(0.98);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
 }
 
 .btn-danger {
   background: var(--danger);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--danger);
   border-radius: var(--radius-sm);
@@ -786,7 +791,7 @@ button {
   background: var(--danger-dark);
   box-shadow: var(--shadow-md);
   border-color: var(--danger-dark);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   transform: translateY(-1px);
 }
 
@@ -794,12 +799,12 @@ button {
   background: var(--danger-dark);
   box-shadow: var(--shadow-sm);
   transform: scale(0.98);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
 }
 
 .btn-success {
   background: var(--success);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   box-shadow: var(--shadow-sm);
   font-weight: 600;
   border: 1px solid var(--success);
@@ -815,7 +820,7 @@ button {
   background: var(--success-dark);
   box-shadow: var(--shadow-md);
   border-color: var(--success-dark);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   transform: translateY(-1px);
 }
 
@@ -823,7 +828,7 @@ button {
   background: var(--success-dark);
   box-shadow: var(--shadow-sm);
   transform: scale(0.98);
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
 }
 
 .table-wrapper {
@@ -918,7 +923,7 @@ button {
   background: var(--primary-soft) !important;
   cursor: pointer;
   transform: scale(1.01);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px var(--app-secondary);
 }
 
 .table tr:last-child td {
@@ -937,14 +942,14 @@ button {
 /* Garantir que TODOS os botões em .actions tenham fundo sólido e texto branco */
 .actions .btn,
 .actions button {
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   font-weight: 600;
 }
 
 .actions .btn-secondary,
 .actions button.btn-secondary {
   background: var(--secondary) !important;
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   border: 1px solid var(--secondary) !important;
   box-shadow: var(--shadow-sm) !important;
   border-radius: var(--radius-sm) !important;
@@ -958,7 +963,7 @@ button {
 .actions button.btn-secondary:active:not(:disabled),
 .actions button.btn-secondary:focus:not(:disabled) {
   background: var(--secondary-dark) !important;
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   box-shadow: var(--shadow-md) !important;
   border-color: var(--secondary-dark) !important;
 }
@@ -966,7 +971,7 @@ button {
 .actions .btn-danger,
 .actions button.btn-danger {
   background: var(--danger) !important;
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   border: 1px solid var(--danger) !important;
   box-shadow: var(--shadow-sm) !important;
   border-radius: var(--radius-sm) !important;
@@ -980,7 +985,7 @@ button {
 .actions button.btn-danger:active:not(:disabled),
 .actions button.btn-danger:focus:not(:disabled) {
   background: var(--danger-dark) !important;
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   box-shadow: var(--shadow-md) !important;
   border-color: var(--danger-dark) !important;
 }
@@ -988,7 +993,7 @@ button {
 .actions .btn-primary,
 .actions button.btn-primary {
   background: var(--primary) !important;
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   border: 1px solid var(--primary) !important;
   box-shadow: var(--shadow-sm) !important;
   border-radius: var(--radius-sm) !important;
@@ -1002,7 +1007,7 @@ button {
 .actions button.btn-primary:active:not(:disabled),
 .actions button.btn-primary:focus:not(:disabled) {
   background: var(--primary-hover) !important;
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   box-shadow: var(--shadow-md) !important;
   border-color: var(--primary-hover) !important;
 }
@@ -1010,7 +1015,7 @@ button {
 .actions .btn-success,
 .actions button.btn-success {
   background: var(--success) !important;
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   border: 1px solid var(--success) !important;
   box-shadow: var(--shadow-sm) !important;
   border-radius: var(--radius-sm) !important;
@@ -1024,7 +1029,7 @@ button {
 .actions button.btn-success:active:not(:disabled),
 .actions button.btn-success:focus:not(:disabled) {
   background: var(--success-dark) !important;
-  color: #FFFFFF !important;
+  color: var(--app-text) !important;
   box-shadow: var(--shadow-md) !important;
   border-color: var(--success-dark) !important;
 }
@@ -1057,7 +1062,7 @@ button {
 }
 
 .alert-success {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  background: linear-gradient(135deg, var(--app-bg) 0%, var(--app-bg) 100%);
   color: var(--success-dark);
   border-color: var(--success);
   border-left-color: var(--success);
@@ -1065,7 +1070,7 @@ button {
 }
 
 .alert-error {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  background: linear-gradient(135deg, var(--app-bg) 0%, var(--app-bg) 100%);
   color: var(--danger-dark);
   border-color: var(--danger);
   border-left-color: var(--danger);
@@ -2362,7 +2367,7 @@ textarea:disabled {
 @media (prefers-color-scheme: light) {
   /* Forçar dark mesmo se sistema estiver em light */
   body {
-    background: linear-gradient(135deg, #070B14 0%, #0F172A 25%, #1E293B 50%, #0F172A 75%, #070B14 100%) !important;
+    background: linear-gradient(135deg, var(--app-bg) 0%, var(--app-bg) 25%, var(--app-bg) 50%, var(--app-bg) 75%, var(--app-bg) 100%) !important;
     color: var(--text-main) !important;
   }
 }

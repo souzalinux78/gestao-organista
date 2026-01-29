@@ -6,78 +6,78 @@
 /* === LIGHT THEME (Default) === */
 :root {
   /* Backgrounds */
-  --bg-main: #F9FAFB;
-  --bg-card: #FFFFFF;
-  --bg-hover: #F3F4F6;
-  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-main: var(--app-text);
+  --bg-card: var(--app-text);
+  --bg-hover: var(--app-text);
+  --bg-overlay: var(--app-text);
   
   /* Text Colors */
-  --text-main: #1F2937;
-  --text-muted: #4B5563;
-  --text-light: #6B7280;
-  --text-inverse: #FFFFFF;
+  --text-main: var(--app-text);
+  --text-muted: var(--app-text);
+  --text-light: var(--app-text);
+  --text-inverse: var(--app-text);
   
   /* Primary Colors */
-  --primary: #4F46E5;
-  --primary-hover: #4338CA;
-  --primary-light: #6366F1;
-  --primary-dark: #3730A3;
-  --primary-soft: rgba(79, 70, 229, 0.1);
-  --primary-glow: rgba(79, 70, 229, 0.2);
+  --primary: var(--app-text);
+  --primary-hover: var(--app-text);
+  --primary-light: var(--app-text);
+  --primary-dark: var(--app-text);
+  --primary-soft: var(--app-text);
+  --primary-glow: var(--app-text);
   
   /* Layout Colors (Admin Panel Style) - Azul Escuro Profissional */
-  /* Cor base: #2C405A (RGB: 44, 64, 90) */
-  --sidebar-bg: #2C405A;
-  --sidebar-hover: #344A64;
-  --sidebar-active: #3D5670;
-  --header-bg: #2C405A;
-  --header-text: #FFFFFF;
+  /* Cor base: var(--app-text) (RGB: 44, 64, 90) */
+  --sidebar-bg: var(--app-text);
+  --sidebar-hover: var(--app-text);
+  --sidebar-active: var(--app-text);
+  --header-bg: var(--app-text);
+  --header-text: var(--app-text);
   
   /* Secondary Colors */
-  --secondary: #7C3AED;
-  --secondary-light: #8B5CF6;
-  --secondary-dark: #6D28D9;
-  --secondary-soft: rgba(124, 58, 237, 0.1);
+  --secondary: var(--app-text);
+  --secondary-light: var(--app-text);
+  --secondary-dark: var(--app-text);
+  --secondary-soft: var(--app-text);
   
   /* Accent Colors */
-  --accent: #059669;
-  --accent-light: #10B981;
-  --accent-dark: #047857;
-  --accent-soft: rgba(5, 150, 105, 0.1);
+  --accent: var(--app-text);
+  --accent-light: var(--app-text);
+  --accent-dark: var(--app-text);
+  --accent-soft: var(--app-text);
   
   /* Status Colors */
-  --success: #10B981;
-  --success-light: #34D399;
-  --success-dark: #059669;
-  --success-soft: rgba(16, 185, 129, 0.1);
-  --danger: #EF4444;
-  --danger-light: #F87171;
-  --danger-dark: #DC2626;
-  --danger-soft: rgba(239, 68, 68, 0.1);
-  --warning: #F59E0B;
-  --warning-light: #FBBF24;
-  --warning-dark: #D97706;
-  --warning-soft: rgba(245, 158, 11, 0.1);
-  --info: #3B82F6;
-  --info-light: #60A5FA;
-  --info-dark: #2563EB;
-  --info-soft: rgba(59, 130, 246, 0.1);
+  --success: var(--app-text);
+  --success-light: var(--app-text);
+  --success-dark: var(--app-text);
+  --success-soft: var(--app-text);
+  --danger: var(--app-text);
+  --danger-light: var(--app-text);
+  --danger-dark: var(--app-text);
+  --danger-soft: var(--app-text);
+  --warning: var(--app-text);
+  --warning-light: var(--app-text);
+  --warning-dark: var(--app-text);
+  --warning-soft: var(--app-text);
+  --info: var(--app-text);
+  --info-light: var(--app-text);
+  --info-dark: var(--app-text);
+  --info-soft: var(--app-text);
   
   /* Borders */
-  --border: #E5E7EB;
-  --border-light: #F3F4F6;
-  --border-medium: #D1D5DB;
-  --border-dark: #9CA3AF;
+  --border: var(--app-secondary);
+  --border-light: var(--app-secondary);
+  --border-medium: var(--app-secondary);
+  --border-dark: var(--app-secondary);
   
   /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-  --shadow-primary: 0 4px 14px rgba(79, 70, 229, 0.15);
-  --shadow-accent: 0 4px 14px rgba(5, 150, 105, 0.15);
+  --shadow-sm: 0 1px 2px 0 var(--app-secondary);
+  --shadow: 0 1px 3px 0 var(--app-secondary), 0 1px 2px 0 var(--app-secondary);
+  --shadow-md: 0 4px 6px -1px var(--app-secondary), 0 2px 4px -1px var(--app-secondary);
+  --shadow-lg: 0 10px 15px -3px var(--app-secondary), 0 4px 6px -2px var(--app-secondary);
+  --shadow-xl: 0 20px 25px -5px var(--app-secondary), 0 10px 10px -5px var(--app-secondary);
+  --shadow-2xl: 0 25px 50px -12px var(--app-secondary);
+  --shadow-primary: 0 4px 14px var(--app-secondary);
+  --shadow-accent: 0 4px 14px var(--app-secondary);
   
   /* Border Radius */
   --radius-sm: 8px;
@@ -101,36 +101,36 @@
   --blue-soft: var(--primary-soft);
   
   /* Variantes adicionais */
-  --primary-soft: rgba(79, 70, 229, 0.1);
-  --primary-glow: rgba(79, 70, 229, 0.2);
-  --secondary-light: #8B5CF6;
-  --secondary-dark: #6D28D9;
-  --secondary-soft: rgba(124, 58, 237, 0.1);
-  --accent-light: #10B981;
-  --accent-dark: #047857;
-  --accent-soft: rgba(5, 150, 105, 0.1);
-  --success-light: #34D399;
-  --success-dark: #059669;
-  --success-soft: rgba(16, 185, 129, 0.1);
-  --danger-light: #F87171;
-  --danger-dark: #DC2626;
-  --danger-soft: rgba(239, 68, 68, 0.1);
-  --warning-light: #FBBF24;
-  --warning-dark: #D97706;
-  --info-light: #60A5FA;
-  --info-dark: #2563EB;
+  --primary-soft: var(--app-text);
+  --primary-glow: var(--app-text);
+  --secondary-light: var(--app-text);
+  --secondary-dark: var(--app-text);
+  --secondary-soft: var(--app-text);
+  --accent-light: var(--app-text);
+  --accent-dark: var(--app-text);
+  --accent-soft: var(--app-text);
+  --success-light: var(--app-text);
+  --success-dark: var(--app-text);
+  --success-soft: var(--app-text);
+  --danger-light: var(--app-text);
+  --danger-dark: var(--app-text);
+  --danger-soft: var(--app-text);
+  --warning-light: var(--app-text);
+  --warning-dark: var(--app-text);
+  --info-light: var(--app-text);
+  --info-dark: var(--app-text);
   
   /* Gray scale */
-  --gray-50: #F8FAFC;
-  --gray-100: #F1F5F9;
+  --gray-50: var(--app-text);
+  --gray-100: var(--app-text);
   --gray-200: var(--border);
   --gray-300: var(--border-medium);
   --gray-400: var(--text-light);
   --gray-500: var(--text-muted);
-  --gray-600: #475569;
-  --gray-700: #334155;
-  --gray-800: #1E293B;
-  --gray-900: #0F172A;
+  --gray-600: var(--app-text);
+  --gray-700: var(--app-text);
+  --gray-800: var(--app-text);
+  --gray-900: var(--app-text);
   
   /* Gold/Accent compatibility */
   --gold-primary: var(--accent);
@@ -141,68 +141,68 @@
 /* === DARK THEME === */
 [data-theme="dark"] {
   /* Backgrounds */
-  --bg-main: #0F172A;
-  --bg-card: #1E293B;
-  --bg-hover: #334155;
-  --bg-overlay: rgba(0, 0, 0, 0.7);
+  --bg-main: var(--app-text);
+  --bg-card: var(--app-text);
+  --bg-hover: var(--app-text);
+  --bg-overlay: var(--app-text);
   
   /* Text Colors */
-  --text-main: #F8FAFC;
-  --text-muted: #CBD5E1;
-  --text-light: #94A3B8;
-  --text-inverse: #0F172A;
+  --text-main: var(--app-text);
+  --text-muted: var(--app-text);
+  --text-light: var(--app-text);
+  --text-inverse: var(--app-text);
   
   /* Primary Colors */
-  --primary: #6366F1;
-  --primary-hover: #818CF8;
-  --primary-light: #818CF8;
-  --primary-dark: #4F46E5;
-  --primary-soft: rgba(99, 102, 241, 0.15);
-  --primary-glow: rgba(99, 102, 241, 0.3);
+  --primary: var(--app-text);
+  --primary-hover: var(--app-text);
+  --primary-light: var(--app-text);
+  --primary-dark: var(--app-text);
+  --primary-soft: var(--app-text);
+  --primary-glow: var(--app-text);
   
   /* Secondary Colors */
-  --secondary: #8B5CF6;
-  --secondary-light: #A78BFA;
-  --secondary-dark: #7C3AED;
-  --secondary-soft: rgba(139, 92, 246, 0.15);
+  --secondary: var(--app-text);
+  --secondary-light: var(--app-text);
+  --secondary-dark: var(--app-text);
+  --secondary-soft: var(--app-text);
   
   /* Accent Colors */
-  --accent: #10B981;
-  --accent-light: #34D399;
-  --accent-dark: #059669;
-  --accent-soft: rgba(16, 185, 129, 0.15);
+  --accent: var(--app-text);
+  --accent-light: var(--app-text);
+  --accent-dark: var(--app-text);
+  --accent-soft: var(--app-text);
   
   /* Status Colors */
-  --success: #34D399;
-  --success-light: #6EE7B7;
-  --success-dark: #10B981;
-  --success-soft: rgba(52, 211, 153, 0.15);
-  --danger: #F87171;
-  --danger-light: #FCA5A5;
-  --danger-dark: #EF4444;
-  --danger-soft: rgba(248, 113, 113, 0.15);
-  --warning: #FBBF24;
-  --warning-light: #FCD34D;
-  --warning-dark: #F59E0B;
-  --info: #60A5FA;
-  --info-light: #93C5FD;
-  --info-dark: #3B82F6;
+  --success: var(--app-text);
+  --success-light: var(--app-text);
+  --success-dark: var(--app-text);
+  --success-soft: var(--app-text);
+  --danger: var(--app-text);
+  --danger-light: var(--app-text);
+  --danger-dark: var(--app-text);
+  --danger-soft: var(--app-text);
+  --warning: var(--app-text);
+  --warning-light: var(--app-text);
+  --warning-dark: var(--app-text);
+  --info: var(--app-text);
+  --info-light: var(--app-text);
+  --info-dark: var(--app-text);
   
   /* Borders */
-  --border: #334155;
-  --border-light: #475569;
-  --border-medium: #64748B;
-  --border-dark: #94A3B8;
+  --border: var(--app-secondary);
+  --border-light: var(--app-secondary);
+  --border-medium: var(--app-secondary);
+  --border-dark: var(--app-secondary);
   
   /* Shadows (mais sutis no dark) */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-  --shadow-primary: 0 4px 14px rgba(99, 102, 241, 0.25);
-  --shadow-accent: 0 4px 14px rgba(16, 185, 129, 0.25);
+  --shadow-sm: 0 1px 2px 0 var(--app-secondary);
+  --shadow: 0 1px 3px 0 var(--app-secondary), 0 1px 2px 0 var(--app-secondary);
+  --shadow-md: 0 4px 6px -1px var(--app-secondary), 0 2px 4px -1px var(--app-secondary);
+  --shadow-lg: 0 10px 15px -3px var(--app-secondary), 0 4px 6px -2px var(--app-secondary);
+  --shadow-xl: 0 20px 25px -5px var(--app-secondary), 0 10px 10px -5px var(--app-secondary);
+  --shadow-2xl: 0 25px 50px -12px var(--app-secondary);
+  --shadow-primary: 0 4px 14px var(--app-secondary);
+  --shadow-accent: 0 4px 14px var(--app-secondary);
   
   /* Compatibility */
   --white: var(--bg-card);
@@ -219,36 +219,36 @@
   --blue-soft: var(--primary-soft);
   
   /* Variantes adicionais */
-  --primary-soft: rgba(99, 102, 241, 0.15);
-  --primary-glow: rgba(99, 102, 241, 0.3);
-  --secondary-light: #A78BFA;
-  --secondary-dark: #7C3AED;
-  --secondary-soft: rgba(139, 92, 246, 0.15);
-  --accent-light: #34D399;
-  --accent-dark: #059669;
-  --accent-soft: rgba(16, 185, 129, 0.15);
-  --success-light: #6EE7B7;
-  --success-dark: #10B981;
-  --success-soft: rgba(52, 211, 153, 0.15);
-  --danger-light: #FCA5A5;
-  --danger-dark: #EF4444;
-  --danger-soft: rgba(248, 113, 113, 0.15);
-  --warning-light: #FCD34D;
-  --warning-dark: #F59E0B;
-  --info-light: #93C5FD;
-  --info-dark: #3B82F6;
+  --primary-soft: var(--app-text);
+  --primary-glow: var(--app-text);
+  --secondary-light: var(--app-text);
+  --secondary-dark: var(--app-text);
+  --secondary-soft: var(--app-text);
+  --accent-light: var(--app-text);
+  --accent-dark: var(--app-text);
+  --accent-soft: var(--app-text);
+  --success-light: var(--app-text);
+  --success-dark: var(--app-text);
+  --success-soft: var(--app-text);
+  --danger-light: var(--app-text);
+  --danger-dark: var(--app-text);
+  --danger-soft: var(--app-text);
+  --warning-light: var(--app-text);
+  --warning-dark: var(--app-text);
+  --info-light: var(--app-text);
+  --info-dark: var(--app-text);
   
   /* Gray scale */
-  --gray-50: #0F172A;
-  --gray-100: #1E293B;
+  --gray-50: var(--app-text);
+  --gray-100: var(--app-text);
   --gray-200: var(--border);
   --gray-300: var(--border-medium);
   --gray-400: var(--text-light);
   --gray-500: var(--text-muted);
-  --gray-600: #64748B;
-  --gray-700: #475569;
-  --gray-800: #334155;
-  --gray-900: #1E293B;
+  --gray-600: var(--app-text);
+  --gray-700: var(--app-text);
+  --gray-800: var(--app-text);
+  --gray-900: var(--app-text);
   
   /* Gold/Accent compatibility */
   --gold-primary: var(--accent);
