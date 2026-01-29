@@ -285,6 +285,7 @@
 .header-left-group {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
@@ -308,6 +309,7 @@
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
 }
@@ -316,6 +318,7 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -349,6 +352,12 @@
     height: 60px;
     padding: 0 12px;
     gap: 6px;
+  }
+
+  .main-header .theme-toggle {
+    width: 40px;
+    height: 40px;
+    padding: 0.375rem;
   }
 
   .main-header .theme-toggle__label {

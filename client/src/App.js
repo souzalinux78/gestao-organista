@@ -224,12 +224,6 @@ function TopHeader({ user, onLogout }) {
           </button>
         </div>
       </header>
-      <section className="user-bar">
-        <span className="user-name">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</span>
-        <button onClick={onLogout} className="logout">
-          Sair
-        </button>
-      </section>
     </>
   );
 }
