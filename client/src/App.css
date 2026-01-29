@@ -84,12 +84,35 @@
   align-items: center;
 }
 
-.app-bar .center {
-  justify-content: center;
-  text-align: center;
-  font-weight: 600;
-  flex: 1;
+.app-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+.app-bar__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.app-bar__title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-bar__subtitle {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .app-bar .right {
@@ -119,15 +142,6 @@
   white-space: nowrap;
 }
 
-.app-bar__user {
-  display: none;
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 280px;
-}
 
 .app-bar__logout {
   display: inline-flex;
@@ -189,25 +203,16 @@
 
   .app-bar .left,
   .app-bar .center,
-  .app-bar .right {
+  .app-bar .right,
+  .app-bar__left {
     display: flex;
     align-items: center;
   }
 
-  .app-bar .left {
-    flex: 0 0 auto;
-  }
-
-  .app-bar .center {
+  .app-bar__left {
     flex: 1 1 auto;
     min-width: 0;
-    justify-content: center;
-    text-align: center;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 0 6px;
+    gap: 8px;
   }
 
   .app-bar .right {
@@ -233,8 +238,8 @@
     display: none !important;
   }
 
-  .app-bar__user {
-    display: none !important;
+  .app-bar__subtitle {
+    font-size: 0.75rem;
   }
 
   .user-bar {
