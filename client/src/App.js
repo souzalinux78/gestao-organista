@@ -211,7 +211,7 @@ function TopHeader({ user, onLogout }) {
         >
           ☰
         </button>
-        <div>
+        <div className="app-header__text">
           <div className="app-header__title">Painel Admin</div>
           <div className="app-header__subtitle">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</div>
         </div>
