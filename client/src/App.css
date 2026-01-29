@@ -91,6 +91,7 @@
 
 .app-bar .right {
   justify-content: flex-end;
+  gap: 8px;
 }
 
 .app-bar__menu {
@@ -109,6 +110,13 @@
 .app-bar .theme-toggle {
   position: static !important;
   margin: 0;
+}
+
+.app-bar__user {
+  display: none;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
 }
 
 .user-bar {
@@ -150,6 +158,20 @@
   .app-bar__menu,
   .app-bar .theme-toggle {
     min-width: 40px;
+  }
+}
+
+@media (min-width: 768px) {
+  .app-bar {
+    grid-template-columns: 48px 1fr auto;
+  }
+
+  .app-bar__user {
+    display: inline-flex;
+  }
+
+  .user-bar {
+    display: none;
   }
 }
 

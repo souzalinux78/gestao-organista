@@ -218,6 +218,7 @@ function TopHeader({ user, onLogout }) {
         </div>
         <div className="right">
           <ThemeToggle />
+          <span className="app-bar__user">{user?.nome} - {igrejas?.[0]?.nome || 'Sistema'}</span>
         </div>
       </header>
       <section className="user-bar">
