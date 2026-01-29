@@ -4,27 +4,22 @@
   "description": "Sistema completo para gerenciar organistas, igrejas, cultos e rodízios",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "icon-192x192.png",
-      "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512x512.png",
-      "type": "image/png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#4F46E5",
-  "background_color": "#F9FAFB",
+  "theme_color": "#243b53",
+  "background_color": "#243b53",
   "orientation": "any",
   "scope": "/",
   "categories": ["productivity", "utilities"],
@@ -37,14 +32,14 @@
       "short_name": "Organistas",
       "description": "Gerenciar organistas",
       "url": "/organistas",
-      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-512.png", "sizes": "512x512" }]
     },
     {
       "name": "Rodízios",
       "short_name": "Rodízios",
       "description": "Gerar rodízios",
       "url": "/rodizios",
-      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-512.png", "sizes": "512x512" }]
     }
   ]
 }
