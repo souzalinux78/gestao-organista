@@ -184,7 +184,7 @@
     flex-wrap: nowrap;
     justify-content: space-between;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
   }
 
   .app-bar .left,
@@ -194,8 +194,12 @@
     align-items: center;
   }
 
+  .app-bar .left {
+    flex: 0 0 auto;
+  }
+
   .app-bar .center {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
     justify-content: center;
     text-align: center;
@@ -203,11 +207,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding: 0 6px;
   }
 
   .app-bar .right {
-    flex-shrink: 0;
+    flex: 0 0 auto;
     gap: 6px;
+    flex-wrap: nowrap;
   }
 
   .app-bar__menu,
@@ -232,14 +238,15 @@
   }
 
   .user-bar {
-    display: none;
+    display: none !important;
   }
 
   .app-bar__logout {
-    padding: 6px 10px;
-    width: auto;
-    flex: 0 0 auto;
+    padding: 4px 8px;
+    width: auto !important;
+    flex: 0 0 auto !important;
     white-space: nowrap;
+    font-size: 0.75rem;
   }
 }
 
