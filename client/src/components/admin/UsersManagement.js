@@ -6,6 +6,7 @@ import { getErrorMessage } from '../../utils/errorMessages';
 import useToast from '../../hooks/useToast';
 import Toast from '../Toast';
 import './UsersManagement.css';
+import Modal from '../Modal';
 
 function UsersManagement() {
   const [usuarios, setUsuarios] = useState([]);
@@ -13,7 +14,6 @@ function UsersManagement() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [modalPosition, setModalPosition] = useState(null);
   const [showResetPassword, setShowResetPassword] = useState(null);
   const [resetPasswordValue, setResetPasswordValue] = useState('');
   const [formData, setFormData] = useState({
@@ -27,33 +27,6 @@ function UsersManagement() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const { toast, showSuccess, showError, hideToast } = useToast();
-  const isEditModalOpen = showForm && !!editing;
-
-  useEffect(() => {
-    if (!isEditModalOpen) return;
-    const scrollY = window.scrollY;
-    const previousPosition = document.body.style.position;
-    const previousTop = document.body.style.top;
-    const previousWidth = document.body.style.width;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        closeEditModal();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.body.style.position = previousPosition;
-      document.body.style.top = previousTop;
-      document.body.style.width = previousWidth;
-      document.body.style.overflow = '';
-      document.removeEventListener('keydown', handleKeyDown);
-      window.scrollTo(0, scrollY);
-    };
-  }, [isEditModalOpen]);
 
   useEffect(() => {
     loadData();
@@ -96,36 +69,7 @@ function UsersManagement() {
     }
   };
 
-  const calculateModalPosition = (event) => {
-    const padding = 16;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const modalWidth = Math.min(760, Math.max(320, viewportWidth - padding * 2));
-    const modalHeight = Math.min(Math.floor(viewportHeight * 0.9), 640);
-    const clickX = event?.clientX ?? viewportWidth / 2;
-    const clickY = event?.clientY ?? viewportHeight / 2;
-    const spaceBelow = viewportHeight - clickY;
-    const spaceAbove = clickY;
-    let top;
-    if (spaceBelow >= modalHeight + padding) {
-      top = clickY + 8;
-    } else if (spaceAbove >= modalHeight + padding) {
-      top = clickY - modalHeight - 8;
-    } else {
-      top = Math.max(padding, (viewportHeight - modalHeight) / 2);
-    }
-    const left = Math.min(
-      Math.max(clickX - modalWidth / 2, padding),
-      viewportWidth - modalWidth - padding
-    );
-    return {
-      top: Math.round(top),
-      left: Math.round(left),
-      width: Math.round(modalWidth)
-    };
-  };
-
-  const openEditModal = (event, usuario) => {
+  const openEditModal = (usuario) => {
     setEditing(usuario);
     setFormData({
       nome: usuario.nome,
@@ -136,7 +80,6 @@ function UsersManagement() {
       aprovado: usuario.aprovado === 1,
       igreja_ids: usuario.igrejas_ids || []
     });
-    setModalPosition(calculateModalPosition(event));
     setShowForm(true);
   };
 
@@ -183,7 +126,6 @@ function UsersManagement() {
   };
 
   const closeEditModal = () => {
-    setModalPosition(null);
     resetForm();
   };
 
@@ -318,112 +260,96 @@ function UsersManagement() {
           </form>
         )}
 
-        {showForm && editing && (
-          <div className="modal-overlay" onClick={closeEditModal}>
-            <div
-              className={`card modal-panel ${modalPosition ? 'modal-panel--anchored' : ''}`}
-              style={modalPosition ? { top: modalPosition.top, left: modalPosition.left, width: modalPosition.width } : undefined}
-              role="dialog"
-              aria-modal="true"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-header">
-                <h2 className="modal-title">Editar Usuário</h2>
-                <button type="button" className="btn btn-secondary modal-close" onClick={closeEditModal} aria-label="Fechar">
-                  ✕
-                </button>
-              </div>
-              <form onSubmit={handleSubmit} className="users-management__form">
-                <div className="form-group">
-                  <label>Nome *</label>
-                  <input
-                    type="text"
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Email *</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Senha {!editing && '*'}</label>
-                  <input
-                    type="password"
-                    value={formData.senha}
-                    onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                    required={!editing}
-                    placeholder={editing ? 'Deixe em branco para não alterar' : ''}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Role</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  >
-                    <option value="usuario">Usuário</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-
-                <div className="form-group form-group--checkbox">
-                  <input
-                    type="checkbox"
-                    id="ativo"
-                    checked={formData.ativo}
-                    onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-                  />
-                  <label htmlFor="ativo">Ativo</label>
-                </div>
-
-                <div className="form-group form-group--checkbox">
-                  <input
-                    type="checkbox"
-                    id="aprovado"
-                    checked={formData.aprovado}
-                    onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
-                  />
-                  <label htmlFor="aprovado">Aprovado</label>
-                </div>
-
-                <div className="form-group">
-                  <label>Igrejas</label>
-                  <div className="users-management__igrejas-list">
-                    {igrejas.map(igreja => (
-                      <label key={igreja.id} className="checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={formData.igreja_ids.includes(igreja.id)}
-                          onChange={() => toggleIgreja(igreja.id)}
-                        />
-                        {igreja.nome}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="users-management__form-actions">
-                  <button type="submit" className="btn btn-primary">
-                    Atualizar
-                  </button>
-                  <button type="button" className="btn btn-secondary" onClick={closeEditModal}>
-                    Cancelar
-                  </button>
-                </div>
-              </form>
+        <Modal isOpen={showForm && editing} title="Editar Usuário" onClose={closeEditModal}>
+          <form onSubmit={handleSubmit} className="users-management__form">
+            <div className="form-group">
+              <label>Nome *</label>
+              <input
+                type="text"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                required
+              />
             </div>
-          </div>
-        )}
+
+            <div className="form-group">
+              <label>Email *</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Senha {!editing && '*'}</label>
+              <input
+                type="password"
+                value={formData.senha}
+                onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
+                required={!editing}
+                placeholder={editing ? 'Deixe em branco para não alterar' : ''}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Role</label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              >
+                <option value="usuario">Usuário</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div className="form-group form-group--checkbox">
+              <input
+                type="checkbox"
+                id="ativo"
+                checked={formData.ativo}
+                onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+              />
+              <label htmlFor="ativo">Ativo</label>
+            </div>
+
+            <div className="form-group form-group--checkbox">
+              <input
+                type="checkbox"
+                id="aprovado"
+                checked={formData.aprovado}
+                onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
+              />
+              <label htmlFor="aprovado">Aprovado</label>
+            </div>
+
+            <div className="form-group">
+              <label>Igrejas</label>
+              <div className="users-management__igrejas-list">
+                {igrejas.map(igreja => (
+                  <label key={igreja.id} className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.igreja_ids.includes(igreja.id)}
+                      onChange={() => toggleIgreja(igreja.id)}
+                    />
+                    {igreja.nome}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="users-management__form-actions">
+              <button type="submit" className="btn btn-primary">
+                Atualizar
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={closeEditModal}>
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </Modal>
 
         <div className="table-wrapper">
           <table className="table">
@@ -460,7 +386,7 @@ function UsersManagement() {
                         className="btn btn-sm btn-secondary"
                         onClick={(event) => {
                           event.preventDefault();
-                          openEditModal(event, usuario);
+                          openEditModal(usuario);
                         }}
                         title="Editar"
                       >

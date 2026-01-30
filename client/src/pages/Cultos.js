@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getCultos, createCulto, updateCulto, deleteCulto, getCultosIgreja } from '../services/api';
 import { getIgrejas } from '../services/api';
+import Modal from '../components/Modal';
 
 function Cultos({ user }) {
   const [cultos, setCultos] = useState([]);
@@ -8,7 +9,6 @@ function Cultos({ user }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [modalPosition, setModalPosition] = useState(null);
   const [formData, setFormData] = useState({
     igreja_id: '',
     dia_semana: '',
@@ -16,33 +16,6 @@ function Cultos({ user }) {
     ativo: true
   });
   const [alert, setAlert] = useState(null);
-  const isEditModalOpen = showForm && !!editing;
-
-  useEffect(() => {
-    if (!isEditModalOpen) return;
-    const scrollY = window.scrollY;
-    const previousPosition = document.body.style.position;
-    const previousTop = document.body.style.top;
-    const previousWidth = document.body.style.width;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        closeEditModal();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.body.style.position = previousPosition;
-      document.body.style.top = previousTop;
-      document.body.style.width = previousWidth;
-      document.body.style.overflow = '';
-      document.removeEventListener('keydown', handleKeyDown);
-      window.scrollTo(0, scrollY);
-    };
-  }, [isEditModalOpen]);
 
   useEffect(() => {
     loadCultos();
@@ -98,36 +71,7 @@ function Cultos({ user }) {
     }
   };
 
-  const calculateModalPosition = (event) => {
-    const padding = 16;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const modalWidth = Math.min(760, Math.max(320, viewportWidth - padding * 2));
-    const modalHeight = Math.min(Math.floor(viewportHeight * 0.9), 640);
-    const clickX = event?.clientX ?? viewportWidth / 2;
-    const clickY = event?.clientY ?? viewportHeight / 2;
-    const spaceBelow = viewportHeight - clickY;
-    const spaceAbove = clickY;
-    let top;
-    if (spaceBelow >= modalHeight + padding) {
-      top = clickY + 8;
-    } else if (spaceAbove >= modalHeight + padding) {
-      top = clickY - modalHeight - 8;
-    } else {
-      top = Math.max(padding, (viewportHeight - modalHeight) / 2);
-    }
-    const left = Math.min(
-      Math.max(clickX - modalWidth / 2, padding),
-      viewportWidth - modalWidth - padding
-    );
-    return {
-      top: Math.round(top),
-      left: Math.round(left),
-      width: Math.round(modalWidth)
-    };
-  };
-
-  const openEditModal = (event, culto) => {
+  const openEditModal = (culto) => {
     setEditing(culto);
     setFormData({
       igreja_id: culto.igreja_id,
@@ -135,7 +79,6 @@ function Cultos({ user }) {
       hora: culto.hora,
       ativo: culto.ativo === 1
     });
-    setModalPosition(calculateModalPosition(event));
     setShowForm(true);
   };
 
@@ -163,7 +106,6 @@ function Cultos({ user }) {
   };
 
   const closeEditModal = () => {
-    setModalPosition(null);
     resetForm();
   };
 
@@ -266,90 +208,74 @@ function Cultos({ user }) {
           </form>
         )}
 
-        {showForm && editing && (
-          <div className="modal-overlay" onClick={closeEditModal}>
-            <div
-              className={`card modal-panel ${modalPosition ? 'modal-panel--anchored' : ''}`}
-              style={modalPosition ? { top: modalPosition.top, left: modalPosition.left, width: modalPosition.width } : undefined}
-              role="dialog"
-              aria-modal="true"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-header">
-                <h2 className="modal-title">Editar Culto</h2>
-                <button type="button" className="btn btn-secondary modal-close" onClick={closeEditModal} aria-label="Fechar">
-                  ✕
-                </button>
+        <Modal isOpen={showForm && editing} title="Editar Culto" onClose={closeEditModal}>
+          <form onSubmit={handleSubmit} className="form--spaced">
+            {user?.role === 'admin' ? (
+              <div className="form-group">
+                <label>Igreja *</label>
+                <select
+                  value={formData.igreja_id}
+                  onChange={(e) => setFormData({ ...formData, igreja_id: e.target.value })}
+                  required
+                >
+                  <option value="">Selecione uma igreja...</option>
+                  {igrejas.map(igreja => (
+                    <option key={igreja.id} value={igreja.id}>
+                      {igreja.nome}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <form onSubmit={handleSubmit} className="form--spaced">
-                {user?.role === 'admin' ? (
-                  <div className="form-group">
-                    <label>Igreja *</label>
-                    <select
-                      value={formData.igreja_id}
-                      onChange={(e) => setFormData({ ...formData, igreja_id: e.target.value })}
-                      required
-                    >
-                      <option value="">Selecione uma igreja...</option>
-                      {igrejas.map(igreja => (
-                        <option key={igreja.id} value={igreja.id}>
-                          {igreja.nome}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div className="form-group">
-                    <label>Igreja</label>
-                    <input
-                      type="text"
-                      value={igrejas.find(i => i.id.toString() === formData.igreja_id)?.nome || ''}
-                      disabled
-                      className="input-readonly"
-                    />
-                  </div>
-                )}
-                <div className="form-group">
-                  <label>Dia da Semana *</label>
-                  <select
-                    value={formData.dia_semana}
-                    onChange={(e) => setFormData({ ...formData, dia_semana: e.target.value })}
-                    required
-                  >
-                    <option value="">Selecione o dia...</option>
-                    {diasSemana.map(dia => (
-                      <option key={dia.value} value={dia.value}>
-                        {dia.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Hora *</label>
-                  <input
-                    type="time"
-                    value={formData.hora}
-                    onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={formData.ativo}
-                      onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-                    />
-                    {' '}Ativo
-                  </label>
-                </div>
-                <button type="submit" className="btn btn-primary">
-                  Atualizar
-                </button>
-              </form>
+            ) : (
+              <div className="form-group">
+                <label>Igreja</label>
+                <input
+                  type="text"
+                  value={igrejas.find(i => i.id.toString() === formData.igreja_id)?.nome || ''}
+                  disabled
+                  className="input-readonly"
+                />
+              </div>
+            )}
+            <div className="form-group">
+              <label>Dia da Semana *</label>
+              <select
+                value={formData.dia_semana}
+                onChange={(e) => setFormData({ ...formData, dia_semana: e.target.value })}
+                required
+              >
+                <option value="">Selecione o dia...</option>
+                {diasSemana.map(dia => (
+                  <option key={dia.value} value={dia.value}>
+                    {dia.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
-        )}
+            <div className="form-group">
+              <label>Hora *</label>
+              <input
+                type="time"
+                value={formData.hora}
+                onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={formData.ativo}
+                  onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                />
+                {' '}Ativo
+              </label>
+            </div>
+            <button type="submit" className="btn btn-primary">
+              Atualizar
+            </button>
+          </form>
+        </Modal>
 
         {cultos.length === 0 ? (
           <div className="empty">Nenhum culto cadastrado</div>
@@ -379,7 +305,7 @@ function Cultos({ user }) {
                           className="btn btn-secondary"
                           onClick={(event) => {
                             event.preventDefault();
-                            openEditModal(event, culto);
+                            openEditModal(culto);
                           }}
                         >
                           Editar

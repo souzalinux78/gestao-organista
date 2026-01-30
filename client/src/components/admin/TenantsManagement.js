@@ -5,46 +5,19 @@ import { getErrorMessage } from '../../utils/errorMessages';
 import useToast from '../../hooks/useToast';
 import Toast from '../Toast';
 import './TenantsManagement.css';
+import Modal from '../Modal';
 
 function TenantsManagement() {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [modalPosition, setModalPosition] = useState(null);
   const [formData, setFormData] = useState({
     nome: '',
     slug: '',
     ativo: true
   });
   const { toast, showSuccess, showError, hideToast } = useToast();
-  const isEditModalOpen = showForm && !!editing;
-
-  useEffect(() => {
-    if (!isEditModalOpen) return;
-    const scrollY = window.scrollY;
-    const previousPosition = document.body.style.position;
-    const previousTop = document.body.style.top;
-    const previousWidth = document.body.style.width;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        closeEditModal();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.body.style.position = previousPosition;
-      document.body.style.top = previousTop;
-      document.body.style.width = previousWidth;
-      document.body.style.overflow = '';
-      document.removeEventListener('keydown', handleKeyDown);
-      window.scrollTo(0, scrollY);
-    };
-  }, [isEditModalOpen]);
 
   useEffect(() => {
     loadTenants();
@@ -79,43 +52,13 @@ function TenantsManagement() {
     }
   };
 
-  const calculateModalPosition = (event) => {
-    const padding = 16;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const modalWidth = Math.min(760, Math.max(320, viewportWidth - padding * 2));
-    const modalHeight = Math.min(Math.floor(viewportHeight * 0.9), 640);
-    const clickX = event?.clientX ?? viewportWidth / 2;
-    const clickY = event?.clientY ?? viewportHeight / 2;
-    const spaceBelow = viewportHeight - clickY;
-    const spaceAbove = clickY;
-    let top;
-    if (spaceBelow >= modalHeight + padding) {
-      top = clickY + 8;
-    } else if (spaceAbove >= modalHeight + padding) {
-      top = clickY - modalHeight - 8;
-    } else {
-      top = Math.max(padding, (viewportHeight - modalHeight) / 2);
-    }
-    const left = Math.min(
-      Math.max(clickX - modalWidth / 2, padding),
-      viewportWidth - modalWidth - padding
-    );
-    return {
-      top: Math.round(top),
-      left: Math.round(left),
-      width: Math.round(modalWidth)
-    };
-  };
-
-  const openEditModal = (event, tenant) => {
+  const openEditModal = (tenant) => {
     setEditing(tenant);
     setFormData({
       nome: tenant.nome,
       slug: tenant.slug,
       ativo: tenant.ativo === 1
     });
-    setModalPosition(calculateModalPosition(event));
     setShowForm(true);
   };
 
@@ -147,7 +90,6 @@ function TenantsManagement() {
   };
 
   const closeEditModal = () => {
-    setModalPosition(null);
     resetForm();
   };
 
@@ -230,67 +172,51 @@ function TenantsManagement() {
           </form>
         )}
 
-        {showForm && editing && (
-          <div className="modal-overlay" onClick={closeEditModal}>
-            <div
-              className={`card modal-panel ${modalPosition ? 'modal-panel--anchored' : ''}`}
-              style={modalPosition ? { top: modalPosition.top, left: modalPosition.left, width: modalPosition.width } : undefined}
-              role="dialog"
-              aria-modal="true"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-header">
-                <h2 className="modal-title">Editar Tenant</h2>
-                <button type="button" className="btn btn-secondary modal-close" onClick={closeEditModal} aria-label="Fechar">
-                  ✕
-                </button>
-              </div>
-              <form onSubmit={handleSubmit} className="tenants-management__form">
-                <div className="form-group">
-                  <label>Nome *</label>
-                  <input
-                    type="text"
-                    value={formData.nome}
-                    onChange={(e) => handleNomeChange(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Slug *</label>
-                  <input
-                    type="text"
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    required
-                    pattern="[a-z0-9-]+"
-                    placeholder="exemplo-tenant"
-                  />
-                  <small className="form-group__hint">Apenas letras minúsculas, números e hífens</small>
-                </div>
-
-                <div className="form-group form-group--checkbox">
-                  <input
-                    type="checkbox"
-                    id="ativo"
-                    checked={formData.ativo}
-                    onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-                  />
-                  <label htmlFor="ativo">Ativo</label>
-                </div>
-
-                <div className="tenants-management__form-actions">
-                  <button type="submit" className="btn btn-primary">
-                    Atualizar
-                  </button>
-                  <button type="button" className="btn btn-secondary" onClick={closeEditModal}>
-                    Cancelar
-                  </button>
-                </div>
-              </form>
+        <Modal isOpen={showForm && editing} title="Editar Tenant" onClose={closeEditModal}>
+          <form onSubmit={handleSubmit} className="tenants-management__form">
+            <div className="form-group">
+              <label>Nome *</label>
+              <input
+                type="text"
+                value={formData.nome}
+                onChange={(e) => handleNomeChange(e.target.value)}
+                required
+              />
             </div>
-          </div>
-        )}
+
+            <div className="form-group">
+              <label>Slug *</label>
+              <input
+                type="text"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                required
+                pattern="[a-z0-9-]+"
+                placeholder="exemplo-tenant"
+              />
+              <small className="form-group__hint">Apenas letras minúsculas, números e hífens</small>
+            </div>
+
+            <div className="form-group form-group--checkbox">
+              <input
+                type="checkbox"
+                id="ativo"
+                checked={formData.ativo}
+                onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+              />
+              <label htmlFor="ativo">Ativo</label>
+            </div>
+
+            <div className="tenants-management__form-actions">
+              <button type="submit" className="btn btn-primary">
+                Atualizar
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={closeEditModal}>
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </Modal>
 
         <div className="table-wrapper">
           <table className="table">
@@ -327,7 +253,7 @@ function TenantsManagement() {
                         className="btn btn-sm btn-secondary"
                         onClick={(event) => {
                           event.preventDefault();
-                          openEditModal(event, tenant);
+                          openEditModal(tenant);
                         }}
                         title="Editar"
                       >

@@ -140,9 +140,9 @@
 
 .modal-panel {
   position: fixed;
-  top: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 16px);
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   width: 100%;
   max-width: 760px;
   max-height: 90vh;
@@ -150,10 +150,6 @@
   -webkit-overflow-scrolling: touch;
   margin: auto;
   animation: modalPanelIn 200ms ease-out;
-}
-
-.modal-panel--anchored {
-  transform: none;
 }
 
 .modal-header {

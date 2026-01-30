@@ -5,6 +5,7 @@ import Toast from '../components/Toast';
 import useToast from '../hooks/useToast';
 import { getErrorMessage } from '../utils/errorMessages';
 import { validateForm, validateRequired, validateEmail, validatePhone, validateMinLength } from '../utils/formValidation';
+import Modal from '../components/Modal';
 
 function Organistas({ user }) {
   const [organistas, setOrganistas] = useState([]);
@@ -15,7 +16,6 @@ function Organistas({ user }) {
   const [editing, setEditing] = useState(null);
   const [filtroIgreja, setFiltroIgreja] = useState('');
   const [igrejas, setIgrejas] = useState([]);
-  const [modalPosition, setModalPosition] = useState(null);
   const [formData, setFormData] = useState({
     ordem: '',
     nome: '',
@@ -25,33 +25,6 @@ function Organistas({ user }) {
     ativa: true
   });
   const { toast, showSuccess, showError, hideToast } = useToast();
-  const isEditModalOpen = showForm && !!editing;
-
-  useEffect(() => {
-    if (!isEditModalOpen) return;
-    const scrollY = window.scrollY;
-    const previousPosition = document.body.style.position;
-    const previousTop = document.body.style.top;
-    const previousWidth = document.body.style.width;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        closeEditModal();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.body.style.position = previousPosition;
-      document.body.style.top = previousTop;
-      document.body.style.width = previousWidth;
-      document.body.style.overflow = '';
-      document.removeEventListener('keydown', handleKeyDown);
-      window.scrollTo(0, scrollY);
-    };
-  }, [isEditModalOpen]);
 
   useEffect(() => {
     loadOrganistas();
@@ -158,36 +131,7 @@ function Organistas({ user }) {
     }
   };
 
-  const calculateModalPosition = (event) => {
-    const padding = 16;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const modalWidth = Math.min(760, Math.max(320, viewportWidth - padding * 2));
-    const modalHeight = Math.min(Math.floor(viewportHeight * 0.9), 640);
-    const clickX = event?.clientX ?? viewportWidth / 2;
-    const clickY = event?.clientY ?? viewportHeight / 2;
-    const spaceBelow = viewportHeight - clickY;
-    const spaceAbove = clickY;
-    let top;
-    if (spaceBelow >= modalHeight + padding) {
-      top = clickY + 8;
-    } else if (spaceAbove >= modalHeight + padding) {
-      top = clickY - modalHeight - 8;
-    } else {
-      top = Math.max(padding, (viewportHeight - modalHeight) / 2);
-    }
-    const left = Math.min(
-      Math.max(clickX - modalWidth / 2, padding),
-      viewportWidth - modalWidth - padding
-    );
-    return {
-      top: Math.round(top),
-      left: Math.round(left),
-      width: Math.round(modalWidth)
-    };
-  };
-
-  const openEditModal = (event, organista) => {
+  const openEditModal = (organista) => {
     setEditing(organista);
     setFormData({
       ordem: organista.ordem ?? '',
@@ -197,7 +141,6 @@ function Organistas({ user }) {
       oficializada: organista.oficializada === 1,
       ativa: organista.ativa === 1
     });
-    setModalPosition(calculateModalPosition(event));
     setShowForm(true);
   };
 
@@ -231,7 +174,6 @@ function Organistas({ user }) {
   };
 
   const closeEditModal = () => {
-    setModalPosition(null);
     resetForm();
   };
 
@@ -327,92 +269,76 @@ function Organistas({ user }) {
           </form>
         )}
 
-        {showForm && editing && (
-          <div className="modal-overlay" onClick={closeEditModal}>
-            <div
-              className={`card modal-panel ${modalPosition ? 'modal-panel--anchored' : ''}`}
-              style={modalPosition ? { top: modalPosition.top, left: modalPosition.left, width: modalPosition.width } : undefined}
-              role="dialog"
-              aria-modal="true"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-header">
-                <h2 className="modal-title">Editar Organista</h2>
-                <button type="button" className="btn btn-secondary modal-close" onClick={closeEditModal} aria-label="Fechar">
-                  ✕
-                </button>
-              </div>
-              <form onSubmit={handleSubmit} className="form--spaced">
-                <div className="form-group">
-                  <label>Numeração (ordem do rodízio)</label>
-                  <input
-                    type="number"
-                    value={formData.ordem}
-                    onChange={(e) => setFormData({ ...formData, ordem: e.target.value })}
-                    placeholder="Ex: 1"
-                    min="1"
-                  />
-                  <small className="form-hint">
-                    Use 1,2,3... para definir a ordem do rodízio. Se deixar vazio, a organista fica sem numeração.
-                  </small>
-                </div>
-                <div className="form-group">
-                  <label>Nome *</label>
-                  <input
-                    type="text"
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Telefone</label>
-                  <input
-                    type="text"
-                    value={formData.telefone}
-                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                    placeholder="(00) 00000-0000"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-                <div className="form-group form-group--checkbox">
-                  <input
-                    type="checkbox"
-                    id="oficializada"
-                    checked={formData.oficializada}
-                    onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
-                    className="checkbox-input"
-                  />
-                  <label htmlFor="oficializada" className="checkbox-label">
-                    Oficializada
-                  </label>
-                </div>
-                <div className="form-group form-group--checkbox">
-                  <input
-                    type="checkbox"
-                    id="ativa"
-                    checked={formData.ativa}
-                    onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
-                    className="checkbox-input"
-                  />
-                  <label htmlFor="ativa" className="checkbox-label">
-                    Ativa
-                  </label>
-                </div>
-                <button type="submit" className="btn btn-primary">
-                  {saving ? 'Salvando...' : 'Atualizar'}
-                </button>
-              </form>
+        <Modal isOpen={showForm && editing} title="Editar Organista" onClose={closeEditModal}>
+          <form onSubmit={handleSubmit} className="form--spaced">
+            <div className="form-group">
+              <label>Numeração (ordem do rodízio)</label>
+              <input
+                type="number"
+                value={formData.ordem}
+                onChange={(e) => setFormData({ ...formData, ordem: e.target.value })}
+                placeholder="Ex: 1"
+                min="1"
+              />
+              <small className="form-hint">
+                Use 1,2,3... para definir a ordem do rodízio. Se deixar vazio, a organista fica sem numeração.
+              </small>
             </div>
-          </div>
-        )}
+            <div className="form-group">
+              <label>Nome *</label>
+              <input
+                type="text"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Telefone</label>
+              <input
+                type="text"
+                value={formData.telefone}
+                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+            <div className="form-group form-group--checkbox">
+              <input
+                type="checkbox"
+                id="oficializada"
+                checked={formData.oficializada}
+                onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
+                className="checkbox-input"
+              />
+              <label htmlFor="oficializada" className="checkbox-label">
+                Oficializada
+              </label>
+            </div>
+            <div className="form-group form-group--checkbox">
+              <input
+                type="checkbox"
+                id="ativa"
+                checked={formData.ativa}
+                onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
+                className="checkbox-input"
+              />
+              <label htmlFor="ativa" className="checkbox-label">
+                Ativa
+              </label>
+            </div>
+            <button type="submit" className="btn btn-primary">
+              {saving ? 'Salvando...' : 'Atualizar'}
+            </button>
+          </form>
+        </Modal>
 
         {user?.role === 'admin' && (
           <div className="filter-row">
@@ -464,7 +390,7 @@ function Organistas({ user }) {
                           className="btn btn-secondary"
                           onClick={(event) => {
                             event.preventDefault();
-                            openEditModal(event, organista);
+                            openEditModal(organista);
                           }}
                         >
                           Editar
