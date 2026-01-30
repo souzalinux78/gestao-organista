@@ -367,8 +367,12 @@ function Admin() {
                             </>
                           )}
                           <button
+                            type="button"
                             className="btn btn-secondary btn-compact"
-                            onClick={() => handleEdit(usuario)}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              handleEdit(usuario);
+                            }}
                           >
                             Editar
                           </button>

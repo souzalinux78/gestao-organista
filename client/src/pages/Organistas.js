@@ -33,7 +33,7 @@ function Organistas({ user }) {
     document.body.style.overflow = 'hidden';
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        resetForm();
+        closeEditModal();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -151,7 +151,7 @@ function Organistas({ user }) {
     }
   };
 
-  const handleEdit = (organista) => {
+  const openEditModal = (organista) => {
     setEditing(organista);
     setFormData({
       ordem: organista.ordem ?? '',
@@ -191,6 +191,10 @@ function Organistas({ user }) {
     });
     setEditing(null);
     setShowForm(false);
+  };
+
+  const closeEditModal = () => {
+    resetForm();
   };
 
   if (loading) {
@@ -287,11 +291,11 @@ function Organistas({ user }) {
         )}
 
         {showForm && editing && (
-          <div className="modal-overlay" onClick={resetForm}>
+          <div className="modal-overlay" onClick={closeEditModal}>
             <div className="card modal-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2 className="modal-title">Editar Organista</h2>
-                <button type="button" className="btn btn-secondary modal-close" onClick={resetForm} aria-label="Fechar">
+                <button type="button" className="btn btn-secondary modal-close" onClick={closeEditModal} aria-label="Fechar">
                   ✕
                 </button>
               </div>
@@ -414,8 +418,12 @@ function Organistas({ user }) {
                     <td data-label="Ações">
                       <div className="actions">
                         <button
+                          type="button"
                           className="btn btn-secondary"
-                          onClick={() => handleEdit(organista)}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            openEditModal(organista);
+                          }}
                         >
                           Editar
                         </button>

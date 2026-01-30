@@ -286,8 +286,12 @@ function UsersManagement() {
                   <td>
                     <div className="actions">
                       <button
+                        type="button"
                         className="btn btn-sm btn-secondary"
-                        onClick={() => handleEdit(usuario)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleEdit(usuario);
+                        }}
                         title="Editar"
                       >
                         ✏️

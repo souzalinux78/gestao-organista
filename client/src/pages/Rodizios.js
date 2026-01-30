@@ -618,8 +618,10 @@ function Rodizios({ user }) {
                         </div>
                       ) : (
                         <button
+                          type="button"
                           className="btn btn-primary"
-                          onClick={() => {
+                          onClick={(event) => {
+                            event.preventDefault();
                             // Carregar organistas da igreja se necessário
                             if (organistasIgreja.length === 0 && rodizio.igreja_id) {
                               loadOrganistasIgreja(rodizio.igreja_id);

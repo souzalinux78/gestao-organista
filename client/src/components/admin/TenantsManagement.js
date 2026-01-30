@@ -198,8 +198,12 @@ function TenantsManagement() {
                   <td>
                     <div className="actions">
                       <button
+                        type="button"
                         className="btn btn-sm btn-secondary"
-                        onClick={() => handleEdit(tenant)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleEdit(tenant);
+                        }}
                         title="Editar"
                       >
                         ✏️
