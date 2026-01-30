@@ -28,7 +28,13 @@ function Organistas({ user }) {
 
   useEffect(() => {
     if (!isEditModalOpen) return;
-    const previousOverflow = document.body.style.overflow;
+    const scrollY = window.scrollY;
+    const previousPosition = document.body.style.position;
+    const previousTop = document.body.style.top;
+    const previousWidth = document.body.style.width;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
     document.body.style.overflow = 'hidden';
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -37,8 +43,12 @@ function Organistas({ user }) {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.position = previousPosition;
+      document.body.style.top = previousTop;
+      document.body.style.width = previousWidth;
+      document.body.style.overflow = '';
       document.removeEventListener('keydown', handleKeyDown);
+      window.scrollTo(0, scrollY);
     };
   }, [isEditModalOpen]);
 

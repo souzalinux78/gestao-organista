@@ -139,10 +139,15 @@
 }
 
 .modal-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 100%;
   max-width: 760px;
   max-height: 90vh;
-  overflow: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   margin: auto;
   animation: modalPanelIn 200ms ease-out;
 }
