@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getCultos, createCulto, updateCulto, deleteCulto, getCultosIgreja } from '../services/api';
 import { getIgrejas } from '../services/api';
 
@@ -15,7 +15,6 @@ function Cultos({ user }) {
     ativo: true
   });
   const [alert, setAlert] = useState(null);
-  const firstInputRef = useRef(null);
   const isEditModalOpen = showForm && !!editing;
 
   useEffect(() => {
@@ -28,9 +27,6 @@ function Cultos({ user }) {
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    requestAnimationFrame(() => {
-      firstInputRef.current?.focus();
-    });
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleKeyDown);
@@ -166,7 +162,6 @@ function Cultos({ user }) {
                 <label>Igreja *</label>
                 <select
                   value={formData.igreja_id}
-                  ref={firstInputRef}
                   onChange={(e) => setFormData({ ...formData, igreja_id: e.target.value })}
                   required
                 >
@@ -244,7 +239,6 @@ function Cultos({ user }) {
                     <label>Igreja *</label>
                     <select
                       value={formData.igreja_id}
-                      ref={firstInputRef}
                       onChange={(e) => setFormData({ ...formData, igreja_id: e.target.value })}
                       required
                     >
@@ -261,7 +255,6 @@ function Cultos({ user }) {
                     <label>Igreja</label>
                     <input
                       type="text"
-                      ref={firstInputRef}
                       value={igrejas.find(i => i.id.toString() === formData.igreja_id)?.nome || ''}
                       disabled
                       className="input-readonly"

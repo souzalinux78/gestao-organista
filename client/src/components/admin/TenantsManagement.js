@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getTenants, createTenant, updateTenant, deleteTenant } from '../../services/api';
 import LoadingSpinner from '../LoadingSpinner';
 import { getErrorMessage } from '../../utils/errorMessages';
@@ -17,7 +17,6 @@ function TenantsManagement() {
     ativo: true
   });
   const { toast, showSuccess, showError, hideToast } = useToast();
-  const firstInputRef = useRef(null);
   const isEditModalOpen = showForm && !!editing;
 
   useEffect(() => {
@@ -30,9 +29,6 @@ function TenantsManagement() {
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    requestAnimationFrame(() => {
-      firstInputRef.current?.focus();
-    });
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleKeyDown);
@@ -152,7 +148,6 @@ function TenantsManagement() {
               <label>Nome *</label>
               <input
                 type="text"
-                ref={firstInputRef}
                 value={formData.nome}
                 onChange={(e) => handleNomeChange(e.target.value)}
                 required
@@ -207,7 +202,6 @@ function TenantsManagement() {
                   <label>Nome *</label>
                   <input
                     type="text"
-                    ref={firstInputRef}
                     value={formData.nome}
                     onChange={(e) => handleNomeChange(e.target.value)}
                     required

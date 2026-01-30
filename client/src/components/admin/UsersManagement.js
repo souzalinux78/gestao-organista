@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario, resetPassword } from '../../services/api';
 import { getIgrejas } from '../../services/api';
 import LoadingSpinner from '../LoadingSpinner';
@@ -26,7 +26,6 @@ function UsersManagement() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const { toast, showSuccess, showError, hideToast } = useToast();
-  const firstInputRef = useRef(null);
   const isEditModalOpen = showForm && !!editing;
 
   useEffect(() => {
@@ -39,9 +38,6 @@ function UsersManagement() {
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    requestAnimationFrame(() => {
-      firstInputRef.current?.focus();
-    });
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleKeyDown);
@@ -195,7 +191,6 @@ function UsersManagement() {
               <label>Nome *</label>
               <input
                 type="text"
-                ref={firstInputRef}
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 required
@@ -295,7 +290,6 @@ function UsersManagement() {
                   <label>Nome *</label>
                   <input
                     type="text"
-                    ref={firstInputRef}
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                     required

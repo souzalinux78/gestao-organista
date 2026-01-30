@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getOrganistas, createOrganista, updateOrganista, deleteOrganista, getIgrejas, getOrganistasIgreja } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Toast from '../components/Toast';
@@ -24,7 +24,6 @@ function Organistas({ user }) {
     ativa: true
   });
   const { toast, showSuccess, showError, hideToast } = useToast();
-  const firstInputRef = useRef(null);
   const isEditModalOpen = showForm && !!editing;
 
   useEffect(() => {
@@ -37,9 +36,6 @@ function Organistas({ user }) {
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    requestAnimationFrame(() => {
-      firstInputRef.current?.focus();
-    });
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleKeyDown);
@@ -237,7 +233,6 @@ function Organistas({ user }) {
               <label>Nome *</label>
               <input
                 type="text"
-                ref={firstInputRef}
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 required
@@ -317,7 +312,6 @@ function Organistas({ user }) {
                   <label>Nome *</label>
                   <input
                     type="text"
-                    ref={firstInputRef}
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                     required

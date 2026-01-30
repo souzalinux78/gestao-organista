@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getIgrejas, createIgreja, updateIgreja, deleteIgreja, getOrganistasIgreja, addOrganistaIgreja, removeOrganistaIgreja } from '../services/api';
 import { getOrganistas } from '../services/api';
 
@@ -21,7 +21,6 @@ function Igrejas({ user }) {
   const [organistasIgreja, setOrganistasIgreja] = useState([]);
   const [allOrganistas, setAllOrganistas] = useState([]);
   const [showOrganistasModal, setShowOrganistasModal] = useState(false);
-  const firstInputRef = useRef(null);
   const isEditModalOpen = showForm && !!editing;
 
   useEffect(() => {
@@ -34,9 +33,6 @@ function Igrejas({ user }) {
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    requestAnimationFrame(() => {
-      firstInputRef.current?.focus();
-    });
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleKeyDown);
@@ -211,7 +207,6 @@ function Igrejas({ user }) {
               <label>Nome *</label>
               <input
                 type="text"
-                ref={firstInputRef}
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 required
@@ -298,7 +293,6 @@ function Igrejas({ user }) {
                   <label>Nome *</label>
                   <input
                     type="text"
-                    ref={firstInputRef}
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                     required
