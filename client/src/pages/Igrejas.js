@@ -7,6 +7,7 @@ function Igrejas({ user }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [modalPosition, setModalPosition] = useState(null);
   const [formData, setFormData] = useState({
     nome: '',
     endereco: '',
@@ -113,7 +114,36 @@ function Igrejas({ user }) {
     }
   };
 
-  const openEditModal = (igreja) => {
+  const calculateModalPosition = (event) => {
+    const padding = 16;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const modalWidth = Math.min(760, Math.max(320, viewportWidth - padding * 2));
+    const modalHeight = Math.min(Math.floor(viewportHeight * 0.9), 640);
+    const clickX = event?.clientX ?? viewportWidth / 2;
+    const clickY = event?.clientY ?? viewportHeight / 2;
+    const spaceBelow = viewportHeight - clickY;
+    const spaceAbove = clickY;
+    let top;
+    if (spaceBelow >= modalHeight + padding) {
+      top = clickY + 8;
+    } else if (spaceAbove >= modalHeight + padding) {
+      top = clickY - modalHeight - 8;
+    } else {
+      top = Math.max(padding, (viewportHeight - modalHeight) / 2);
+    }
+    const left = Math.min(
+      Math.max(clickX - modalWidth / 2, padding),
+      viewportWidth - modalWidth - padding
+    );
+    return {
+      top: Math.round(top),
+      left: Math.round(left),
+      width: Math.round(modalWidth)
+    };
+  };
+
+  const openEditModal = (event, igreja) => {
     setEditing(igreja);
     setFormData({
       nome: igreja.nome,
@@ -124,6 +154,7 @@ function Igrejas({ user }) {
       encarregado_regional_telefone: igreja.encarregado_regional_telefone || '',
       mesma_organista_ambas_funcoes: igreja.mesma_organista_ambas_funcoes === 1 || igreja.mesma_organista_ambas_funcoes === true
     });
+    setModalPosition(calculateModalPosition(event));
     setShowForm(true);
   };
 
@@ -188,6 +219,7 @@ function Igrejas({ user }) {
   };
 
   const closeEditModal = () => {
+    setModalPosition(null);
     resetForm();
   };
 
@@ -291,7 +323,13 @@ function Igrejas({ user }) {
 
         {showForm && editing && (
           <div className="modal-overlay" onClick={closeEditModal}>
-            <div className="card modal-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div
+              className={`card modal-panel ${modalPosition ? 'modal-panel--anchored' : ''}`}
+              style={modalPosition ? { top: modalPosition.top, left: modalPosition.left, width: modalPosition.width } : undefined}
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-header">
                 <h2 className="modal-title">Editar Igreja</h2>
                 <button type="button" className="btn btn-secondary modal-close" onClick={closeEditModal} aria-label="Fechar">
@@ -436,7 +474,7 @@ function Igrejas({ user }) {
                           className="btn btn-secondary"
                           onClick={(event) => {
                             event.preventDefault();
-                            openEditModal(igreja);
+                            openEditModal(event, igreja);
                           }}
                         >
                           Editar

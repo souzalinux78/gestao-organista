@@ -152,6 +152,10 @@
   animation: modalPanelIn 200ms ease-out;
 }
 
+.modal-panel--anchored {
+  transform: none;
+}
+
 .modal-header {
   display: flex;
   align-items: center;

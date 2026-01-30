@@ -8,6 +8,7 @@ function Cultos({ user }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [modalPosition, setModalPosition] = useState(null);
   const [formData, setFormData] = useState({
     igreja_id: '',
     dia_semana: '',
@@ -97,7 +98,36 @@ function Cultos({ user }) {
     }
   };
 
-  const openEditModal = (culto) => {
+  const calculateModalPosition = (event) => {
+    const padding = 16;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const modalWidth = Math.min(760, Math.max(320, viewportWidth - padding * 2));
+    const modalHeight = Math.min(Math.floor(viewportHeight * 0.9), 640);
+    const clickX = event?.clientX ?? viewportWidth / 2;
+    const clickY = event?.clientY ?? viewportHeight / 2;
+    const spaceBelow = viewportHeight - clickY;
+    const spaceAbove = clickY;
+    let top;
+    if (spaceBelow >= modalHeight + padding) {
+      top = clickY + 8;
+    } else if (spaceAbove >= modalHeight + padding) {
+      top = clickY - modalHeight - 8;
+    } else {
+      top = Math.max(padding, (viewportHeight - modalHeight) / 2);
+    }
+    const left = Math.min(
+      Math.max(clickX - modalWidth / 2, padding),
+      viewportWidth - modalWidth - padding
+    );
+    return {
+      top: Math.round(top),
+      left: Math.round(left),
+      width: Math.round(modalWidth)
+    };
+  };
+
+  const openEditModal = (event, culto) => {
     setEditing(culto);
     setFormData({
       igreja_id: culto.igreja_id,
@@ -105,6 +135,7 @@ function Cultos({ user }) {
       hora: culto.hora,
       ativo: culto.ativo === 1
     });
+    setModalPosition(calculateModalPosition(event));
     setShowForm(true);
   };
 
@@ -132,6 +163,7 @@ function Cultos({ user }) {
   };
 
   const closeEditModal = () => {
+    setModalPosition(null);
     resetForm();
   };
 
@@ -236,7 +268,13 @@ function Cultos({ user }) {
 
         {showForm && editing && (
           <div className="modal-overlay" onClick={closeEditModal}>
-            <div className="card modal-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div
+              className={`card modal-panel ${modalPosition ? 'modal-panel--anchored' : ''}`}
+              style={modalPosition ? { top: modalPosition.top, left: modalPosition.left, width: modalPosition.width } : undefined}
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-header">
                 <h2 className="modal-title">Editar Culto</h2>
                 <button type="button" className="btn btn-secondary modal-close" onClick={closeEditModal} aria-label="Fechar">
@@ -341,7 +379,7 @@ function Cultos({ user }) {
                           className="btn btn-secondary"
                           onClick={(event) => {
                             event.preventDefault();
-                            openEditModal(culto);
+                            openEditModal(event, culto);
                           }}
                         >
                           Editar

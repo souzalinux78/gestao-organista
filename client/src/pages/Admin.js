@@ -22,6 +22,7 @@ function Admin() {
   const [filtroAprovacao, setFiltroAprovacao] = useState('todos'); // 'todos', 'pendentes', 'aprovados'
   const [searchTerm, setSearchTerm] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [modalPosition, setModalPosition] = useState(null);
   const [alert, setAlert] = useState(null);
 
   useEffect(() => {
@@ -60,7 +61,36 @@ function Admin() {
     }
   };
 
-  const handleEdit = (usuario) => {
+  const calculateModalPosition = (event) => {
+    const padding = 16;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const modalWidth = Math.min(760, Math.max(320, viewportWidth - padding * 2));
+    const modalHeight = Math.min(Math.floor(viewportHeight * 0.9), 640);
+    const clickX = event?.clientX ?? viewportWidth / 2;
+    const clickY = event?.clientY ?? viewportHeight / 2;
+    const spaceBelow = viewportHeight - clickY;
+    const spaceAbove = clickY;
+    let top;
+    if (spaceBelow >= modalHeight + padding) {
+      top = clickY + 8;
+    } else if (spaceAbove >= modalHeight + padding) {
+      top = clickY - modalHeight - 8;
+    } else {
+      top = Math.max(padding, (viewportHeight - modalHeight) / 2);
+    }
+    const left = Math.min(
+      Math.max(clickX - modalWidth / 2, padding),
+      viewportWidth - modalWidth - padding
+    );
+    return {
+      top: Math.round(top),
+      left: Math.round(left),
+      width: Math.round(modalWidth)
+    };
+  };
+
+  const handleEdit = (event, usuario) => {
     setEditing(usuario);
     setFormData({
       nome: usuario.nome,
@@ -71,10 +101,12 @@ function Admin() {
       aprovado: usuario.aprovado === 1,
       igreja_ids: usuario.igrejas_ids || []
     });
+    setModalPosition(calculateModalPosition(event));
     setShowEditModal(true);
   };
 
   const handleCloseEditModal = () => {
+    setModalPosition(null);
     setShowEditModal(false);
     setEditing(null);
     resetForm();
@@ -371,7 +403,7 @@ function Admin() {
                             className="btn btn-secondary btn-compact"
                             onClick={(event) => {
                               event.preventDefault();
-                              handleEdit(usuario);
+                              handleEdit(event, usuario);
                             }}
                           >
                             Editar
@@ -395,7 +427,10 @@ function Admin() {
         {/* Modal de Edição */}
         {showEditModal && editing && (
           <div className="modal-overlay">
-            <div className="card modal-panel">
+            <div
+              className={`card modal-panel ${modalPosition ? 'modal-panel--anchored' : ''}`}
+              style={modalPosition ? { top: modalPosition.top, left: modalPosition.left, width: modalPosition.width } : undefined}
+            >
               <div className="modal-header">
                 <h2 className="modal-title">Editar Usuário</h2>
                 <button className="btn btn-secondary btn-nowrap" onClick={handleCloseEditModal}>
