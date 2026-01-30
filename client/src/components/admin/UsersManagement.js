@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario, resetPassword } from '../../services/api';
 import { getIgrejas } from '../../services/api';
 import LoadingSpinner from '../LoadingSpinner';
@@ -26,6 +26,27 @@ function UsersManagement() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const { toast, showSuccess, showError, hideToast } = useToast();
+  const firstInputRef = useRef(null);
+  const isEditModalOpen = showForm && !!editing;
+
+  useEffect(() => {
+    if (!isEditModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        closeEditModal();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    requestAnimationFrame(() => {
+      firstInputRef.current?.focus();
+    });
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditModalOpen]);
 
   useEffect(() => {
     loadData();
@@ -68,7 +89,7 @@ function UsersManagement() {
     }
   };
 
-  const handleEdit = (usuario) => {
+  const openEditModal = (usuario) => {
     setEditing(usuario);
     setFormData({
       nome: usuario.nome,
@@ -124,6 +145,10 @@ function UsersManagement() {
     setShowForm(false);
   };
 
+  const closeEditModal = () => {
+    resetForm();
+  };
+
   const toggleIgreja = (igrejaId) => {
     setFormData(prev => ({
       ...prev,
@@ -162,7 +187,7 @@ function UsersManagement() {
           />
         </div>
 
-        {showForm && (
+        {showForm && !editing && (
           <form onSubmit={handleSubmit} className="users-management__form">
             <h3>{editing ? 'Editar Usuário' : 'Novo Usuário'}</h3>
             
@@ -170,6 +195,7 @@ function UsersManagement() {
               <label>Nome *</label>
               <input
                 type="text"
+                ref={firstInputRef}
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 required
@@ -255,6 +281,108 @@ function UsersManagement() {
           </form>
         )}
 
+        {showForm && editing && (
+          <div className="modal-overlay" onClick={closeEditModal}>
+            <div className="card modal-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 className="modal-title">Editar Usuário</h2>
+                <button type="button" className="btn btn-secondary modal-close" onClick={closeEditModal} aria-label="Fechar">
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="users-management__form">
+                <div className="form-group">
+                  <label>Nome *</label>
+                  <input
+                    type="text"
+                    ref={firstInputRef}
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Email *</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Senha {!editing && '*'}</label>
+                  <input
+                    type="password"
+                    value={formData.senha}
+                    onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
+                    required={!editing}
+                    placeholder={editing ? 'Deixe em branco para não alterar' : ''}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Role</label>
+                  <select
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  >
+                    <option value="usuario">Usuário</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <div className="form-group form-group--checkbox">
+                  <input
+                    type="checkbox"
+                    id="ativo"
+                    checked={formData.ativo}
+                    onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                  />
+                  <label htmlFor="ativo">Ativo</label>
+                </div>
+
+                <div className="form-group form-group--checkbox">
+                  <input
+                    type="checkbox"
+                    id="aprovado"
+                    checked={formData.aprovado}
+                    onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
+                  />
+                  <label htmlFor="aprovado">Aprovado</label>
+                </div>
+
+                <div className="form-group">
+                  <label>Igrejas</label>
+                  <div className="users-management__igrejas-list">
+                    {igrejas.map(igreja => (
+                      <label key={igreja.id} className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={formData.igreja_ids.includes(igreja.id)}
+                          onChange={() => toggleIgreja(igreja.id)}
+                        />
+                        {igreja.nome}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="users-management__form-actions">
+                  <button type="submit" className="btn btn-primary">
+                    Atualizar
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={closeEditModal}>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         <div className="table-wrapper">
           <table className="table">
             <thead>
@@ -290,7 +418,7 @@ function UsersManagement() {
                         className="btn btn-sm btn-secondary"
                         onClick={(event) => {
                           event.preventDefault();
-                          handleEdit(usuario);
+                          openEditModal(usuario);
                         }}
                         title="Editar"
                       >

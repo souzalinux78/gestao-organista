@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getTenants, createTenant, updateTenant, deleteTenant } from '../../services/api';
 import LoadingSpinner from '../LoadingSpinner';
 import { getErrorMessage } from '../../utils/errorMessages';
@@ -17,6 +17,27 @@ function TenantsManagement() {
     ativo: true
   });
   const { toast, showSuccess, showError, hideToast } = useToast();
+  const firstInputRef = useRef(null);
+  const isEditModalOpen = showForm && !!editing;
+
+  useEffect(() => {
+    if (!isEditModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        closeEditModal();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    requestAnimationFrame(() => {
+      firstInputRef.current?.focus();
+    });
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditModalOpen]);
 
   useEffect(() => {
     loadTenants();
@@ -51,7 +72,7 @@ function TenantsManagement() {
     }
   };
 
-  const handleEdit = (tenant) => {
+  const openEditModal = (tenant) => {
     setEditing(tenant);
     setFormData({
       nome: tenant.nome,
@@ -88,6 +109,10 @@ function TenantsManagement() {
     setShowForm(false);
   };
 
+  const closeEditModal = () => {
+    resetForm();
+  };
+
   const generateSlug = (nome) => {
     return nome
       .toLowerCase()
@@ -119,7 +144,7 @@ function TenantsManagement() {
           </button>
         </div>
 
-        {showForm && (
+        {showForm && !editing && (
           <form onSubmit={handleSubmit} className="tenants-management__form">
             <h3>{editing ? 'Editar Tenant' : 'Novo Tenant'}</h3>
             
@@ -127,6 +152,7 @@ function TenantsManagement() {
               <label>Nome *</label>
               <input
                 type="text"
+                ref={firstInputRef}
                 value={formData.nome}
                 onChange={(e) => handleNomeChange(e.target.value)}
                 required
@@ -167,6 +193,63 @@ function TenantsManagement() {
           </form>
         )}
 
+        {showForm && editing && (
+          <div className="modal-overlay" onClick={closeEditModal}>
+            <div className="card modal-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 className="modal-title">Editar Tenant</h2>
+                <button type="button" className="btn btn-secondary modal-close" onClick={closeEditModal} aria-label="Fechar">
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="tenants-management__form">
+                <div className="form-group">
+                  <label>Nome *</label>
+                  <input
+                    type="text"
+                    ref={firstInputRef}
+                    value={formData.nome}
+                    onChange={(e) => handleNomeChange(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Slug *</label>
+                  <input
+                    type="text"
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    required
+                    pattern="[a-z0-9-]+"
+                    placeholder="exemplo-tenant"
+                  />
+                  <small className="form-group__hint">Apenas letras minúsculas, números e hífens</small>
+                </div>
+
+                <div className="form-group form-group--checkbox">
+                  <input
+                    type="checkbox"
+                    id="ativo"
+                    checked={formData.ativo}
+                    onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                  />
+                  <label htmlFor="ativo">Ativo</label>
+                </div>
+
+                <div className="tenants-management__form-actions">
+                  <button type="submit" className="btn btn-primary">
+                    Atualizar
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={closeEditModal}>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         <div className="table-wrapper">
           <table className="table">
             <thead>
@@ -202,7 +285,7 @@ function TenantsManagement() {
                         className="btn btn-sm btn-secondary"
                         onClick={(event) => {
                           event.preventDefault();
-                          handleEdit(tenant);
+                          openEditModal(tenant);
                         }}
                         title="Editar"
                       >
