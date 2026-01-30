@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getCultos, createCulto, updateCulto, deleteCulto, getCultosIgreja } from '../services/api';
 import { getIgrejas } from '../services/api';
 
@@ -15,6 +15,27 @@ function Cultos({ user }) {
     ativo: true
   });
   const [alert, setAlert] = useState(null);
+  const firstInputRef = useRef(null);
+  const isEditModalOpen = showForm && !!editing;
+
+  useEffect(() => {
+    if (!isEditModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        resetForm();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    requestAnimationFrame(() => {
+      firstInputRef.current?.focus();
+    });
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditModalOpen]);
 
   useEffect(() => {
     loadCultos();
@@ -134,13 +155,14 @@ function Cultos({ user }) {
           </div>
         )}
 
-        {showForm && (
+        {showForm && !editing && (
           <form onSubmit={handleSubmit} className="form--spaced">
             {user?.role === 'admin' ? (
               <div className="form-group">
                 <label>Igreja *</label>
                 <select
                   value={formData.igreja_id}
+                  ref={firstInputRef}
                   onChange={(e) => setFormData({ ...formData, igreja_id: e.target.value })}
                   required
                 >
@@ -201,6 +223,87 @@ function Cultos({ user }) {
               {editing ? 'Atualizar' : 'Salvar'}
             </button>
           </form>
+        )}
+
+        {showForm && editing && (
+          <div className="modal-overlay" onClick={resetForm}>
+            <div className="card modal-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 className="modal-title">Editar Culto</h2>
+                <button type="button" className="btn btn-secondary modal-close" onClick={resetForm} aria-label="Fechar">
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="form--spaced">
+                {user?.role === 'admin' ? (
+                  <div className="form-group">
+                    <label>Igreja *</label>
+                    <select
+                      value={formData.igreja_id}
+                      ref={firstInputRef}
+                      onChange={(e) => setFormData({ ...formData, igreja_id: e.target.value })}
+                      required
+                    >
+                      <option value="">Selecione uma igreja...</option>
+                      {igrejas.map(igreja => (
+                        <option key={igreja.id} value={igreja.id}>
+                          {igreja.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <label>Igreja</label>
+                    <input
+                      type="text"
+                      ref={firstInputRef}
+                      value={igrejas.find(i => i.id.toString() === formData.igreja_id)?.nome || ''}
+                      disabled
+                      className="input-readonly"
+                    />
+                  </div>
+                )}
+                <div className="form-group">
+                  <label>Dia da Semana *</label>
+                  <select
+                    value={formData.dia_semana}
+                    onChange={(e) => setFormData({ ...formData, dia_semana: e.target.value })}
+                    required
+                  >
+                    <option value="">Selecione o dia...</option>
+                    {diasSemana.map(dia => (
+                      <option key={dia.value} value={dia.value}>
+                        {dia.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Hora *</label>
+                  <input
+                    type="time"
+                    value={formData.hora}
+                    onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.ativo}
+                      onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                    />
+                    {' '}Ativo
+                  </label>
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  Atualizar
+                </button>
+              </form>
+            </div>
+          </div>
         )}
 
         {cultos.length === 0 ? (

@@ -127,14 +127,15 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: var(--app-bg);
+  background: rgba(11, 11, 11, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 15px;
-  overflow: auto;
+  overflow: hidden;
   -webkit-overflow-scrolling: touch;
+  animation: modalOverlayIn 160ms ease-out;
 }
 
 .modal-panel {
@@ -143,6 +144,7 @@
   max-height: 90vh;
   overflow: auto;
   margin: auto;
+  animation: modalPanelIn 200ms ease-out;
 }
 
 .modal-header {
@@ -158,6 +160,33 @@
   font-size: clamp(1.1rem, 4vw, 1.5rem);
   font-weight: 700;
   color: var(--text-main);
+}
+
+.modal-close {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+}
+
+@keyframes modalOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .checklist {

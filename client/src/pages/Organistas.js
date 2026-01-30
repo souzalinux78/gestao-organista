@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getOrganistas, createOrganista, updateOrganista, deleteOrganista, getIgrejas, getOrganistasIgreja } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Toast from '../components/Toast';
@@ -24,6 +24,27 @@ function Organistas({ user }) {
     ativa: true
   });
   const { toast, showSuccess, showError, hideToast } = useToast();
+  const firstInputRef = useRef(null);
+  const isEditModalOpen = showForm && !!editing;
+
+  useEffect(() => {
+    if (!isEditModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        resetForm();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    requestAnimationFrame(() => {
+      firstInputRef.current?.focus();
+    });
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditModalOpen]);
 
   useEffect(() => {
     loadOrganistas();
@@ -193,7 +214,7 @@ function Organistas({ user }) {
           duration={toast?.duration}
         />
 
-        {showForm && (
+        {showForm && !editing && (
           <form onSubmit={handleSubmit} className="form--spaced">
             <div className="form-group">
               <label>Numeração (ordem do rodízio)</label>
@@ -212,6 +233,7 @@ function Organistas({ user }) {
               <label>Nome *</label>
               <input
                 type="text"
+                ref={firstInputRef}
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 required
@@ -262,6 +284,88 @@ function Organistas({ user }) {
               {saving ? 'Salvando...' : (editing ? 'Atualizar' : 'Salvar')}
             </button>
           </form>
+        )}
+
+        {showForm && editing && (
+          <div className="modal-overlay" onClick={resetForm}>
+            <div className="card modal-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 className="modal-title">Editar Organista</h2>
+                <button type="button" className="btn btn-secondary modal-close" onClick={resetForm} aria-label="Fechar">
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="form--spaced">
+                <div className="form-group">
+                  <label>Numeração (ordem do rodízio)</label>
+                  <input
+                    type="number"
+                    value={formData.ordem}
+                    onChange={(e) => setFormData({ ...formData, ordem: e.target.value })}
+                    placeholder="Ex: 1"
+                    min="1"
+                  />
+                  <small className="form-hint">
+                    Use 1,2,3... para definir a ordem do rodízio. Se deixar vazio, a organista fica sem numeração.
+                  </small>
+                </div>
+                <div className="form-group">
+                  <label>Nome *</label>
+                  <input
+                    type="text"
+                    ref={firstInputRef}
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Telefone</label>
+                  <input
+                    type="text"
+                    value={formData.telefone}
+                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+                <div className="form-group form-group--checkbox">
+                  <input
+                    type="checkbox"
+                    id="oficializada"
+                    checked={formData.oficializada}
+                    onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
+                    className="checkbox-input"
+                  />
+                  <label htmlFor="oficializada" className="checkbox-label">
+                    Oficializada
+                  </label>
+                </div>
+                <div className="form-group form-group--checkbox">
+                  <input
+                    type="checkbox"
+                    id="ativa"
+                    checked={formData.ativa}
+                    onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
+                    className="checkbox-input"
+                  />
+                  <label htmlFor="ativa" className="checkbox-label">
+                    Ativa
+                  </label>
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  {saving ? 'Salvando...' : 'Atualizar'}
+                </button>
+              </form>
+            </div>
+          </div>
         )}
 
         {user?.role === 'admin' && (

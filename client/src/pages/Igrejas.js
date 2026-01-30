@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getIgrejas, createIgreja, updateIgreja, deleteIgreja, getOrganistasIgreja, addOrganistaIgreja, removeOrganistaIgreja } from '../services/api';
 import { getOrganistas } from '../services/api';
 
@@ -21,6 +21,27 @@ function Igrejas({ user }) {
   const [organistasIgreja, setOrganistasIgreja] = useState([]);
   const [allOrganistas, setAllOrganistas] = useState([]);
   const [showOrganistasModal, setShowOrganistasModal] = useState(false);
+  const firstInputRef = useRef(null);
+  const isEditModalOpen = showForm && !!editing;
+
+  useEffect(() => {
+    if (!isEditModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        resetForm();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    requestAnimationFrame(() => {
+      firstInputRef.current?.focus();
+    });
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditModalOpen]);
 
   useEffect(() => {
     loadIgrejas();
@@ -180,12 +201,13 @@ function Igrejas({ user }) {
           </div>
         )}
 
-        {showForm && (
+        {showForm && !editing && (
           <form onSubmit={handleSubmit} className="form--spaced">
             <div className="form-group">
               <label>Nome *</label>
               <input
                 type="text"
+                ref={firstInputRef}
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 required
@@ -256,6 +278,95 @@ function Igrejas({ user }) {
               {editing ? 'Atualizar' : 'Salvar'}
             </button>
           </form>
+        )}
+
+        {showForm && editing && (
+          <div className="modal-overlay" onClick={resetForm}>
+            <div className="card modal-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 className="modal-title">Editar Igreja</h2>
+                <button type="button" className="btn btn-secondary modal-close" onClick={resetForm} aria-label="Fechar">
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="form--spaced">
+                <div className="form-group">
+                  <label>Nome *</label>
+                  <input
+                    type="text"
+                    ref={firstInputRef}
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Endereço</label>
+                  <input
+                    type="text"
+                    value={formData.endereco}
+                    onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                  />
+                </div>
+                <h3 className="form-section-title">Encarregado Local</h3>
+                <div className="form-group">
+                  <label>Nome</label>
+                  <input
+                    type="text"
+                    value={formData.encarregado_local_nome}
+                    onChange={(e) => setFormData({ ...formData, encarregado_local_nome: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Telefone</label>
+                  <input
+                    type="text"
+                    value={formData.encarregado_local_telefone}
+                    onChange={(e) => setFormData({ ...formData, encarregado_local_telefone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <h3 className="form-section-title">Encarregado Regional</h3>
+                <div className="form-group">
+                  <label>Nome</label>
+                  <input
+                    type="text"
+                    value={formData.encarregado_regional_nome}
+                    onChange={(e) => setFormData({ ...formData, encarregado_regional_nome: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Telefone</label>
+                  <input
+                    type="text"
+                    value={formData.encarregado_regional_telefone}
+                    onChange={(e) => setFormData({ ...formData, encarregado_regional_telefone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="form-group">
+                  <div className="form-group--checkbox">
+                    <input
+                      type="checkbox"
+                      id="mesma_organista_ambas_funcoes"
+                      checked={formData.mesma_organista_ambas_funcoes}
+                      onChange={(e) => setFormData({ ...formData, mesma_organista_ambas_funcoes: e.target.checked })}
+                      className="checkbox-input"
+                    />
+                    <label htmlFor="mesma_organista_ambas_funcoes" className="checkbox-label">
+                      Permitir que a mesma organista faça meia hora e tocar no culto
+                    </label>
+                  </div>
+                  <p className="form-hint">
+                    Se marcado, no rodízio a mesma organista fará ambas as funções. Se não marcado, uma organista fará meia hora e outra tocará no culto.
+                  </p>
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  Atualizar
+                </button>
+              </form>
+            </div>
+          </div>
         )}
 
         {igrejas.length === 0 ? (
