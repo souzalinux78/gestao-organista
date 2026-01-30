@@ -98,23 +98,28 @@ const enviarNotificacaoDiaCulto = async (rodizio, enviarParaEncarregados = false
     
     // Determinar função
     const funcaoTexto = rodizio.funcao === 'meia_hora' 
-      ? '🎵 Meia Hora (30 min antes do culto)' 
-      : '🎹 Tocar no Culto';
+      ? 'Meia hora (30 min antes do culto)' 
+      : 'Culto';
+    const horaCultoSemSegundos = rodizio.hora_culto
+      ? rodizio.hora_culto.split(':').slice(0, 2).join(':')
+      : null;
     
-    // Mensagem para a organista
-    const mensagemOrganista = `
-🎹 Lembrete: Você está escalada para hoje!
-
-📅 Data: ${formatarDataBR(rodizio.data_culto)}
-🕐 Hora do culto: ${rodizio.hora_culto}
-🎯 Função: ${funcaoTexto}
-${rodizio.funcao === 'meia_hora' ? `⏰ Horário: ${horaMeiaHoraStr}` : ''}
-📍 Igreja: ${rodizio.igreja_nome}
-
-${rodizio.funcao === 'meia_hora' 
-  ? 'Por favor, esteja presente 30 minutos antes do culto para a meia hora.' 
-  : 'Por favor, esteja presente para tocar durante o culto.'}
-    `.trim();
+    // Mensagem para a organista (tom congregacional e acolhedor)
+    const linhasMensagem = [
+      `🎶 Olá, ${rodizio.organista_nome}! A paz de Deus 🙏`,
+      '',
+      rodizio.data_culto ? `📅 Data: ${formatarDataBR(rodizio.data_culto)}` : null,
+      rodizio.igreja_nome ? `📍 Igreja: ${rodizio.igreja_nome}` : null,
+      `🎯 Função: ${funcaoTexto}`,
+      rodizio.funcao === 'meia_hora'
+        ? `🕐 Horário: ${horaMeiaHoraStr}`
+        : horaCultoSemSegundos
+          ? `🕐 Horário: ${horaCultoSemSegundos}`
+          : null,
+      '',
+      'Que Deus abençoe sua participação nesta noite 💙'
+    ].filter(Boolean);
+    const mensagemOrganista = linhasMensagem.join('\n');
     
     // Mensagem para encarregados
     const mensagemEncarregados = `
