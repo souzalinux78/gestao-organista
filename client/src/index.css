@@ -1286,9 +1286,10 @@ button {
   }
 
   .form-group--checkbox {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: 20px 1fr;
     align-items: center;
-    gap: 10px;
+    column-gap: 10px;
   }
 
   .form-group--checkbox .checkbox-input {
@@ -1300,9 +1301,13 @@ button {
   .form-group--checkbox .checkbox-label {
     display: inline-flex !important;
     align-items: center;
+    justify-content: flex-start;
+    width: 100%;
     font-size: 13px !important;
     color: var(--text-main) !important;
     margin: 0 !important;
+    text-align: left;
+    visibility: visible !important;
   }
 
   .form-group input,
