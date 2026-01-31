@@ -247,7 +247,7 @@ function Organistas({ user }) {
                 onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
                 className="checkbox-input"
               />
-              <label htmlFor="oficializada" className="checkbox-label">
+              <label htmlFor="oficializada" className="checkbox-label" data-label="Oficializada">
                 <span className="checkbox-text">Oficializada</span>
               </label>
             </div>
@@ -259,7 +259,7 @@ function Organistas({ user }) {
                 onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
                 className="checkbox-input"
               />
-              <label htmlFor="ativa" className="checkbox-label">
+              <label htmlFor="ativa" className="checkbox-label" data-label="Ativa">
                 <span className="checkbox-text">Ativa</span>
               </label>
             </div>
@@ -318,7 +318,7 @@ function Organistas({ user }) {
                 onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
                 className="checkbox-input"
               />
-              <label htmlFor="oficializada" className="checkbox-label">
+              <label htmlFor="oficializada" className="checkbox-label" data-label="Oficializada">
                 <span className="checkbox-text">Oficializada</span>
               </label>
             </div>
@@ -330,7 +330,7 @@ function Organistas({ user }) {
                 onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
                 className="checkbox-input"
               />
-              <label htmlFor="ativa" className="checkbox-label">
+              <label htmlFor="ativa" className="checkbox-label" data-label="Ativa">
                 <span className="checkbox-text">Ativa</span>
               </label>
             </div>
