@@ -239,28 +239,28 @@ function Organistas({ user }) {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
-            <div className="form-group form-group--checkbox">
-              <input
-                type="checkbox"
-                id="oficializada"
-                checked={formData.oficializada}
-                onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
-                className="checkbox-input"
-              />
-              <label htmlFor="oficializada" className="checkbox-label" data-label="Oficializada">
-                <span className="checkbox-text">Oficializada</span>
+            <div className="form-group">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  id="oficializada"
+                  checked={formData.oficializada}
+                  onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-label-text">Oficializada</span>
               </label>
             </div>
-            <div className="form-group form-group--checkbox">
-              <input
-                type="checkbox"
-                id="ativa"
-                checked={formData.ativa}
-                onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
-                className="checkbox-input"
-              />
-              <label htmlFor="ativa" className="checkbox-label" data-label="Ativa">
-                <span className="checkbox-text">Ativa</span>
+            <div className="form-group">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  id="ativa"
+                  checked={formData.ativa}
+                  onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-label-text">Ativa</span>
               </label>
             </div>
             <button type="submit" className="btn btn-primary">
@@ -310,28 +310,28 @@ function Organistas({ user }) {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
-            <div className="form-group form-group--checkbox">
-              <input
-                type="checkbox"
-                id="oficializada"
-                checked={formData.oficializada}
-                onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
-                className="checkbox-input"
-              />
-              <label htmlFor="oficializada" className="checkbox-label" data-label="Oficializada">
-                <span className="checkbox-text">Oficializada</span>
+            <div className="form-group">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  id="oficializada"
+                  checked={formData.oficializada}
+                  onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-label-text">Oficializada</span>
               </label>
             </div>
-            <div className="form-group form-group--checkbox">
-              <input
-                type="checkbox"
-                id="ativa"
-                checked={formData.ativa}
-                onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
-                className="checkbox-input"
-              />
-              <label htmlFor="ativa" className="checkbox-label" data-label="Ativa">
-                <span className="checkbox-text">Ativa</span>
+            <div className="form-group">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  id="ativa"
+                  checked={formData.ativa}
+                  onChange={(e) => setFormData({ ...formData, ativa: e.target.checked })}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-label-text">Ativa</span>
               </label>
             </div>
             <button type="submit" className="btn btn-primary">

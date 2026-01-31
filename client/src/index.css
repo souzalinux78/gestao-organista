@@ -634,10 +634,24 @@ input {
   opacity: 1;
 }
 
-.checkbox-text {
-  color: var(--text-main);
-  font-weight: 500;
-  display: inline;
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.checkbox-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.checkbox-label-text {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  user-select: none;
 }
 
 .form-group__hint {
@@ -1295,45 +1309,15 @@ button {
     display: block;
   }
 
-  .form-group--checkbox {
-    display: flex !important;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+  .checkbox-field {
+    align-items: flex-start;
   }
 
-  .form-group--checkbox .checkbox-input {
-    width: 20px !important;
-    height: 20px !important;
-    min-height: 20px !important;
-  }
-
-  .form-group--checkbox .checkbox-label {
-    display: inline-flex !important;
-    align-items: center;
-    gap: 8px;
-    justify-content: flex-start;
-    width: auto;
-    flex: 1 1 auto;
-    font-size: 14px !important;
-    color: var(--text-primary) !important;
-    margin: 0 !important;
-    text-align: left;
+  .checkbox-label-text {
+    display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
     white-space: normal !important;
-    overflow: visible !important;
-    line-height: 1.3 !important;
-    max-width: none;
-    position: static !important;
-  }
-
-  .form-group--checkbox .checkbox-text {
-    color: var(--text-primary) !important;
-    font-size: 14px !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    display: inline !important;
   }
 
   .form-group input,
