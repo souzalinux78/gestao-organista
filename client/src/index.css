@@ -634,24 +634,38 @@ input {
   opacity: 1;
 }
 
+/* Checkbox padrão reconstruído - SEMPRE visível */
 .checkbox-field {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  cursor: pointer !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .checkbox-field input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  appearance: auto !important;
+  -webkit-appearance: checkbox !important;
 }
 
 .checkbox-label-text {
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--text-primary);
-  user-select: none;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  color: var(--text-primary) !important;
+  user-select: none !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  white-space: normal !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .form-group__hint {
@@ -1299,7 +1313,7 @@ button {
     box-sizing: border-box;
   }
 
-  .form-group label {
+  .form-group label:not(.checkbox-field) {
     font-size: 13px !important;
     margin-bottom: 6px;
     font-weight: 600;
@@ -1310,7 +1324,19 @@ button {
   }
 
   .checkbox-field {
-    align-items: flex-start;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+    cursor: pointer !important;
+  }
+
+  .checkbox-field input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
   }
 
   .checkbox-label-text {
@@ -1318,6 +1344,10 @@ button {
     visibility: visible !important;
     opacity: 1 !important;
     white-space: normal !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    color: var(--text-primary) !important;
+    flex: 1 1 auto !important;
   }
 
   .form-group input,
