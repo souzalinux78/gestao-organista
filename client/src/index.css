@@ -637,6 +637,7 @@ input {
 .checkbox-text {
   color: var(--text-main);
   font-weight: 500;
+  display: inline;
 }
 
 .form-group__hint {
@@ -1313,6 +1314,7 @@ button {
     gap: 8px;
     justify-content: flex-start;
     width: auto;
+    flex: 1 1 auto;
     font-size: 14px !important;
     color: var(--text-primary) !important;
     margin: 0 !important;
@@ -1323,6 +1325,7 @@ button {
     overflow: visible !important;
     line-height: 1.3 !important;
     max-width: none;
+    position: static !important;
   }
 
   .form-group--checkbox .checkbox-text {
@@ -1330,17 +1333,7 @@ button {
     font-size: 14px !important;
     visibility: visible !important;
     opacity: 1 !important;
-  }
-
-  .form-group--checkbox .checkbox-label[data-label] {
-    font-size: 0 !important;
-  }
-
-  .form-group--checkbox .checkbox-label[data-label]::after {
-    content: attr(data-label);
-    font-size: 14px;
-    color: var(--text-primary);
-    line-height: 1.3;
+    display: inline !important;
   }
 
   .form-group input,
