@@ -248,7 +248,7 @@ function Organistas({ user }) {
                 className="checkbox-input"
               />
               <label htmlFor="oficializada" className="checkbox-label">
-                Oficializada
+                <span className="checkbox-text">Oficializada</span>
               </label>
             </div>
             <div className="form-group form-group--checkbox">
@@ -260,7 +260,7 @@ function Organistas({ user }) {
                 className="checkbox-input"
               />
               <label htmlFor="ativa" className="checkbox-label">
-                Ativa
+                <span className="checkbox-text">Ativa</span>
               </label>
             </div>
             <button type="submit" className="btn btn-primary">
@@ -319,7 +319,7 @@ function Organistas({ user }) {
                 className="checkbox-input"
               />
               <label htmlFor="oficializada" className="checkbox-label">
-                Oficializada
+                <span className="checkbox-text">Oficializada</span>
               </label>
             </div>
             <div className="form-group form-group--checkbox">
@@ -331,7 +331,7 @@ function Organistas({ user }) {
                 className="checkbox-input"
               />
               <label htmlFor="ativa" className="checkbox-label">
-                Ativa
+                <span className="checkbox-text">Ativa</span>
               </label>
             </div>
             <button type="submit" className="btn btn-primary">
