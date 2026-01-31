@@ -1295,10 +1295,10 @@ button {
   }
 
   .form-group--checkbox {
-    display: grid;
-    grid-template-columns: 20px 1fr;
+    display: flex !important;
     align-items: center;
-    column-gap: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
   .form-group--checkbox .checkbox-input {
@@ -1310,9 +1310,10 @@ button {
   .form-group--checkbox .checkbox-label {
     display: inline-flex !important;
     align-items: center;
+    gap: 8px;
     justify-content: flex-start;
-    width: 100%;
-    font-size: 13px !important;
+    width: auto;
+    font-size: 14px !important;
     color: var(--text-primary) !important;
     margin: 0 !important;
     text-align: left;
@@ -1321,11 +1322,14 @@ button {
     white-space: normal !important;
     overflow: visible !important;
     line-height: 1.3 !important;
+    max-width: none;
   }
 
   .form-group--checkbox .checkbox-text {
     color: var(--text-primary) !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .form-group input,
