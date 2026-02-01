@@ -162,6 +162,26 @@ if ('serviceWorker' in navigator) {
           .then((registration) => {
             console.log('[PWA] Service Worker registrado:', registration.scope);
             
+            // Detectar mudança de controller (nova versão ativada) e forçar reload
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              console.log('[PWA] Nova versão do Service Worker ativada. Recarregando...');
+              // Limpar todos os caches antes de recarregar
+              if ('caches' in window) {
+                caches.keys().then(names => {
+                  Promise.all(names.map(name => caches.delete(name))).then(() => {
+                    window.location.reload();
+                  });
+                });
+              } else {
+                window.location.reload();
+              }
+            });
+            
+            // Verificar atualizações periodicamente
+            setInterval(() => {
+              registration.update();
+            }, 60000); // A cada 1 minuto
+            
             // DESABILITAR verificação automática se AUTO_UPDATE_ENABLED for false
             if (AUTO_UPDATE_ENABLED && (!isMobile || !wasManualRefresh)) {
               // Verificar atualizações apenas periodicamente (não imediatamente)
