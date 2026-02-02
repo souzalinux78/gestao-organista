@@ -136,52 +136,24 @@ async function checkAppVersion() {
 
 // Registrar Service Worker para PWA - SEM loops infinitos no mobile
 if ('serviceWorker' in navigator) {
-  // Adicionar listener de controllerchange GLOBALMENTE (apenas uma vez)
-  // Isso evita múltiplos listeners sendo adicionados
-  if (!window.controllerChangeListenerAdded) {
-    let lastControllerChange = 0;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      const now = Date.now();
-      // Proteção: evitar múltiplos reloads em menos de 5 segundos
-      if (isReloading || (now - lastControllerChange < 5000)) {
-        console.log('[PWA] Reload já em andamento ou muito recente. Ignorando controllerchange.');
-        return;
-      }
-      
-      // Verificar se realmente há um novo controller
-      if (!navigator.serviceWorker.controller) {
-        return;
-      }
-      
-      console.log('[PWA] Nova versão do Service Worker ativada. Recarregando...');
-      isReloading = true;
-      lastControllerChange = now;
-      
-      // Limpar todos os caches antes de recarregar
-      if ('caches' in window) {
-        caches.keys().then(names => {
-          Promise.all(names.map(name => caches.delete(name))).then(() => {
-            // Delay para evitar loop
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          });
-        });
-      } else {
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      }
-    });
-    window.controllerChangeListenerAdded = true;
-  }
+  // REMOVIDO: listener de controllerchange que causava reload automático
+  // O Service Worker agora não força ativação imediata, então não há necessidade
+  // de reload automático. A atualização acontecerá naturalmente na próxima visita.
   
   window.addEventListener('load', () => {
+    // Proteção: garantir que o Service Worker seja registrado apenas uma vez
+    if (window.serviceWorkerRegistered) {
+      console.log('[PWA] Service Worker já foi registrado. Ignorando nova tentativa.');
+      return;
+    }
+    
     // Verificar se já está em modo standalone (PWA instalado)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     
-    // No mobile, usar versão fixa do SW (não baseada em timestamp)
-    const swVersion = isMobile ? 'v1' : Date.now().toString();
+    // Usar versão estática (mesma do Service Worker) - não usar timestamp dinâmico
+    // IMPORTANTE: Alterar esta versão apenas quando houver um novo build real
+    // Isso evita que o navegador detecte "nova versão" a cada carregamento
+    const swVersion = 'v1.0.0';
     
     navigator.serviceWorker.getRegistrations().then((registrations) => {
       // Não desregistrar service workers se já estiver instalado como PWA
@@ -200,18 +172,12 @@ if ('serviceWorker' in navigator) {
           updateViaCache: 'none'
         })
           .then((registration) => {
+            window.serviceWorkerRegistered = true; // Marcar como registrado
             console.log('[PWA] Service Worker registrado:', registration.scope);
             
-            // Verificar atualizações periodicamente (apenas se AUTO_UPDATE_ENABLED)
-            // O listener de controllerchange já foi adicionado globalmente acima
-            if (AUTO_UPDATE_ENABLED) {
-              setInterval(() => {
-                // Só verificar se não estiver em processo de reload
-                if (!isReloading) {
-                  registration.update();
-                }
-              }, 300000); // A cada 5 minutos (menos agressivo)
-            }
+            // Verificar atualizações apenas quando necessário (não agressivamente)
+            // A verificação periódica foi removida para evitar loops
+            // O Service Worker será atualizado apenas quando houver um novo build real
             
             // DESABILITAR verificação automática se AUTO_UPDATE_ENABLED for false
             if (AUTO_UPDATE_ENABLED && (!isMobile || !wasManualRefresh)) {
@@ -247,46 +213,21 @@ if ('serviceWorker' in navigator) {
               });
             }
             
-            // Escutar atualizações do service worker (com proteção - DESABILITADO se AUTO_UPDATE_ENABLED for false)
-            if (AUTO_UPDATE_ENABLED) {
-              registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                if (!newWorker) return;
-                
-                // No mobile após refresh manual, não recarregar automaticamente
-                if (isMobile && wasManualRefresh) {
-                  console.log('[PWA] Atualização do SW detectada, mas refresh manual no mobile. Não recarregando.');
-                  return;
+            // Escutar atualizações do service worker - SEM reload automático
+            // A atualização será aplicada na próxima visita, não imediatamente
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              if (!newWorker) return;
+              
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed') {
+                  // Nova versão disponível, mas NÃO recarregar automaticamente
+                  // O usuário pode continuar usando a versão atual
+                  // A nova versão será aplicada na próxima visita ou quando o usuário recarregar manualmente
+                  console.log('[PWA] Nova versão do Service Worker disponível. Será aplicada na próxima visita.');
                 }
-                
-                newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && 
-                      navigator.serviceWorker.controller && 
-                      !isReloading &&
-                      reloadAttempts < MAX_RELOAD_ATTEMPTS &&
-                      !(isMobile && wasManualRefresh)) {
-                    console.log('[PWA] Nova versão disponível. Recarregando...');
-                    isReloading = true;
-                    reloadAttempts++;
-                    
-                    // Limpar caches antes de recarregar
-                    if ('caches' in window) {
-                      caches.keys().then(names => {
-                        Promise.all(names.map(name => caches.delete(name))).then(() => {
-                          setTimeout(() => {
-                            window.location.reload();
-                          }, 2000);
-                        });
-                      });
-                    } else {
-                      setTimeout(() => {
-                        window.location.reload();
-                      }, 2000);
-                    }
-                  }
-                });
               });
-            }
+            });
           })
           .catch((error) => {
             console.error('[PWA] Falha ao registrar Service Worker:', error);
@@ -295,32 +236,8 @@ if ('serviceWorker' in navigator) {
     });
   });
   
-  // Escutar mensagens do service worker (com proteção - DESABILITADO se AUTO_UPDATE_ENABLED for false)
-  if (AUTO_UPDATE_ENABLED) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'SKIP_WAITING' && 
-          !isReloading && 
-          reloadAttempts < MAX_RELOAD_ATTEMPTS &&
-          !(isMobile && wasManualRefresh)) {
-        isReloading = true;
-        reloadAttempts++;
-        
-        if ('caches' in window) {
-          caches.keys().then(names => {
-            Promise.all(names.map(name => caches.delete(name))).then(() => {
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
-            });
-          });
-        } else {
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
-        }
-      }
-    });
-  }
+  // REMOVIDO: listener de mensagens que causava reload automático
+  // O Service Worker não enviará mais mensagens de SKIP_WAITING
 }
 
 // Verificar versão na inicialização (apenas se AUTO_UPDATE_ENABLED for true)

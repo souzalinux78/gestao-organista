@@ -1,62 +1,76 @@
-// Service Worker - Atualização Forçada e Cache Control
-// Versão dinâmica baseada em timestamp do build
-// SEMPRE força atualização e limpa caches antigos
-const CACHE_VERSION = 'v' + Date.now();
+// Service Worker - Cache Control e Atualização Controlada
+// Versão estática baseada no build (não timestamp dinâmico)
+// Evita loops de reload e garante atualizações controladas
+//
+// IMPORTANTE: Para atualizar o Service Worker em produção:
+// 1. Alterar CACHE_VERSION abaixo (ex: 'v1.0.1', 'v1.1.0', etc.)
+// 2. Alterar a mesma versão em client/src/index.js (const swVersion)
+// 3. Fazer build e deploy
+// 4. O Service Worker será atualizado na próxima visita do usuário (sem reload automático)
+//
+const CACHE_VERSION = 'v1.0.0'; // Versão estática - alterar apenas em novos builds
 const CACHE_NAME = `gestao-organistas-${CACHE_VERSION}`;
 const STATIC_CACHE_NAME = 'gestao-organistas-static-v1';
 
 const OFFLINE_URL = '/offline.html';
 
-// Instalar Service Worker - FORÇAR ATIVAÇÃO IMEDIATA
+// Instalar Service Worker - SEM forçar ativação imediata
 self.addEventListener('install', (event) => {
   console.log('[SW] Instalando Service Worker - Versão:', CACHE_VERSION);
   
-  // FORÇAR skipWaiting para ativar imediatamente (mas apenas uma vez)
-  event.waitUntil(self.skipWaiting());
-  
+  // NÃO forçar skipWaiting - aguardar até que todas as páginas sejam fechadas
+  // Isso evita reloads automáticos em loop
   event.waitUntil(
-    // Limpar TODOS os caches antigos imediatamente
+    // Limpar apenas caches antigos (não o cache atual se já existir)
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          console.log('[SW] Removendo cache antigo:', cacheName);
-          return caches.delete(cacheName);
+          // Remover apenas caches de versões antigas
+          if (cacheName.startsWith('gestao-organistas-') && cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME) {
+            console.log('[SW] Removendo cache antigo:', cacheName);
+            return caches.delete(cacheName);
+          }
         })
       );
     }).then(async () => {
       // Cache SOMENTE offline page
       const cache = await caches.open(CACHE_NAME);
-      await cache.addAll([OFFLINE_URL]);
+      try {
+        await cache.addAll([OFFLINE_URL]);
+      } catch (err) {
+        console.log('[SW] Erro ao cachear offline page:', err);
+      }
       
       // Assets estáticos serão cacheados sob demanda
       const staticCache = await caches.open(STATIC_CACHE_NAME);
-      console.log('[SW] Cache limpo e preparado');
+      console.log('[SW] Service Worker instalado - Versão:', CACHE_VERSION);
     })
   );
+  
+  // NÃO chamar skipWaiting() aqui - deixar o Service Worker aguardar
 });
 
-// Ativar Service Worker - FORÇAR CONTROLE IMEDIATO
+// Ativar Service Worker - SEM forçar controle imediato
 self.addEventListener('activate', (event) => {
   console.log('[SW] Ativando Service Worker - Versão:', CACHE_VERSION);
   
   event.waitUntil(
-    // Limpar TODOS os caches antigos
+    // Limpar apenas caches antigos
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // Remover TODOS os caches antigos (exceto cache atual)
-          if (cacheName !== CACHE_NAME) {
+          // Remover apenas caches de versões antigas
+          if (cacheName.startsWith('gestao-organistas-') && cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME) {
             console.log('[SW] Removendo cache antigo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
-      // FORÇAR clients.claim() para controlar todas as páginas imediatamente
-      // Mas apenas se não houver um controller já ativo
-      return self.clients.claim().catch(err => {
-        console.log('[SW] Erro ao fazer claim (pode ser normal):', err);
-      });
+      // NÃO forçar clients.claim() - deixar o Service Worker assumir controle naturalmente
+      // Isso evita reloads automáticos
+      console.log('[SW] Service Worker ativado - Versão:', CACHE_VERSION);
+      return Promise.resolve();
     })
   );
 });
