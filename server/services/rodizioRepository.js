@@ -96,14 +96,28 @@ async function buscarRodiziosDoDia(dataCulto, igrejaId) {
  * Verifica se existe rodízio para um culto em uma data específica
  * @param {number} cultoId - ID do culto
  * @param {string} dataCulto - Data do culto (YYYY-MM-DD)
+ * @param {string} funcao - Função (opcional: 'meia_hora' ou 'tocar_culto')
+ * @param {number} organistaId - ID da organista (opcional)
  * @returns {Promise<boolean>} True se existe rodízio
  */
-async function existeRodizio(cultoId, dataCulto) {
+async function existeRodizio(cultoId, dataCulto, funcao = null, organistaId = null) {
   const pool = db.getDb();
-  const [rows] = await pool.execute(
-    'SELECT id FROM rodizios WHERE culto_id = ? AND data_culto = ? LIMIT 1',
-    [cultoId, dataCulto]
-  );
+  let query = 'SELECT id FROM rodizios WHERE culto_id = ? AND data_culto = ?';
+  const params = [cultoId, dataCulto];
+  
+  if (funcao) {
+    query += ' AND funcao = ?';
+    params.push(funcao);
+  }
+  
+  if (organistaId) {
+    query += ' AND organista_id = ?';
+    params.push(organistaId);
+  }
+  
+  query += ' LIMIT 1';
+  
+  const [rows] = await pool.execute(query, params);
   return rows.length > 0;
 }
 

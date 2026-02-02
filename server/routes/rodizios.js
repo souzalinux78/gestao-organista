@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../database/db');
 const rodizioService = require('../services/rodizioService');
 const rodizioRepository = require('../services/rodizioRepository');
+const rodizioImportService = require('../services/rodizioImportService');
 const pdfService = require('../services/pdfService');
 const webhookService = require('../services/webhookService');
 const notificacaoService = require('../services/notificacaoService');
@@ -282,6 +283,47 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
     }
   } catch (error) {
     console.error('Erro ao testar webhook:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Importar rodízio via CSV (com verificação de acesso à igreja)
+router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
+  try {
+    const { csv_content } = req.body;
+    const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
+    
+    if (!csv_content) {
+      return res.status(400).json({ error: 'Conteúdo do CSV é obrigatório' });
+    }
+    
+    if (typeof csv_content !== 'string') {
+      return res.status(400).json({ error: 'Conteúdo do CSV deve ser uma string' });
+    }
+    
+    const resultado = await rodizioImportService.importarRodizio(
+      req.user.id,
+      igreja_id,
+      csv_content
+    );
+    
+    if (!resultado.sucesso) {
+      return res.status(400).json({
+        error: 'Erros na importação',
+        detalhes: resultado.erros,
+        duplicados: resultado.duplicados,
+        rodiziosInseridos: resultado.rodiziosInseridos
+      });
+    }
+    
+    res.json({
+      message: `Importação concluída com sucesso! ${resultado.rodiziosInseridos} rodízio(s) inserido(s).`,
+      rodiziosInseridos: resultado.rodiziosInseridos,
+      totalLinhas: resultado.totalLinhas,
+      duplicados: resultado.duplicados.length > 0 ? resultado.duplicados : undefined
+    });
+  } catch (error) {
+    console.error('Erro ao importar rodízio:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRodizios, gerarRodizio, getRodizioPDF, getDiagnosticoIgreja, limparRodiziosIgreja, testarWebhook, updateRodizio } from '../services/api';
+import { getRodizios, gerarRodizio, getRodizioPDF, getDiagnosticoIgreja, limparRodiziosIgreja, testarWebhook, updateRodizio, importarRodizio } from '../services/api';
 import { getIgrejas, getCultosIgreja, getOrganistasIgreja } from '../services/api';
 import { formatarDataBrasileira, parseDataBrasileira, aplicarMascaraData, validarDataBrasileira } from '../utils/dateHelpers';
 
@@ -23,6 +23,8 @@ function Rodizios({ user }) {
     data_inicial: '',
     organista_inicial: ''
   });
+  const [arquivoCSV, setArquivoCSV] = useState(null);
+  const [loadingImportar, setLoadingImportar] = useState(false);
   const [cultosIgreja, setCultosIgreja] = useState([]);
   const [organistasIgreja, setOrganistasIgreja] = useState([]);
   const [alert, setAlert] = useState(null);
@@ -476,7 +478,51 @@ function Rodizios({ user }) {
                 </button>
               </>
             )}
-            <button 
+          </div>
+        </form>
+
+        {/* Seção de Importação de Rodízio */}
+        <div className="form-section" style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid #e5e7eb' }}>
+          <h3>Importar Rodízio (CSV)</h3>
+          <p style={{ marginBottom: '1rem', color: '#6b7280' }}>
+            Importe um rodízio já definido usando um arquivo CSV. O sistema não substituirá rodízios existentes, apenas adicionará novos.
+          </p>
+          
+          <div className="form-group">
+            <label>Arquivo CSV *</label>
+            <input
+              id="csv-import-input"
+              type="file"
+              accept=".csv"
+              onChange={(e) => setArquivoCSV(e.target.files[0] || null)}
+              style={{ marginBottom: '0.5rem' }}
+            />
+            <small className="form-hint">
+              <strong>Formato esperado:</strong> CSV com cabeçalho: igreja_id, data_culto, dia_semana, hora_culto, organista_id, funcao<br />
+              <strong>Data:</strong> Formato brasileiro (dd/mm/yyyy)<br />
+              <strong>Função:</strong> meia_hora ou tocar_culto<br />
+              <strong>Exemplo:</strong><br />
+              <code style={{ display: 'block', marginTop: '0.5rem', padding: '0.5rem', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.85rem' }}>
+                igreja_id,data_culto,dia_semana,hora_culto,organista_id,funcao<br />
+                1,15/01/2024,segunda,19:00:00,5,meia_hora<br />
+                1,15/01/2024,segunda,19:30:00,3,tocar_culto
+              </code>
+            </small>
+          </div>
+          
+          <div className="btn-row">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleImportarRodizio}
+              disabled={loadingImportar || !arquivoCSV || !gerarForm.igreja_id}
+            >
+              {loadingImportar ? 'Importando...' : '📥 Importar Rodízio (CSV)'}
+            </button>
+          </div>
+        </div>
+
+        <button 
               type="button" 
               className="btn btn-primary" 
               onClick={handleTestarWebhook}
