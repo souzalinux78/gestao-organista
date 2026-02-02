@@ -29,6 +29,20 @@ function Cultos({ user }) {
     }
   }, [igrejas, user]);
 
+  // Reaplicar igreja quando o formulário for aberto para novo cadastro
+  useEffect(() => {
+    // Se o formulário está aberto para novo cadastro (não edição) e usuário não é admin
+    if (showForm && !editing && user?.role !== 'admin' && igrejas.length === 1) {
+      setFormData(prev => {
+        // Só atualizar se o igreja_id estiver vazio
+        if (!prev.igreja_id) {
+          return { ...prev, igreja_id: igrejas[0].id.toString() };
+        }
+        return prev;
+      });
+    }
+  }, [showForm, editing, user, igrejas.length]);
+
   const loadCultos = async () => {
     try {
       const response = await getCultos();
@@ -56,6 +70,13 @@ function Cultos({ user }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validação: garantir que igreja_id está preenchido
+    if (!formData.igreja_id) {
+      showAlert('Por favor, selecione uma igreja', 'error');
+      return;
+    }
+    
     try {
       if (editing) {
         await updateCulto(editing.id, formData);
@@ -95,8 +116,13 @@ function Cultos({ user }) {
   };
 
   const resetForm = () => {
+    // Preservar igreja_id para usuários não-admin (que têm apenas 1 igreja)
+    const preservedIgrejaId = (user?.role !== 'admin' && igrejas.length === 1) 
+      ? igrejas[0].id.toString() 
+      : '';
+    
     setFormData({
-      igreja_id: '',
+      igreja_id: preservedIgrejaId,
       dia_semana: '',
       hora: '',
       ativo: true
@@ -128,7 +154,31 @@ function Cultos({ user }) {
       <div className="card">
         <div className="page-header">
           <h2>Cultos</h2>
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => {
+              if (!showForm) {
+                // Ao abrir o formulário, garantir que a igreja está selecionada para usuários não-admin
+                if (user?.role !== 'admin' && igrejas.length === 1) {
+                  setFormData(prev => ({
+                    ...prev,
+                    igreja_id: prev.igreja_id || igrejas[0].id.toString(),
+                    dia_semana: '',
+                    hora: '',
+                    ativo: true
+                  }));
+                } else {
+                  setFormData(prev => ({
+                    ...prev,
+                    dia_semana: '',
+                    hora: '',
+                    ativo: true
+                  }));
+                }
+              }
+              setShowForm(!showForm);
+            }}
+          >
             {showForm ? 'Cancelar' : '+ Novo Culto'}
           </button>
         </div>
