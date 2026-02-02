@@ -10,6 +10,7 @@ const notificacaoService = require('../services/notificacaoService');
 const { authenticate, getUserIgrejas } = require('../middleware/auth');
 const { tenantResolver, getTenantId } = require('../middleware/tenantResolver');
 const { checkIgrejaAccess, checkRodizioAccess } = require('../middleware/igrejaAccess');
+const logger = require('../utils/logger');
 
 // Listar rodízios (filtrado por igrejas do usuário e tenant)
 router.get('/', authenticate, tenantResolver, async (req, res) => {
@@ -324,7 +325,18 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
     });
   } catch (error) {
     console.error('Erro ao importar rodízio:', error);
-    res.status(500).json({ error: error.message });
+    // CORREÇÃO: Tratamento robusto de erros - nunca retornar 500 sem mensagem clara
+    const errorMessage = error.message || 'Erro desconhecido ao importar rodízio';
+    logger.error('Erro na importação de rodízio:', {
+      userId: req.user?.id,
+      igrejaId: igreja_id,
+      error: errorMessage,
+      stack: error.stack
+    });
+    res.status(500).json({ 
+      error: errorMessage,
+      detalhes: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

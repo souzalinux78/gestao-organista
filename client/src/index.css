@@ -564,8 +564,35 @@ input {
   overflow-wrap: break-word;
   -webkit-appearance: none;
   appearance: none;
-  color: var(--text-main);
+  color: var(--text-main) !important;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* CORREÇÃO: Garantir que texto digitado seja sempre visível */
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.form-group input:not(:placeholder-shown),
+.form-group textarea:not(:placeholder-shown),
+.form-group select {
+  color: var(--text-main) !important;
+}
+
+/* Garantir que inputs de data também mostrem o texto */
+input[type="date"],
+input[type="text"][placeholder*="dd/mm"],
+input[type="text"][placeholder*="data"] {
+  color: var(--text-main) !important;
+}
+
+/* Garantir que textareas mostrem o texto */
+textarea {
+  color: var(--text-main) !important;
+  min-height: 100px;
+  resize: vertical;
 }
 
 .form-group--checkbox .checkbox-input {

@@ -1,5 +1,5 @@
 const db = require('../database/db');
-const { getProximaData, adicionarMeses, formatarData, calcularHoraMeiaHora } = require('../utils/dateHelpers');
+const { getProximaData, adicionarMeses, formatarData, calcularHoraMeiaHora, DIAS_SEMANA } = require('../utils/dateHelpers');
 const rodizioRepository = require('./rodizioRepository');
 
 // Função para verificar se organista tocou nos últimos X dias (evitar sequências)
@@ -263,10 +263,18 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
     const igreja = igrejas[0];
     const permiteMesmaOrganista = igreja.mesma_organista_ambas_funcoes === 1;
     
-    const [cultos] = await pool.execute(
-      'SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1 ORDER BY dia_semana',
+    // CORREÇÃO: Ordenar cultos pela ordem cronológica da semana, não alfabeticamente
+    const [cultosRaw] = await pool.execute(
+      'SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1',
       [igrejaId]
     );
+    
+    // Ordenar pela ordem cronológica da semana usando DIAS_SEMANA
+    const cultos = cultosRaw.sort((a, b) => {
+      const diaA = DIAS_SEMANA[a.dia_semana.toLowerCase()] ?? 99;
+      const diaB = DIAS_SEMANA[b.dia_semana.toLowerCase()] ?? 99;
+      return diaA - diaB;
+    });
     
     if (cultos.length === 0) {
       throw new Error('Nenhum culto ativo encontrado para esta igreja');

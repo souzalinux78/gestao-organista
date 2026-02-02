@@ -581,14 +581,19 @@ function Rodizios({ user }) {
               style={{ marginBottom: '0.5rem' }}
             />
             <small className="form-hint">
-              <strong>Formato esperado:</strong> CSV com cabeçalho: igreja_id, data_culto, dia_semana, hora_culto, organista_id, funcao<br />
+              <strong>Formatos aceitos:</strong><br />
+              <strong>Formato 1 (recomendado):</strong> igreja, data, horario, tipo, organista<br />
+              <strong>Formato 2:</strong> igreja_id, data_culto, dia_semana, hora_culto, organista_id, funcao<br />
+              <br />
               <strong>Data:</strong> Formato brasileiro (dd/mm/yyyy)<br />
-              <strong>Função:</strong> meia_hora ou tocar_culto<br />
-              <strong>Exemplo:</strong><br />
+              <strong>Tipo/Função:</strong> MEIA_HORA ou CULTO (formato 1) / meia_hora ou tocar_culto (formato 2)<br />
+              <strong>Organista:</strong> Nome completo (formato 1) ou ID numérico (formato 2)<br />
+              <br />
+              <strong>Exemplo (Formato 1):</strong><br />
               <code style={{ display: 'block', marginTop: '0.5rem', padding: '0.5rem', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.85rem' }}>
-                igreja_id,data_culto,dia_semana,hora_culto,organista_id,funcao<br />
-                1,15/01/2024,segunda,19:00:00,5,meia_hora<br />
-                1,15/01/2024,segunda,19:30:00,3,tocar_culto
+                igreja,data,horario,tipo,organista<br />
+                BAIRRO DO CRUZEIRO,01/02/2026,18:30,MEIA_HORA,Leda<br />
+                BAIRRO DO CRUZEIRO,01/02/2026,19:00,CULTO,Ariana
               </code>
             </small>
           </div>
