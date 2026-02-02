@@ -321,6 +321,81 @@ function Rodizios({ user }) {
     }
   };
 
+  const handleImportarRodizio = async () => {
+    if (!gerarForm.igreja_id) {
+      showAlert('Selecione uma igreja antes de importar', 'error');
+      return;
+    }
+    
+    if (!arquivoCSV) {
+      showAlert('Selecione um arquivo CSV para importar', 'error');
+      return;
+    }
+    
+    // Validar extensão do arquivo
+    if (!arquivoCSV.name.toLowerCase().endsWith('.csv')) {
+      showAlert('O arquivo deve ser um CSV (.csv)', 'error');
+      return;
+    }
+    
+    try {
+      setLoadingImportar(true);
+      
+      // Ler conteúdo do arquivo
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const csvContent = e.target.result;
+          
+          const response = await importarRodizio(
+            parseInt(gerarForm.igreja_id),
+            csvContent
+          );
+          
+          let mensagem = `Importação concluída! ${response.data.rodiziosInseridos} rodízio(s) inserido(s).`;
+          if (response.data.duplicados && response.data.duplicados.length > 0) {
+            mensagem += ` ${response.data.duplicados.length} rodízio(s) duplicado(s) foram ignorados.`;
+          }
+          
+          showAlert(mensagem, 'success');
+          setArquivoCSV(null);
+          
+          // Limpar input de arquivo
+          const fileInput = document.getElementById('csv-import-input');
+          if (fileInput) {
+            fileInput.value = '';
+          }
+          
+          loadRodizios();
+        } catch (error) {
+          const errorMessage = error.response?.data?.error || 'Erro ao importar rodízio';
+          const detalhes = error.response?.data?.detalhes;
+          
+          if (detalhes && Array.isArray(detalhes) && detalhes.length > 0) {
+            // Mostrar erros detalhados
+            const errosTexto = detalhes.slice(0, 5).join('\n'); // Mostrar apenas os 5 primeiros
+            const maisErros = detalhes.length > 5 ? `\n... e mais ${detalhes.length - 5} erro(s)` : '';
+            showAlert(`${errorMessage}\n\n${errosTexto}${maisErros}`, 'error');
+          } else {
+            showAlert(errorMessage, 'error');
+          }
+        } finally {
+          setLoadingImportar(false);
+        }
+      };
+      
+      reader.onerror = () => {
+        showAlert('Erro ao ler o arquivo CSV', 'error');
+        setLoadingImportar(false);
+      };
+      
+      reader.readAsText(arquivoCSV, 'UTF-8');
+    } catch (error) {
+      showAlert('Erro ao processar arquivo', 'error');
+      setLoadingImportar(false);
+    }
+  };
+
   // Usar função padronizada de formatação de data (dd/mm/yyyy)
   const formatarData = (dataStr) => {
     return formatarDataBrasileira(dataStr);
