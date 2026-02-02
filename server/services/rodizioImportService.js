@@ -162,12 +162,24 @@ async function importarRodizio(userId, igrejaId, csvContent) {
   const pool = db.getDb();
   
   try {
+    logger.info(`[IMPORT] Iniciando importação de rodízio - Usuário: ${userId}, Igreja: ${igrejaId}`);
+    
     // 1. Parse do CSV (retorna { dados, formatoNovo })
-    const { dados, formatoNovo } = parseCSV(csvContent);
+    let dados, formatoNovo;
+    try {
+      const resultado = parseCSV(csvContent);
+      dados = resultado.dados;
+      formatoNovo = resultado.formatoNovo;
+    } catch (parseError) {
+      logger.error('[IMPORT] Erro ao fazer parse do CSV:', parseError);
+      throw new Error(`Erro ao processar CSV: ${parseError.message}`);
+    }
     
     if (!dados || dados.length === 0) {
       throw new Error('CSV não contém dados válidos');
     }
+    
+    logger.info(`[IMPORT] CSV parseado com sucesso - ${dados.length} linha(s) encontrada(s), formato: ${formatoNovo ? 'novo' : 'antigo'}`);
     
     // 2. Buscar igreja para validar nome (se formato novo)
     let igrejaNome = null;
@@ -415,6 +427,7 @@ async function importarRodizio(userId, igrejaId, csvContent) {
     
     // 6. Se houver erros, retornar sem inserir nada
     if (erros.length > 0) {
+      logger.warn(`[IMPORT] Importação falhou - ${erros.length} erro(s) encontrado(s), ${duplicados.length} duplicado(s)`);
       return {
         sucesso: false,
         erros: erros,
@@ -427,9 +440,21 @@ async function importarRodizio(userId, igrejaId, csvContent) {
     // 7. Inserir rodízios válidos
     let rodiziosInseridos = 0;
     if (rodiziosParaInserir.length > 0) {
-      await rodizioRepository.inserirRodizios(rodiziosParaInserir);
-      rodiziosInseridos = rodiziosParaInserir.length;
+      logger.info(`[IMPORT] Inserindo ${rodiziosParaInserir.length} rodízio(s) válido(s)...`);
+      
+      try {
+        await rodizioRepository.inserirRodizios(rodiziosParaInserir);
+        rodiziosInseridos = rodiziosParaInserir.length;
+        logger.info(`[IMPORT] ${rodiziosInseridos} rodízio(s) inserido(s) com sucesso`);
+      } catch (insertError) {
+        logger.error('[IMPORT] Erro ao inserir rodízios no banco:', insertError);
+        throw new Error(`Erro ao salvar rodízios no banco de dados: ${insertError.message}`);
+      }
+    } else {
+      logger.warn('[IMPORT] Nenhum rodízio válido para inserir');
     }
+    
+    logger.info(`[IMPORT] Importação concluída - ${rodiziosInseridos} inserido(s), ${duplicados.length} duplicado(s), ${dados.length} total`);
     
     return {
       sucesso: true,

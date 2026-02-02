@@ -338,61 +338,113 @@ function Rodizios({ user }) {
       return;
     }
     
+    // CORREÇÃO: Converter FileReader para Promise para tratamento adequado de async/await
+    const lerArquivo = (arquivo) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (error) => reject(new Error('Erro ao ler o arquivo CSV: ' + (error.message || 'Erro desconhecido')));
+        reader.readAsText(arquivo, 'UTF-8');
+      });
+    };
+    
     try {
       setLoadingImportar(true);
+      console.log('[IMPORT] Iniciando importação de CSV...', {
+        igrejaId: gerarForm.igreja_id,
+        arquivo: arquivoCSV.name,
+        tamanho: arquivoCSV.size
+      });
       
-      // Ler conteúdo do arquivo
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const csvContent = e.target.result;
-          
-          const response = await importarRodizio(
-            parseInt(gerarForm.igreja_id),
-            csvContent
-          );
-          
-          let mensagem = `Importação concluída! ${response.data.rodiziosInseridos} rodízio(s) inserido(s).`;
-          if (response.data.duplicados && response.data.duplicados.length > 0) {
-            mensagem += ` ${response.data.duplicados.length} rodízio(s) duplicado(s) foram ignorados.`;
-          }
-          
-          showAlert(mensagem, 'success');
-          setArquivoCSV(null);
-          
-          // Limpar input de arquivo
-          const fileInput = document.getElementById('csv-import-input');
-          if (fileInput) {
-            fileInput.value = '';
-          }
-          
-          loadRodizios();
-        } catch (error) {
-          const errorMessage = error.response?.data?.error || 'Erro ao importar rodízio';
-          const detalhes = error.response?.data?.detalhes;
-          
-          if (detalhes && Array.isArray(detalhes) && detalhes.length > 0) {
-            // Mostrar erros detalhados
-            const errosTexto = detalhes.slice(0, 5).join('\n'); // Mostrar apenas os 5 primeiros
-            const maisErros = detalhes.length > 5 ? `\n... e mais ${detalhes.length - 5} erro(s)` : '';
-            showAlert(`${errorMessage}\n\n${errosTexto}${maisErros}`, 'error');
-          } else {
-            showAlert(errorMessage, 'error');
-          }
-        } finally {
-          setLoadingImportar(false);
+      // Ler conteúdo do arquivo usando Promise
+      const csvContent = await lerArquivo(arquivoCSV);
+      
+      if (!csvContent || csvContent.trim().length === 0) {
+        throw new Error('Arquivo CSV está vazio');
+      }
+      
+      console.log('[IMPORT] Arquivo lido com sucesso, tamanho:', csvContent.length, 'caracteres');
+      
+      // Chamar API de importação
+      const response = await importarRodizio(
+        parseInt(gerarForm.igreja_id),
+        csvContent
+      );
+      
+      console.log('[IMPORT] Resposta da API:', response);
+      
+      // Validar resposta
+      if (!response || !response.data) {
+        throw new Error('Resposta inválida do servidor');
+      }
+      
+      // Verificar se houve erros na importação
+      if (response.data.error) {
+        const errorMessage = response.data.error;
+        const detalhes = response.data.detalhes;
+        
+        if (detalhes && Array.isArray(detalhes) && detalhes.length > 0) {
+          // Mostrar erros detalhados
+          const errosTexto = detalhes.slice(0, 10).join('\n'); // Mostrar até 10 erros
+          const maisErros = detalhes.length > 10 ? `\n... e mais ${detalhes.length - 10} erro(s)` : '';
+          showAlert(`${errorMessage}\n\nErros encontrados:\n${errosTexto}${maisErros}`, 'error');
+        } else {
+          showAlert(errorMessage, 'error');
         }
-      };
+        return;
+      }
       
-      reader.onerror = () => {
-        showAlert('Erro ao ler o arquivo CSV', 'error');
-        setLoadingImportar(false);
-      };
+      // Sucesso
+      const rodiziosInseridos = response.data.rodiziosInseridos || 0;
+      const totalLinhas = response.data.totalLinhas || 0;
+      const duplicados = response.data.duplicados || [];
       
-      reader.readAsText(arquivoCSV, 'UTF-8');
+      let mensagem = `✅ Importação concluída com sucesso!\n\n${rodiziosInseridos} rodízio(s) inserido(s) de ${totalLinhas} linha(s) processada(s).`;
+      
+      if (duplicados.length > 0) {
+        mensagem += `\n\n⚠️ ${duplicados.length} rodízio(s) duplicado(s) foram ignorados.`;
+      }
+      
+      showAlert(mensagem, 'success');
+      setArquivoCSV(null);
+      
+      // Limpar input de arquivo
+      const fileInput = document.getElementById('csv-import-input');
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      
+      // Recarregar lista de rodízios
+      await loadRodizios();
+      
+      console.log('[IMPORT] Importação concluída com sucesso');
+      
     } catch (error) {
-      showAlert('Erro ao processar arquivo', 'error');
+      console.error('[IMPORT] Erro na importação:', error);
+      
+      // Tratamento detalhado de erros
+      let errorMessage = 'Erro ao importar rodízio';
+      
+      if (error.response) {
+        // Erro da API
+        const apiError = error.response.data;
+        errorMessage = apiError?.error || errorMessage;
+        
+        if (apiError?.detalhes && Array.isArray(apiError.detalhes)) {
+          const errosTexto = apiError.detalhes.slice(0, 10).join('\n');
+          const maisErros = apiError.detalhes.length > 10 ? `\n... e mais ${apiError.detalhes.length - 10} erro(s)` : '';
+          errorMessage = `${errorMessage}\n\nErros encontrados:\n${errosTexto}${maisErros}`;
+        }
+      } else if (error.message) {
+        // Erro de leitura de arquivo ou outro erro
+        errorMessage = error.message;
+      }
+      
+      showAlert(errorMessage, 'error');
+    } finally {
+      // SEMPRE finalizar loading, mesmo em caso de erro
       setLoadingImportar(false);
+      console.log('[IMPORT] Loading finalizado');
     }
   };
 

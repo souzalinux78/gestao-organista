@@ -291,16 +291,30 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
 // Importar rodízio via CSV (com verificação de acesso à igreja)
 router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
   try {
+    logger.info('[ROUTE] Iniciando importação de rodízio via CSV', {
+      userId: req.user?.id,
+      igrejaId: req.igrejaId
+    });
+    
     const { csv_content } = req.body;
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
     
     if (!csv_content) {
+      logger.warn('[ROUTE] Tentativa de importação sem conteúdo CSV');
       return res.status(400).json({ error: 'Conteúdo do CSV é obrigatório' });
     }
     
     if (typeof csv_content !== 'string') {
+      logger.warn('[ROUTE] Conteúdo CSV não é string', { type: typeof csv_content });
       return res.status(400).json({ error: 'Conteúdo do CSV deve ser uma string' });
     }
+    
+    if (csv_content.trim().length === 0) {
+      logger.warn('[ROUTE] Conteúdo CSV está vazio');
+      return res.status(400).json({ error: 'Conteúdo do CSV está vazio' });
+    }
+    
+    logger.info('[ROUTE] Processando CSV', { tamanho: csv_content.length });
     
     const resultado = await rodizioImportService.importarRodizio(
       req.user.id,
@@ -308,12 +322,21 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
       csv_content
     );
     
+    logger.info('[ROUTE] Resultado da importação:', {
+      sucesso: resultado.sucesso,
+      rodiziosInseridos: resultado.rodiziosInseridos,
+      totalLinhas: resultado.totalLinhas,
+      erros: resultado.erros?.length || 0,
+      duplicados: resultado.duplicados?.length || 0
+    });
+    
     if (!resultado.sucesso) {
       return res.status(400).json({
         error: 'Erros na importação',
         detalhes: resultado.erros,
         duplicados: resultado.duplicados,
-        rodiziosInseridos: resultado.rodiziosInseridos
+        rodiziosInseridos: resultado.rodiziosInseridos,
+        totalLinhas: resultado.totalLinhas
       });
     }
     
