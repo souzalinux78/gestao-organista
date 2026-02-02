@@ -182,8 +182,17 @@ const getUserIgrejas = async (userId, isAdmin, tenantId = null) => {
                  LIMIT 100`;
           values = [userId, tenantId];
         } else if (temTenantId && !tenantId) {
-          // Se tenant_id existe mas não foi fornecido, retornar vazio (segurança)
-          return [];
+          // CORREÇÃO: Se tenant_id existe mas usuário não tem (migração em andamento),
+          // usar query sem filtro de tenant como fallback (compatibilidade durante migração)
+          // Isso evita bloquear usuários que ainda não foram migrados
+          sql = `SELECT i.* 
+                 FROM igrejas i
+                 INNER JOIN usuario_igreja ui ON i.id = ui.igreja_id
+                 WHERE ui.usuario_id = ?
+                 ORDER BY i.nome
+                 LIMIT 100`;
+          values = [userId];
+          logger.warn(`Usuário ${userId} sem tenant_id mas coluna existe - usando fallback sem filtro de tenant`);
         } else {
           // Se coluna não existe, usar query antiga (compatibilidade)
           sql = `SELECT i.* 

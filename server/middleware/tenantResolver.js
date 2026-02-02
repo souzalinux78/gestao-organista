@@ -42,20 +42,25 @@ function tenantResolver(req, res, next) {
     const tenantId = req.user.tenant_id || req.user.tenantId || null;
     
     if (!tenantId) {
-      // Para usuários comuns, tenant_id é obrigatório após FASE 5
-      logger.warn(`Usuário ${req.user.id} sem tenant_id - dados podem não estar migrados`);
-      return res.status(403).json({
-        error: 'Usuário não associado a um tenant. Contate o administrador para migração.'
-      });
+      // CORREÇÃO: Durante migração, permitir que usuários sem tenant_id continuem
+      // O getUserIgrejas já tem fallback para lidar com isso
+      // Bloquear apenas se realmente necessário (pode ser configurável no futuro)
+      logger.warn(`Usuário ${req.user.id} sem tenant_id - usando fallback (migração em andamento)`);
+      // Não bloquear - permitir que continue com tenantId = null
+      // O getUserIgrejas vai usar fallback sem filtro de tenant
     }
     
-    // Adicionar tenant_id ao request
+    // Adicionar tenant_id ao request (pode ser null durante migração)
     req.tenantId = tenantId;
     
     // Adicionar também ao req.user para facilitar acesso
     req.user.tenantId = tenantId;
     
-    logger.debug(`Tenant resolvido: ${tenantId} para usuário ${req.user.id}`);
+    if (tenantId) {
+      logger.debug(`Tenant resolvido: ${tenantId} para usuário ${req.user.id}`);
+    } else {
+      logger.debug(`Usuário ${req.user.id} sem tenant_id - usando modo compatibilidade`);
+    }
     
     next();
   } catch (error) {

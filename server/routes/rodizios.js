@@ -46,7 +46,8 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
 });
 
 // Gerar rodízio (com verificação de acesso à igreja)
-router.post('/gerar', authenticate, checkIgrejaAccess, async (req, res) => {
+// CORREÇÃO: Adicionar tenantResolver antes de checkIgrejaAccess para garantir que req.tenantId esteja disponível
+router.post('/gerar', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
   try {
     const { periodo_meses, ciclo_inicial, data_inicial, organista_inicial } = req.body;
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
@@ -92,7 +93,8 @@ router.post('/gerar', authenticate, checkIgrejaAccess, async (req, res) => {
 });
 
 // Gerar PDF do rodízio (com verificação de acesso)
-router.get('/pdf/:igreja_id', authenticate, checkIgrejaAccess, async (req, res) => {
+// CORREÇÃO: Adicionar tenantResolver antes de checkIgrejaAccess
+router.get('/pdf/:igreja_id', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
   try {
     const { periodo_inicio, periodo_fim } = req.query;
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
@@ -174,7 +176,8 @@ router.delete('/:id', authenticate, checkRodizioAccess, async (req, res) => {
 });
 
 // Deletar rodízios de uma igreja (com verificação de acesso)
-router.delete('/igreja/:igreja_id', authenticate, checkIgrejaAccess, async (req, res) => {
+// CORREÇÃO: Adicionar tenantResolver antes de checkIgrejaAccess
+router.delete('/igreja/:igreja_id', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
   try {
     const { periodo_inicio, periodo_fim } = req.query;
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
