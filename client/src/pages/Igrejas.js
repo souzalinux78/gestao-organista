@@ -241,7 +241,7 @@ function Igrejas({ user }) {
               />
             </div>
             <div className="form-group">
-              <div className="form-group--checkbox">
+              <label className="checkbox-field">
                 <input
                   type="checkbox"
                   id="mesma_organista_ambas_funcoes"
@@ -249,10 +249,10 @@ function Igrejas({ user }) {
                   onChange={(e) => setFormData({ ...formData, mesma_organista_ambas_funcoes: e.target.checked })}
                   className="checkbox-input"
                 />
-                <label htmlFor="mesma_organista_ambas_funcoes" className="checkbox-label">
+                <span className="checkbox-label-text">
                   Permitir que a mesma organista faça meia hora e tocar no culto
-                </label>
-              </div>
+                </span>
+              </label>
               <p className="form-hint">
                 Se marcado, no rodízio a mesma organista fará ambas as funções. Se não marcado, uma organista fará meia hora e outra tocará no culto.
               </p>
@@ -319,18 +319,18 @@ function Igrejas({ user }) {
               />
             </div>
             <div className="form-group">
-              <div className="form-group--checkbox">
+              <label className="checkbox-field">
                 <input
                   type="checkbox"
-                  id="mesma_organista_ambas_funcoes"
+                  id="edit_mesma_organista_ambas_funcoes"
                   checked={formData.mesma_organista_ambas_funcoes}
                   onChange={(e) => setFormData({ ...formData, mesma_organista_ambas_funcoes: e.target.checked })}
                   className="checkbox-input"
                 />
-                <label htmlFor="mesma_organista_ambas_funcoes" className="checkbox-label">
+                <span className="checkbox-label-text">
                   Permitir que a mesma organista faça meia hora e tocar no culto
-                </label>
-              </div>
+                </span>
+              </label>
               <p className="form-hint">
                 Se marcado, no rodízio a mesma organista fará ambas as funções. Se não marcado, uma organista fará meia hora e outra tocará no culto.
               </p>

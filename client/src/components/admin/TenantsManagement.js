@@ -151,14 +151,17 @@ function TenantsManagement() {
               <small className="form-group__hint">Apenas letras minúsculas, números e hífens</small>
             </div>
 
-            <div className="form-group form-group--checkbox">
-              <input
-                type="checkbox"
-                id="ativo"
-                checked={formData.ativo}
-                onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-              />
-              <label htmlFor="ativo">Ativo</label>
+            <div className="form-group">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  id="ativo"
+                  checked={formData.ativo}
+                  onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-label-text">Ativo</span>
+              </label>
             </div>
 
             <div className="tenants-management__form-actions">
@@ -197,14 +200,17 @@ function TenantsManagement() {
               <small className="form-group__hint">Apenas letras minúsculas, números e hífens</small>
             </div>
 
-            <div className="form-group form-group--checkbox">
-              <input
-                type="checkbox"
-                id="ativo"
-                checked={formData.ativo}
-                onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-              />
-              <label htmlFor="ativo">Ativo</label>
+            <div className="form-group">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  id="edit_tenant_ativo"
+                  checked={formData.ativo}
+                  onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-label-text">Ativo</span>
+              </label>
             </div>
 
             <div className="tenants-management__form-actions">

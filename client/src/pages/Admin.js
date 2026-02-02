@@ -242,7 +242,7 @@ function Admin() {
               </select>
             </div>
             <div className="form-group">
-              <div className="form-group--checkbox">
+              <label className="checkbox-field">
                 <input
                   type="checkbox"
                   id="usuario_ativo"
@@ -250,12 +250,12 @@ function Admin() {
                   onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
                   className="checkbox-input"
                 />
-                <label htmlFor="usuario_ativo" className="checkbox-label">Ativo</label>
-              </div>
+                <span className="checkbox-label-text">Ativo</span>
+              </label>
             </div>
             {formData.role === 'usuario' && (
               <div className="form-group">
-                <div className="form-group--checkbox">
+                <label className="checkbox-field">
                   <input
                     type="checkbox"
                     id="usuario_aprovado"
@@ -263,8 +263,8 @@ function Admin() {
                     onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
                     className="checkbox-input"
                   />
-                  <label htmlFor="usuario_aprovado" className="checkbox-label">Aprovado</label>
-                </div>
+                  <span className="checkbox-label-text">Aprovado</span>
+                </label>
               </div>
             )}
             
@@ -435,7 +435,7 @@ function Admin() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <div className="form-group--checkbox">
+                  <label className="checkbox-field">
                     <input
                       type="checkbox"
                       id="edit_usuario_ativo"
@@ -443,12 +443,12 @@ function Admin() {
                       onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
                       className="checkbox-input"
                     />
-                    <label htmlFor="edit_usuario_ativo" className="checkbox-label">Ativo</label>
-                  </div>
+                    <span className="checkbox-label-text">Ativo</span>
+                  </label>
                 </div>
                 {formData.role === 'usuario' && (
                   <div className="form-group">
-                    <div className="form-group--checkbox">
+                    <label className="checkbox-field">
                       <input
                         type="checkbox"
                         id="edit_usuario_aprovado"
@@ -456,8 +456,8 @@ function Admin() {
                         onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
                         className="checkbox-input"
                       />
-                      <label htmlFor="edit_usuario_aprovado" className="checkbox-label">Aprovado</label>
-                    </div>
+                      <span className="checkbox-label-text">Aprovado</span>
+                    </label>
                   </div>
                 )}
                 

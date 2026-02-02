@@ -193,13 +193,15 @@ function Cultos({ user }) {
               />
             </div>
             <div className="form-group">
-              <label>
+              <label className="checkbox-field">
                 <input
                   type="checkbox"
+                  id="ativo"
                   checked={formData.ativo}
                   onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                  className="checkbox-input"
                 />
-                {' '}Ativo
+                <span className="checkbox-label-text">Ativo</span>
               </label>
             </div>
             <button type="submit" className="btn btn-primary">
@@ -262,13 +264,15 @@ function Cultos({ user }) {
               />
             </div>
             <div className="form-group">
-              <label>
+              <label className="checkbox-field">
                 <input
                   type="checkbox"
+                  id="edit_ativo"
                   checked={formData.ativo}
                   onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                  className="checkbox-input"
                 />
-                {' '}Ativo
+                <span className="checkbox-label-text">Ativo</span>
               </label>
             </div>
             <button type="submit" className="btn btn-primary">

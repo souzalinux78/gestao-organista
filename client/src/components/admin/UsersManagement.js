@@ -213,24 +213,30 @@ function UsersManagement() {
               </select>
             </div>
 
-            <div className="form-group form-group--checkbox">
-              <input
-                type="checkbox"
-                id="ativo"
-                checked={formData.ativo}
-                onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-              />
-              <label htmlFor="ativo">Ativo</label>
+            <div className="form-group">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  id="ativo"
+                  checked={formData.ativo}
+                  onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-label-text">Ativo</span>
+              </label>
             </div>
 
-            <div className="form-group form-group--checkbox">
-              <input
-                type="checkbox"
-                id="aprovado"
-                checked={formData.aprovado}
-                onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
-              />
-              <label htmlFor="aprovado">Aprovado</label>
+            <div className="form-group">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  id="aprovado"
+                  checked={formData.aprovado}
+                  onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-label-text">Aprovado</span>
+              </label>
             </div>
 
             <div className="form-group">
@@ -304,24 +310,30 @@ function UsersManagement() {
               </select>
             </div>
 
-            <div className="form-group form-group--checkbox">
-              <input
-                type="checkbox"
-                id="ativo"
-                checked={formData.ativo}
-                onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-              />
-              <label htmlFor="ativo">Ativo</label>
+            <div className="form-group">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  id="edit_usuario_ativo"
+                  checked={formData.ativo}
+                  onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-label-text">Ativo</span>
+              </label>
             </div>
 
-            <div className="form-group form-group--checkbox">
-              <input
-                type="checkbox"
-                id="aprovado"
-                checked={formData.aprovado}
-                onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
-              />
-              <label htmlFor="aprovado">Aprovado</label>
+            <div className="form-group">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  id="edit_usuario_aprovado"
+                  checked={formData.aprovado}
+                  onChange={(e) => setFormData({ ...formData, aprovado: e.target.checked })}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-label-text">Aprovado</span>
+              </label>
             </div>
 
             <div className="form-group">
