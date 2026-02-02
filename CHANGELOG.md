@@ -267,3 +267,5 @@ Todas as alterações importantes do projeto.
 ## v3.0.15 - 2026-02-02
 
 ## v3.0.16 - 2026-02-02
+
+## v3.0.17 - 2026-02-02

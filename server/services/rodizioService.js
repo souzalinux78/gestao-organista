@@ -400,7 +400,9 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
     
     for (const item of todasDatas) {
       const { culto, dataFormatada } = item;
-      const diaCultoAtual = culto.dia_semana.toLowerCase();
+      
+      // CORREÇÃO: Removida lógica de alinhamento indevida que pulava datas
+      // Agora processamos TODAS as datas geradas, respeitando apenas a ordem cronológica
       
       if (indiceOrganista >= totalOrganistas) {
         cicloAtual++;
@@ -410,33 +412,35 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
       const ordemCiclo = gerarOrdemCiclo(cicloAtual, totalDias, totalOrganistas);
       const indiceReal = ordemCiclo[indiceOrganista];
       const organistaSelecionada = organistas[indiceReal];
-      const indiceDia = indiceOrganista % totalDias;
-      const diaCalculado = diasCulto[indiceDia];
-      
-      if (diaCalculado !== diaCultoAtual) {
-        continue;
-      }
       
       indiceOrganista++;
       
       let organistaMeiaHora, organistaTocarCulto;
       
       if (permiteMesmaOrganista) {
+        // CORREÇÃO: Garantir que organista não oficializada nunca toque no culto
         if (!organistaSelecionada.oficializada) {
+          // Organista não oficializada: buscar organista oficializada para ambas as funções
           const proximaOficializada = organistas.find(o => o.oficializada);
           if (!proximaOficializada) {
-            throw new Error('Não existe organista oficializada ativa associada.');
+            throw new Error('Não existe organista oficializada ativa associada. Organistas não oficializadas só podem fazer meia hora.');
           }
-          organistaMeiaHora = proximaOficializada;
-          organistaTocarCulto = proximaOficializada;
+          // Organista não oficializada faz meia hora, oficializada toca no culto
+          organistaMeiaHora = organistaSelecionada; // Não oficializada faz meia hora
+          organistaTocarCulto = proximaOficializada; // Oficializada toca no culto
         } else {
+          // Organista oficializada pode fazer ambas as funções
           organistaMeiaHora = organistaSelecionada;
           organistaTocarCulto = organistaSelecionada;
         }
       } else {
+        // CORREÇÃO: Organista não oficializada só pode fazer meia hora
+        // Sempre buscar organista oficializada para tocar no culto
         organistaMeiaHora = organistaSelecionada;
         let organistaTocarCultoEncontrada = null;
         const indiceAnterior = indiceOrganista - 1;
+        
+        // Buscar próxima organista oficializada na sequência
         for (let i = 1; i < totalOrganistas; i++) {
           const idxProximo = (indiceAnterior + i) % totalOrganistas;
           const indiceRealProximo = ordemCiclo[idxProximo];
@@ -446,12 +450,17 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
             break;
           }
         }
+        
+        // Se não encontrou na sequência, buscar qualquer organista oficializada
         if (!organistaTocarCultoEncontrada) {
           organistaTocarCultoEncontrada = organistas.find(o => o.oficializada);
-          if (!organistaTocarCultoEncontrada) {
-            throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto".');
-          }
         }
+        
+        // VALIDAÇÃO CRÍTICA: Garantir que organistaTocarCulto seja sempre oficializada
+        if (!organistaTocarCultoEncontrada || !organistaTocarCultoEncontrada.oficializada) {
+          throw new Error('Não existe organista oficializada ativa associada para a função "Tocar no Culto". Organistas não oficializadas só podem fazer meia hora.');
+        }
+        
         organistaTocarCulto = organistaTocarCultoEncontrada;
       }
       

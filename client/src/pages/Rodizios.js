@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRodizios, gerarRodizio, getRodizioPDF, getDiagnosticoIgreja, limparRodiziosIgreja, testarWebhook, updateRodizio } from '../services/api';
 import { getIgrejas, getCultosIgreja, getOrganistasIgreja } from '../services/api';
+import { formatarDataBrasileira, parseDataBrasileira, aplicarMascaraData, validarDataBrasileira } from '../utils/dateHelpers';
 
 function Rodizios({ user }) {
   const navigate = useNavigate();
@@ -247,11 +248,22 @@ function Rodizios({ user }) {
     
     try {
       setLoadingGerar(true);
+      // Converter data_inicial de dd/mm/yyyy para YYYY-MM-DD se necessário
+      let dataInicialFormatada = gerarForm.data_inicial;
+      if (dataInicialFormatada && dataInicialFormatada.includes('/')) {
+        try {
+          dataInicialFormatada = parseDataBrasileira(dataInicialFormatada);
+        } catch (error) {
+          showAlert('Data inicial inválida. Use o formato dd/mm/yyyy', 'error');
+          return;
+        }
+      }
+      
       const response = await gerarRodizio(
         parseInt(gerarForm.igreja_id), 
         gerarForm.periodo_meses,
         parseInt(gerarForm.ciclo_inicial),
-        gerarForm.data_inicial || null,
+        dataInicialFormatada || null,
         gerarForm.organista_inicial ? parseInt(gerarForm.organista_inicial) : null
       );
       showAlert(`Rodízio gerado com sucesso! ${response.data.rodizios} rodízios criados.`);
@@ -307,48 +319,9 @@ function Rodizios({ user }) {
     }
   };
 
+  // Usar função padronizada de formatação de data (dd/mm/yyyy)
   const formatarData = (dataStr) => {
-    if (!dataStr) return '-';
-    
-    try {
-      // Se for uma string ISO (com T e Z)
-      if (typeof dataStr === 'string' && dataStr.includes('T')) {
-        const data = new Date(dataStr);
-        if (isNaN(data.getTime())) {
-          // Tentar parsear formato YYYY-MM-DD
-          const partes = dataStr.split('T')[0].split('-');
-          if (partes.length === 3) {
-            return `${partes[2]}/${partes[1]}/${partes[0]}`;
-          }
-          return dataStr;
-        }
-        const dia = String(data.getDate()).padStart(2, '0');
-        const mes = String(data.getMonth() + 1).padStart(2, '0');
-        const ano = data.getFullYear();
-        return `${dia}/${mes}/${ano}`;
-      }
-      
-      // Se for formato YYYY-MM-DD
-      if (typeof dataStr === 'string' && dataStr.includes('-') && !dataStr.includes('T')) {
-        const [ano, mes, dia] = dataStr.split('-');
-        if (ano && mes && dia) {
-          return `${dia}/${mes}/${ano}`;
-        }
-      }
-      
-      // Se for um objeto Date
-      if (dataStr instanceof Date) {
-        const dia = String(dataStr.getDate()).padStart(2, '0');
-        const mes = String(dataStr.getMonth() + 1).padStart(2, '0');
-        const ano = dataStr.getFullYear();
-        return `${dia}/${mes}/${ano}`;
-      }
-      
-      return String(dataStr);
-    } catch (error) {
-      console.error('Erro ao formatar data:', error, dataStr);
-      return String(dataStr);
-    }
+    return formatarDataBrasileira(dataStr);
   };
 
   if (loading) {
@@ -425,9 +398,14 @@ function Rodizios({ user }) {
           <div className="form-group">
             <label>Data Inicial</label>
             <input
-              type="date"
+              type="text"
+              placeholder="dd/mm/yyyy"
               value={gerarForm.data_inicial}
-              onChange={(e) => setGerarForm({ ...gerarForm, data_inicial: e.target.value })}
+              onChange={(e) => {
+                const valorComMascara = aplicarMascaraData(e.target.value);
+                setGerarForm({ ...gerarForm, data_inicial: valorComMascara });
+              }}
+              maxLength={10}
             />
             <small className="form-hint">
               Selecione a data a partir da qual deseja gerar o rodízio. Se deixar em branco, começará a partir de hoje.
