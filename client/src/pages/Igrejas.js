@@ -42,8 +42,9 @@ function Igrejas({ user }) {
   const loadAllOrganistas = async () => {
     try {
       const response = await getOrganistas();
-      // Filtrar apenas organistas oficializadas e ativas
-      setAllOrganistas(response.data.filter(o => o.oficializada === 1 && o.ativa === 1));
+      // CORREÇÃO: Remover filtro de oficializada - listar TODAS as organistas ativas
+      // Organistas não oficializadas e de meia hora também devem aparecer
+      setAllOrganistas(response.data.filter(o => o.ativa === 1));
     } catch (error) {
       console.error('Erro ao carregar organistas:', error);
     }
