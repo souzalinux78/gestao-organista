@@ -478,6 +478,14 @@ function Rodizios({ user }) {
                 </button>
               </>
             )}
+            <button 
+              type="button" 
+              className="btn btn-primary" 
+              onClick={handleTestarWebhook}
+              disabled={loadingWebhook || loadingGerar}
+            >
+              {loadingWebhook ? 'Testando...' : '🔔 Testar Webhook'}
+            </button>
           </div>
         </form>
 
@@ -521,17 +529,6 @@ function Rodizios({ user }) {
             </button>
           </div>
         </div>
-
-        <button 
-              type="button" 
-              className="btn btn-primary" 
-              onClick={handleTestarWebhook}
-              disabled={loadingWebhook || loadingGerar}
-            >
-              {loadingWebhook ? 'Testando...' : '🔔 Testar Webhook'}
-            </button>
-          </div>
-        </form>
       </div>
 
       <div className="card">
