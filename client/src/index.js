@@ -136,6 +136,46 @@ async function checkAppVersion() {
 
 // Registrar Service Worker para PWA - SEM loops infinitos no mobile
 if ('serviceWorker' in navigator) {
+  // Adicionar listener de controllerchange GLOBALMENTE (apenas uma vez)
+  // Isso evita múltiplos listeners sendo adicionados
+  if (!window.controllerChangeListenerAdded) {
+    let lastControllerChange = 0;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      const now = Date.now();
+      // Proteção: evitar múltiplos reloads em menos de 5 segundos
+      if (isReloading || (now - lastControllerChange < 5000)) {
+        console.log('[PWA] Reload já em andamento ou muito recente. Ignorando controllerchange.');
+        return;
+      }
+      
+      // Verificar se realmente há um novo controller
+      if (!navigator.serviceWorker.controller) {
+        return;
+      }
+      
+      console.log('[PWA] Nova versão do Service Worker ativada. Recarregando...');
+      isReloading = true;
+      lastControllerChange = now;
+      
+      // Limpar todos os caches antes de recarregar
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          Promise.all(names.map(name => caches.delete(name))).then(() => {
+            // Delay para evitar loop
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          });
+        });
+      } else {
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
+    });
+    window.controllerChangeListenerAdded = true;
+  }
+  
   window.addEventListener('load', () => {
     // Verificar se já está em modo standalone (PWA instalado)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -162,25 +202,16 @@ if ('serviceWorker' in navigator) {
           .then((registration) => {
             console.log('[PWA] Service Worker registrado:', registration.scope);
             
-            // Detectar mudança de controller (nova versão ativada) e forçar reload
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-              console.log('[PWA] Nova versão do Service Worker ativada. Recarregando...');
-              // Limpar todos os caches antes de recarregar
-              if ('caches' in window) {
-                caches.keys().then(names => {
-                  Promise.all(names.map(name => caches.delete(name))).then(() => {
-                    window.location.reload();
-                  });
-                });
-              } else {
-                window.location.reload();
-              }
-            });
-            
-            // Verificar atualizações periodicamente
-            setInterval(() => {
-              registration.update();
-            }, 60000); // A cada 1 minuto
+            // Verificar atualizações periodicamente (apenas se AUTO_UPDATE_ENABLED)
+            // O listener de controllerchange já foi adicionado globalmente acima
+            if (AUTO_UPDATE_ENABLED) {
+              setInterval(() => {
+                // Só verificar se não estiver em processo de reload
+                if (!isReloading) {
+                  registration.update();
+                }
+              }, 300000); // A cada 5 minutos (menos agressivo)
+            }
             
             // DESABILITAR verificação automática se AUTO_UPDATE_ENABLED for false
             if (AUTO_UPDATE_ENABLED && (!isMobile || !wasManualRefresh)) {

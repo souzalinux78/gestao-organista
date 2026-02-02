@@ -11,8 +11,8 @@ const OFFLINE_URL = '/offline.html';
 self.addEventListener('install', (event) => {
   console.log('[SW] Instalando Service Worker - Versão:', CACHE_VERSION);
   
-  // FORÇAR skipWaiting para ativar imediatamente
-  self.skipWaiting();
+  // FORÇAR skipWaiting para ativar imediatamente (mas apenas uma vez)
+  event.waitUntil(self.skipWaiting());
   
   event.waitUntil(
     // Limpar TODOS os caches antigos imediatamente
@@ -53,7 +53,10 @@ self.addEventListener('activate', (event) => {
       );
     }).then(() => {
       // FORÇAR clients.claim() para controlar todas as páginas imediatamente
-      return self.clients.claim();
+      // Mas apenas se não houver um controller já ativo
+      return self.clients.claim().catch(err => {
+        console.log('[SW] Erro ao fazer claim (pode ser normal):', err);
+      });
     })
   );
 });
