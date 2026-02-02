@@ -352,11 +352,12 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
     const errorMessage = error.message || 'Erro desconhecido ao importar rodízio';
     logger.error('Erro na importação de rodízio:', {
       userId: req.user?.id,
-      igrejaId: igreja_id,
+      igrejaId: req.igrejaId ?? req.body?.igreja_id ?? null,
       error: errorMessage,
       stack: error.stack
     });
-    res.status(500).json({ 
+    // CORREÇÃO: Retornar erro claro ao frontend (sem falha silenciosa)
+    res.status(400).json({ 
       error: errorMessage,
       detalhes: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });

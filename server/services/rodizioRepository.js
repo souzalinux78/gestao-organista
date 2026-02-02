@@ -139,15 +139,15 @@ async function inserirRodizios(rodizios) {
   
   for (const rodizio of rodizios) {
     await pool.execute(query, [
-      rodizio.igreja_id,
-      rodizio.culto_id,
-      rodizio.organista_id,
-      rodizio.data_culto,
-      rodizio.hora_culto,
-      rodizio.dia_semana,
-      rodizio.funcao,
-      rodizio.periodo_inicio,
-      rodizio.periodo_fim
+      rodizio.igreja_id ?? null,
+      rodizio.culto_id ?? null,
+      rodizio.organista_id ?? null,
+      rodizio.data_culto ?? null,
+      rodizio.hora_culto ?? null,
+      rodizio.dia_semana ?? null,
+      rodizio.funcao ?? null,
+      rodizio.periodo_inicio ?? null,
+      rodizio.periodo_fim ?? null
     ]);
   }
 }

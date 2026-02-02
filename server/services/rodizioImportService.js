@@ -320,16 +320,29 @@ async function importarRodizio(userId, igrejaId, csvContent) {
             continue;
           }
           
-          // Criar objeto de rodízio
-          rodiziosParaInserir.push({
-            igreja_id: igrejaId,
-            culto_id: culto.id,
-            organista_id: organista.id,
-            data_culto: dataFormatada,
-            hora_culto: horaFormatada,
-            dia_semana: culto.dia_semana,
-            funcao: funcao
-          });
+          // Criar objeto de rodízio (nunca com campos undefined)
+          const rodizio = {
+            igreja_id: igrejaId ?? null,
+            culto_id: culto?.id ?? null,
+            organista_id: organista?.id ?? null,
+            data_culto: dataFormatada ?? null,
+            hora_culto: horaFormatada ?? null,
+            dia_semana: culto?.dia_semana ?? null,
+            funcao: funcao ?? null,
+            periodo_inicio: dataFormatada ?? null,
+            periodo_fim: dataFormatada ?? null
+          };
+
+          // Validar campos obrigatórios antes de inserir
+          const camposObrigatorios = ['igreja_id', 'culto_id', 'organista_id', 'data_culto', 'hora_culto', 'dia_semana', 'funcao'];
+          const camposInvalidos = camposObrigatorios.filter(campo => rodizio[campo] === null);
+          if (camposInvalidos.length > 0) {
+            logger.warn(`[IMPORT] Linha ${numLinha}: campos obrigatórios ausentes -> ${camposInvalidos.join(', ')}`);
+            erros.push(`Linha ${numLinha}: campos obrigatórios ausentes (${camposInvalidos.join(', ')})`);
+            continue;
+          }
+
+          rodiziosParaInserir.push(rodizio);
           
         } else {
           // FORMATO ANTIGO: igreja_id, data_culto, dia_semana, hora_culto, organista_id, funcao
@@ -408,16 +421,29 @@ async function importarRodizio(userId, igrejaId, csvContent) {
             continue;
           }
           
-          // Criar objeto de rodízio
-          rodiziosParaInserir.push({
-            igreja_id: igrejaId,
-            culto_id: culto.id,
-            organista_id: organistaId,
-            data_culto: dataFormatada,
-            hora_culto: horaFormatada,
-            dia_semana: culto.dia_semana,
-            funcao: funcao
-          });
+        // Criar objeto de rodízio (nunca com campos undefined)
+        const rodizio = {
+          igreja_id: igrejaId ?? null,
+          culto_id: culto?.id ?? null,
+          organista_id: organistaId ?? null,
+          data_culto: dataFormatada ?? null,
+          hora_culto: horaFormatada ?? null,
+          dia_semana: culto?.dia_semana ?? null,
+          funcao: funcao ?? null,
+          periodo_inicio: dataFormatada ?? null,
+          periodo_fim: dataFormatada ?? null
+        };
+
+        // Validar campos obrigatórios antes de inserir
+        const camposObrigatorios = ['igreja_id', 'culto_id', 'organista_id', 'data_culto', 'hora_culto', 'dia_semana', 'funcao'];
+        const camposInvalidos = camposObrigatorios.filter(campo => rodizio[campo] === null);
+        if (camposInvalidos.length > 0) {
+          logger.warn(`[IMPORT] Linha ${numLinha}: campos obrigatórios ausentes -> ${camposInvalidos.join(', ')}`);
+          erros.push(`Linha ${numLinha}: campos obrigatórios ausentes (${camposInvalidos.join(', ')})`);
+          continue;
+        }
+
+        rodiziosParaInserir.push(rodizio);
         }
         
       } catch (error) {
