@@ -174,6 +174,11 @@ export const gerarRodizio = (igrejaId, periodoMeses, cicloInicial = null, dataIn
     data_inicial: dataInicial,
     organista_inicial: organistaInicial
   });
+export const importarRodizio = (igrejaId, csvContent) => 
+  api.post('/rodizios/importar', { 
+    igreja_id: igrejaId,
+    csv_content: csvContent
+  });
 export const getRodizioPDF = (igrejaId, periodoInicio, periodoFim) => {
   const params = {};
   if (periodoInicio) params.periodo_inicio = periodoInicio;
