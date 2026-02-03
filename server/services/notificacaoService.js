@@ -117,9 +117,9 @@ const enviarNotificacaoDiaCulto = async (rodizio, enviarParaEncarregados = false
           ? `🕐 Horário: ${horaCultoSemSegundos}`
           : null,
       '',
-      'Que Deus abençoe sua participação nesta noite 💙'
+      'Que Deus abençoe sua participação nesta noite'
     ].filter(Boolean);
-    const mensagemOrganista = linhasMensagem.join('\n');
+    const mensagemOrganista = removerEmojisAfetivos(linhasMensagem.join('\n'));
     
     // Mensagem para encarregados
     const mensagemEncarregados = `
@@ -184,6 +184,7 @@ const formatarTimestampBR = () => {
 // Função especial para enviar mensagem consolidada para encarregados
 const enviarMensagemEncarregados = async (telefone, mensagem, primeiroRodizio, rodiziosFormatados) => {
   const webhookNotificacao = process.env.WEBHOOK_NOTIFICACAO;
+  const mensagemSanitizada = removerEmojisAfetivos(mensagem);
   
   if (webhookNotificacao) {
     try {
@@ -197,7 +198,7 @@ const enviarMensagemEncarregados = async (telefone, mensagem, primeiroRodizio, r
             ? 'encarregado_local' 
             : 'encarregado_regional'
         },
-        mensagem: mensagem,
+        mensagem: mensagemSanitizada,
         dados: {
           igreja: {
             nome: primeiroRodizio.igreja_nome || null,
@@ -231,7 +232,7 @@ const enviarMensagemEncarregados = async (telefone, mensagem, primeiroRodizio, r
     }
   } else {
     console.log(`[SIMULAÇÃO] Mensagem para encarregado ${telefone}:`);
-    console.log(mensagem);
+    console.log(mensagemSanitizada);
     console.log('Rodízios:', JSON.stringify(rodiziosFormatados, null, 2));
   }
 };
@@ -241,6 +242,7 @@ const enviarMensagem = async (telefone, mensagem, dadosRodizio = null) => {
   // Por exemplo: Twilio, WhatsApp Business API, etc.
   
   const webhookNotificacao = process.env.WEBHOOK_NOTIFICACAO;
+  const mensagemSanitizada = removerEmojisAfetivos(mensagem);
   
   if (webhookNotificacao) {
     try {
@@ -271,7 +273,7 @@ const enviarMensagem = async (telefone, mensagem, dadosRodizio = null) => {
               : 'encarregado'
           ) : 'encarregado'
         },
-        mensagem: mensagem,
+        mensagem: mensagemSanitizada,
         dados: dadosRodizio ? {
           rodizio_id: dadosRodizio.id,
           organista: {
@@ -321,7 +323,7 @@ const enviarMensagem = async (telefone, mensagem, dadosRodizio = null) => {
   } else {
     // Se não houver webhook configurado, apenas loga
     console.log(`[SIMULAÇÃO] Mensagem para ${telefone}:`);
-    console.log(mensagem);
+    console.log(mensagemSanitizada);
     if (dadosRodizio) {
       console.log('Dados do rodízio:', JSON.stringify(dadosRodizio, null, 2));
     }
@@ -356,6 +358,12 @@ const formatarDataBR = (dataStr) => {
   
   // Tentar converter para string
   return String(dataStr);
+};
+
+const removerEmojisAfetivos = (mensagem) => {
+  if (!mensagem) return mensagem;
+  const regexEmojisAfetivos = /(?:\u2764\uFE0F?|\u2665\uFE0F?|\u2763\uFE0F?|\u{1F49A}|\u{1F499}|\u{1F49B}|\u{1F49C}|\u{1F49D}|\u{1F49E}|\u{1F49F}|\u{1F5A4}|\u{1F90D}|\u{1F90E}|\u{1F90F}|\u{1F9E1}|\u{1F494}|\u{1F495}|\u{1F496}|\u{1F497}|\u{1F498})/gu;
+  return mensagem.replace(regexEmojisAfetivos, '');
 };
 
 module.exports = {
