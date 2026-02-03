@@ -15,6 +15,7 @@ function Igrejas({ user }) {
     encarregado_local_telefone: '',
     encarregado_regional_nome: '',
     encarregado_regional_telefone: '',
+    contato_aviso_escala_telefone: '',
     mesma_organista_ambas_funcoes: false
   });
   const [alert, setAlert] = useState(null);
@@ -97,6 +98,7 @@ function Igrejas({ user }) {
       encarregado_local_telefone: igreja.encarregado_local_telefone || '',
       encarregado_regional_nome: igreja.encarregado_regional_nome || '',
       encarregado_regional_telefone: igreja.encarregado_regional_telefone || '',
+      contato_aviso_escala_telefone: igreja.contato_aviso_escala_telefone || '',
       mesma_organista_ambas_funcoes: igreja.mesma_organista_ambas_funcoes === 1 || igreja.mesma_organista_ambas_funcoes === true
     });
     setShowForm(true);
@@ -156,6 +158,7 @@ function Igrejas({ user }) {
       encarregado_local_telefone: '',
       encarregado_regional_nome: '',
       encarregado_regional_telefone: '',
+      contato_aviso_escala_telefone: '',
       mesma_organista_ambas_funcoes: false
     });
     setEditing(null);
@@ -241,6 +244,19 @@ function Igrejas({ user }) {
                 placeholder="(00) 00000-0000"
               />
             </div>
+            <h3 className="form-section-title">Contato para Aviso de Escala (Opcional)</h3>
+            <div className="form-group">
+              <label>Telefone/WhatsApp</label>
+              <input
+                type="text"
+                value={formData.contato_aviso_escala_telefone}
+                onChange={(e) => setFormData({ ...formData, contato_aviso_escala_telefone: e.target.value })}
+                placeholder="(00) 00000-0000"
+              />
+              <p className="form-hint">
+                Este contato receberá uma cópia da mensagem enviada à organista quando ela for escalada para tocar no culto. Campo opcional.
+              </p>
+            </div>
             <div className="form-group">
               <label className="checkbox-field">
                 <input
@@ -318,6 +334,19 @@ function Igrejas({ user }) {
                 onChange={(e) => setFormData({ ...formData, encarregado_regional_telefone: e.target.value })}
                 placeholder="(00) 00000-0000"
               />
+            </div>
+            <h3 className="form-section-title">Contato para Aviso de Escala (Opcional)</h3>
+            <div className="form-group">
+              <label>Telefone/WhatsApp</label>
+              <input
+                type="text"
+                value={formData.contato_aviso_escala_telefone}
+                onChange={(e) => setFormData({ ...formData, contato_aviso_escala_telefone: e.target.value })}
+                placeholder="(00) 00000-0000"
+              />
+              <p className="form-hint">
+                Este contato receberá uma cópia da mensagem enviada à organista quando ela for escalada para tocar no culto. Campo opcional.
+              </p>
             </div>
             <div className="form-group">
               <label className="checkbox-field">

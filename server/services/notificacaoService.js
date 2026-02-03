@@ -139,6 +139,14 @@ ${rodizio.funcao === 'meia_hora' ? `⏰ Horário: ${horaMeiaHoraStr}` : ''}
     await enviarMensagem(telefoneOrganista, mensagemOrganista, rodizio);
     console.log(`✅ Webhook disparado para organista: ${rodizio.organista_nome} (${rodizio.funcao === 'meia_hora' ? 'Meia Hora' : 'Tocar no Culto'})`);
     
+    // NOVO: Enviar também para contato adicional (se configurado)
+    // Este contato recebe a MESMA mensagem da organista, apenas para ciência
+    if (rodizio.contato_aviso_escala_telefone && rodizio.contato_aviso_escala_telefone.trim()) {
+      const telefoneContatoExtra = rodizio.contato_aviso_escala_telefone.trim();
+      await enviarMensagem(telefoneContatoExtra, mensagemOrganista, rodizio);
+      console.log(`✅ Webhook disparado para contato adicional: ${telefoneContatoExtra}`);
+    }
+    
     // NÃO enviar para encarregados aqui - será enviado consolidado depois
     
     // Registrar notificação no banco
@@ -209,7 +217,8 @@ const enviarMensagemEncarregados = async (telefone, mensagem, primeiroRodizio, r
             encarregado_regional: {
               nome: primeiroRodizio.encarregado_regional_nome || null,
               telefone: primeiroRodizio.encarregado_regional_telefone || null
-            }
+            },
+            contato_aviso_escala_telefone: primeiroRodizio.contato_aviso_escala_telefone || null
           },
           data: primeiroRodizio.data_culto || null,
           data_formatada: formatarDataBR(primeiroRodizio.data_culto),
@@ -270,6 +279,8 @@ const enviarMensagem = async (telefone, mensagem, dadosRodizio = null) => {
               ? 'encarregado_local'
               : telefone === dadosRodizio.encarregado_regional_telefone
               ? 'encarregado_regional'
+              : telefone === dadosRodizio.contato_aviso_escala_telefone
+              ? 'contato_aviso_escala'
               : 'encarregado'
           ) : 'encarregado'
         },
@@ -290,7 +301,8 @@ const enviarMensagem = async (telefone, mensagem, dadosRodizio = null) => {
             encarregado_regional: {
               nome: dadosRodizio.encarregado_regional_nome || null,
               telefone: dadosRodizio.encarregado_regional_telefone || null
-            }
+            },
+            contato_aviso_escala_telefone: dadosRodizio.contato_aviso_escala_telefone || null
           },
           culto: {
             data: dadosRodizio.data_culto || null,
