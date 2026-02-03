@@ -134,20 +134,24 @@ ${rodizio.funcao === 'meia_hora' ? `⏰ Horário: ${horaMeiaHoraStr}` : ''}
 📍 Igreja: ${rodizio.igreja_nome}
     `.trim();
     
-    // Enviar webhook APENAS para a organista (1 webhook por organista/rodízio)
+    // Enviar webhook para a organista (1 webhook por organista/rodízio)
     const telefoneOrganista = rodizio.organista_telefone || 'webhook_organista';
     await enviarMensagem(telefoneOrganista, mensagemOrganista, rodizio);
     console.log(`✅ Webhook disparado para organista: ${rodizio.organista_nome} (${rodizio.funcao === 'meia_hora' ? 'Meia Hora' : 'Tocar no Culto'})`);
     
-    // NOVO: Enviar também para contato adicional (se configurado)
-    // Este contato recebe a MESMA mensagem da organista, apenas para ciência
-    if (rodizio.contato_aviso_escala_telefone && rodizio.contato_aviso_escala_telefone.trim()) {
-      const telefoneContatoExtra = rodizio.contato_aviso_escala_telefone.trim();
-      await enviarMensagem(telefoneContatoExtra, mensagemOrganista, rodizio);
-      console.log(`✅ Webhook disparado para contato adicional: ${telefoneContatoExtra}`);
+    // Enviar a MESMA mensagem da organista para encarregado local (se configurado)
+    if (rodizio.encarregado_local_telefone && rodizio.encarregado_local_telefone.trim()) {
+      await enviarMensagem(rodizio.encarregado_local_telefone.trim(), mensagemOrganista, rodizio);
+      console.log(`✅ Webhook disparado para encarregado local: ${rodizio.encarregado_local_nome || 'N/A'}`);
     }
     
-    // NÃO enviar para encarregados aqui - será enviado consolidado depois
+    // Enviar a MESMA mensagem da organista para encarregado regional (se configurado)
+    if (rodizio.encarregado_regional_telefone && rodizio.encarregado_regional_telefone.trim()) {
+      await enviarMensagem(rodizio.encarregado_regional_telefone.trim(), mensagemOrganista, rodizio);
+      console.log(`✅ Webhook disparado para encarregado regional: ${rodizio.encarregado_regional_nome || 'N/A'}`);
+    }
+    
+    // NÃO enviar mensagem consolidada aqui - será enviado consolidado depois (opcional)
     
     // Registrar notificação no banco
     // Formatar data para MySQL (YYYY-MM-DD HH:MM:SS)
@@ -217,8 +221,7 @@ const enviarMensagemEncarregados = async (telefone, mensagem, primeiroRodizio, r
             encarregado_regional: {
               nome: primeiroRodizio.encarregado_regional_nome || null,
               telefone: primeiroRodizio.encarregado_regional_telefone || null
-            },
-            contato_aviso_escala_telefone: primeiroRodizio.contato_aviso_escala_telefone || null
+            }
           },
           data: primeiroRodizio.data_culto || null,
           data_formatada: formatarDataBR(primeiroRodizio.data_culto),
@@ -279,8 +282,6 @@ const enviarMensagem = async (telefone, mensagem, dadosRodizio = null) => {
               ? 'encarregado_local'
               : telefone === dadosRodizio.encarregado_regional_telefone
               ? 'encarregado_regional'
-              : telefone === dadosRodizio.contato_aviso_escala_telefone
-              ? 'contato_aviso_escala'
               : 'encarregado'
           ) : 'encarregado'
         },
@@ -301,8 +302,7 @@ const enviarMensagem = async (telefone, mensagem, dadosRodizio = null) => {
             encarregado_regional: {
               nome: dadosRodizio.encarregado_regional_nome || null,
               telefone: dadosRodizio.encarregado_regional_telefone || null
-            },
-            contato_aviso_escala_telefone: dadosRodizio.contato_aviso_escala_telefone || null
+            }
           },
           culto: {
             data: dadosRodizio.data_culto || null,

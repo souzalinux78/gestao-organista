@@ -15,7 +15,6 @@ function Igrejas({ user }) {
     encarregado_local_telefone: '',
     encarregado_regional_nome: '',
     encarregado_regional_telefone: '',
-    contato_aviso_escala_telefone: '',
     mesma_organista_ambas_funcoes: false
   });
   const [alert, setAlert] = useState(null);
@@ -98,7 +97,6 @@ function Igrejas({ user }) {
       encarregado_local_telefone: igreja.encarregado_local_telefone || '',
       encarregado_regional_nome: igreja.encarregado_regional_nome || '',
       encarregado_regional_telefone: igreja.encarregado_regional_telefone || '',
-      contato_aviso_escala_telefone: igreja.contato_aviso_escala_telefone || '',
       mesma_organista_ambas_funcoes: igreja.mesma_organista_ambas_funcoes === 1 || igreja.mesma_organista_ambas_funcoes === true
     });
     setShowForm(true);
@@ -158,7 +156,6 @@ function Igrejas({ user }) {
       encarregado_local_telefone: '',
       encarregado_regional_nome: '',
       encarregado_regional_telefone: '',
-      contato_aviso_escala_telefone: '',
       mesma_organista_ambas_funcoes: false
     });
     setEditing(null);
@@ -244,63 +241,6 @@ function Igrejas({ user }) {
                 placeholder="(00) 00000-0000"
               />
             </div>
-            
-            {/* Seção destacada para Contato de Aviso de Escala */}
-            <div style={{ 
-              marginTop: '2rem', 
-              marginBottom: '1.5rem', 
-              padding: '1.25rem', 
-              backgroundColor: 'var(--bg-hover, #f8f9fa)', 
-              borderRadius: '8px',
-              border: '2px solid var(--primary, #2563eb)',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-            }}>
-              <h3 className="form-section-title" style={{ 
-                marginTop: 0, 
-                marginBottom: '1rem', 
-                color: 'var(--primary, #2563eb)',
-                fontSize: '1.125rem',
-                fontWeight: 600
-              }}>
-                📱 Contato para Receber Aviso de Escala
-              </h3>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ 
-                  fontWeight: 600, 
-                  marginBottom: '0.5rem', 
-                  display: 'block',
-                  fontSize: '0.9375rem'
-                }}>
-                  Telefone/WhatsApp do Encarregado
-                </label>
-                <input
-                  type="text"
-                  value={formData.contato_aviso_escala_telefone}
-                  onChange={(e) => setFormData({ ...formData, contato_aviso_escala_telefone: e.target.value })}
-                  placeholder="(00) 00000-0000"
-                  style={{ 
-                    width: '100%',
-                    padding: '0.75rem',
-                    fontSize: '1rem',
-                    border: '1px solid var(--border, #e5e7eb)',
-                    borderRadius: '6px',
-                    backgroundColor: 'var(--bg-card, #ffffff)'
-                  }}
-                />
-                <p className="form-hint" style={{ 
-                  marginTop: '0.75rem', 
-                  fontSize: '0.875rem',
-                  color: 'var(--text-muted, #6b7280)',
-                  lineHeight: '1.6'
-                }}>
-                  <strong>💡 Como funciona:</strong> Quando uma organista for escalada para tocar no culto, este contato receberá automaticamente uma <strong>cópia da mesma mensagem</strong> enviada à organista. Útil para que o encarregado tenha ciência de quem irá tocar no dia.
-                  <br />
-                  <br />
-                  <em style={{ fontSize: '0.8125rem' }}>Campo opcional - se não preenchido, apenas a organista receberá a mensagem.</em>
-                </p>
-              </div>
-            </div>
-            
             <div className="form-group">
               <label className="checkbox-field">
                 <input
@@ -379,63 +319,6 @@ function Igrejas({ user }) {
                 placeholder="(00) 00000-0000"
               />
             </div>
-            
-            {/* Seção destacada para Contato de Aviso de Escala */}
-            <div style={{ 
-              marginTop: '2rem', 
-              marginBottom: '1.5rem', 
-              padding: '1.25rem', 
-              backgroundColor: 'var(--bg-hover, #f8f9fa)', 
-              borderRadius: '8px',
-              border: '2px solid var(--primary, #2563eb)',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-            }}>
-              <h3 className="form-section-title" style={{ 
-                marginTop: 0, 
-                marginBottom: '1rem', 
-                color: 'var(--primary, #2563eb)',
-                fontSize: '1.125rem',
-                fontWeight: 600
-              }}>
-                📱 Contato para Receber Aviso de Escala
-              </h3>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ 
-                  fontWeight: 600, 
-                  marginBottom: '0.5rem', 
-                  display: 'block',
-                  fontSize: '0.9375rem'
-                }}>
-                  Telefone/WhatsApp do Encarregado
-                </label>
-                <input
-                  type="text"
-                  value={formData.contato_aviso_escala_telefone}
-                  onChange={(e) => setFormData({ ...formData, contato_aviso_escala_telefone: e.target.value })}
-                  placeholder="(00) 00000-0000"
-                  style={{ 
-                    width: '100%',
-                    padding: '0.75rem',
-                    fontSize: '1rem',
-                    border: '1px solid var(--border, #e5e7eb)',
-                    borderRadius: '6px',
-                    backgroundColor: 'var(--bg-card, #ffffff)'
-                  }}
-                />
-                <p className="form-hint" style={{ 
-                  marginTop: '0.75rem', 
-                  fontSize: '0.875rem',
-                  color: 'var(--text-muted, #6b7280)',
-                  lineHeight: '1.6'
-                }}>
-                  <strong>💡 Como funciona:</strong> Quando uma organista for escalada para tocar no culto, este contato receberá automaticamente uma <strong>cópia da mesma mensagem</strong> enviada à organista. Útil para que o encarregado tenha ciência de quem irá tocar no dia.
-                  <br />
-                  <br />
-                  <em style={{ fontSize: '0.8125rem' }}>Campo opcional - se não preenchido, apenas a organista receberá a mensagem.</em>
-                </p>
-              </div>
-            </div>
-            
             <div className="form-group">
               <label className="checkbox-field">
                 <input
@@ -475,7 +358,6 @@ function Igrejas({ user }) {
                   <th>Endereço</th>
                   <th>Encarregado Local</th>
                   <th>Encarregado Regional</th>
-                  <th>📱 Contato Aviso</th>
                   {user?.role === 'admin' && (
                     <>
                       <th className="th-center">Organistas</th>
@@ -493,24 +375,6 @@ function Igrejas({ user }) {
                     <td data-label="Endereço" className="td-wrap">{igreja.endereco || '-'}</td>
                     <td data-label="Encarregado Local">{igreja.encarregado_local_nome || '-'}</td>
                     <td data-label="Encarregado Regional">{igreja.encarregado_regional_nome || '-'}</td>
-                    <td data-label="Contato Aviso Escala" style={{ fontSize: '0.875rem' }}>
-                      {igreja.contato_aviso_escala_telefone ? (
-                        <span style={{ 
-                          display: 'inline-flex', 
-                          alignItems: 'center', 
-                          gap: '0.25rem',
-                          color: 'var(--success, #10b981)',
-                          fontWeight: 500
-                        }}>
-                          <span>📱</span>
-                          <span>{igreja.contato_aviso_escala_telefone}</span>
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted, #9ca3af)', fontStyle: 'italic' }}>
-                          Não configurado
-                        </span>
-                      )}
-                    </td>
                     {user?.role === 'admin' && (
                       <>
                         <td data-label="Organistas" className="td-center">

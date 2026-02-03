@@ -26,7 +26,6 @@ const verificarERodiziosDoDia = async () => {
               i.nome as igreja_nome,
               i.encarregado_local_nome, i.encarregado_local_telefone,
               i.encarregado_regional_nome, i.encarregado_regional_telefone,
-              i.contato_aviso_escala_telefone,
               c.dia_semana, c.hora as hora_culto, r.funcao
        FROM rodizios r
        INNER JOIN organistas o ON r.organista_id = o.id

@@ -26,7 +26,6 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
           i.id, i.nome, i.endereco, 
           i.encarregado_local_nome, i.encarregado_local_telefone,
           i.encarregado_regional_nome, i.encarregado_regional_telefone,
-          i.contato_aviso_escala_telefone,
           i.mesma_organista_ambas_funcoes, i.rodizio_ciclo,
           i.created_at,
           COUNT(DISTINCT oi.organista_id) as total_organistas,
@@ -40,7 +39,6 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
          GROUP BY i.id, i.nome, i.endereco, 
                   i.encarregado_local_nome, i.encarregado_local_telefone,
                   i.encarregado_regional_nome, i.encarregado_regional_telefone,
-                  i.contato_aviso_escala_telefone,
                   i.mesma_organista_ambas_funcoes, i.rodizio_ciclo, i.created_at
          ORDER BY i.nome`
       );
@@ -97,7 +95,6 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
       encarregado_local_telefone,
       encarregado_regional_nome,
       encarregado_regional_telefone,
-      contato_aviso_escala_telefone,
       mesma_organista_ambas_funcoes
     } = req.body;
     const pool = db.getDb();
@@ -146,27 +143,7 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
         nome, endereco, 
         encarregado_local_nome, encarregado_local_telefone,
         encarregado_regional_nome, encarregado_regional_telefone,
-        contato_aviso_escala_telefone,
         mesma_organista_ambas_funcoes, tenant_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-      values = [
-        nome, 
-        endereco || null,
-        encarregado_local_nome || null,
-        encarregado_local_telefone || null,
-        encarregado_regional_nome || null,
-        encarregado_regional_telefone || null,
-        contato_aviso_escala_telefone?.trim() || null,
-        mesma_organista_ambas_funcoes ? 1 : 0,
-        tenantIdParaIgreja
-      ];
-    } else {
-      sql = `INSERT INTO igrejas (
-        nome, endereco, 
-        encarregado_local_nome, encarregado_local_telefone,
-        encarregado_regional_nome, encarregado_regional_telefone,
-        contato_aviso_escala_telefone,
-        mesma_organista_ambas_funcoes
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
       values = [
         nome, 
@@ -175,7 +152,23 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
         encarregado_local_telefone || null,
         encarregado_regional_nome || null,
         encarregado_regional_telefone || null,
-        contato_aviso_escala_telefone?.trim() || null,
+        mesma_organista_ambas_funcoes ? 1 : 0,
+        tenantIdParaIgreja
+      ];
+    } else {
+      sql = `INSERT INTO igrejas (
+        nome, endereco, 
+        encarregado_local_nome, encarregado_local_telefone,
+        encarregado_regional_nome, encarregado_regional_telefone,
+        mesma_organista_ambas_funcoes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      values = [
+        nome, 
+        endereco || null,
+        encarregado_local_nome || null,
+        encarregado_local_telefone || null,
+        encarregado_regional_nome || null,
+        encarregado_regional_telefone || null,
         mesma_organista_ambas_funcoes ? 1 : 0
       ];
     }
@@ -221,7 +214,6 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
       encarregado_local_telefone,
       encarregado_regional_nome,
       encarregado_regional_telefone,
-      contato_aviso_escala_telefone: contato_aviso_escala_telefone?.trim() || null,
       mesma_organista_ambas_funcoes: mesma_organista_ambas_funcoes ? 1 : 0
     });
   } catch (error) {
@@ -252,7 +244,6 @@ router.put('/:id', authenticate, asyncHandler(async (req, res) => {
     encarregado_local_telefone,
     encarregado_regional_nome,
     encarregado_regional_telefone,
-    contato_aviso_escala_telefone,
     mesma_organista_ambas_funcoes
   } = req.body;
   
@@ -267,7 +258,6 @@ router.put('/:id', authenticate, asyncHandler(async (req, res) => {
       nome = ?, endereco = ?,
       encarregado_local_nome = ?, encarregado_local_telefone = ?,
       encarregado_regional_nome = ?, encarregado_regional_telefone = ?,
-      contato_aviso_escala_telefone = ?,
       mesma_organista_ambas_funcoes = ?
     WHERE id = ?`,
     [
@@ -277,7 +267,6 @@ router.put('/:id', authenticate, asyncHandler(async (req, res) => {
       encarregado_local_telefone?.trim() || null,
       encarregado_regional_nome?.trim() || null,
       encarregado_regional_telefone?.trim() || null,
-      contato_aviso_escala_telefone?.trim() || null,
       mesma_organista_ambas_funcoes ? 1 : 0,
       req.params.id
     ]
@@ -304,7 +293,6 @@ router.put('/:id', authenticate, asyncHandler(async (req, res) => {
     encarregado_local_telefone,
     encarregado_regional_nome,
     encarregado_regional_telefone,
-    contato_aviso_escala_telefone: contato_aviso_escala_telefone?.trim() || null,
     mesma_organista_ambas_funcoes: mesma_organista_ambas_funcoes ? 1 : 0
   });
 }));

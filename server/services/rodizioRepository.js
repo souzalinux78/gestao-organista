@@ -18,7 +18,6 @@ const RODIZIO_BASE_QUERY = `
          i.encarregado_local_telefone,
          i.encarregado_regional_nome, 
          i.encarregado_regional_telefone,
-         i.contato_aviso_escala_telefone,
          c.dia_semana, 
          c.hora as hora_culto
   FROM rodizios r
