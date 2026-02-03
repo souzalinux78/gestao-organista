@@ -294,3 +294,5 @@ Todas as alterações importantes do projeto.
 - Merge branch 'main' of https://github.com/souzalinux78/gestao-organista
 - msg
 ## v3.0.27 - 2026-02-03
+
+## v3.0.28 - 2026-02-03
