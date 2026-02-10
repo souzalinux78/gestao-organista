@@ -1,0 +1,191 @@
+/* Toast Notification Component */
+
+.toast {
+  position: fixed;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  min-width: 300px;
+  max-width: 500px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xl);
+  padding: var(--spacing-md) var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  z-index: 10000;
+  animation: toast-slide-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 4px solid;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast:hover {
+  box-shadow: var(--shadow-2xl);
+  transform: translateY(-2px);
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(calc(100% + var(--spacing-lg)));
+    opacity: 0;
+    scale: 0.95;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    transform: translateX(calc(100% + var(--spacing-lg)));
+    opacity: 0;
+    scale: 0.95;
+  }
+}
+
+.toast--exiting {
+  animation: toast-slide-out 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast__content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.toast__icon {
+  font-size: 1.25rem;
+  font-weight: bold;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.toast__message {
+  color: var(--text);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.toast__close {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.toast__close:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  transform: scale(1.1);
+}
+
+.toast__close:active {
+  transform: scale(0.95);
+}
+
+.toast__close:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Toast Types */
+.toast--success {
+  border-left-color: var(--success);
+  background: linear-gradient(to right, var(--success-soft), var(--card-bg));
+  box-shadow: var(--shadow-xl), 0 0 0 1px var(--success-soft);
+}
+
+.toast--success .toast__icon {
+  color: var(--success);
+  animation: toast-icon-bounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.toast--error {
+  border-left-color: var(--danger);
+  background: linear-gradient(to right, var(--danger-soft), var(--card-bg));
+  box-shadow: var(--shadow-xl), 0 0 0 1px var(--danger-soft);
+}
+
+.toast--error .toast__icon {
+  color: var(--danger);
+  animation: toast-icon-bounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.toast--warning {
+  border-left-color: var(--warning);
+  background: linear-gradient(to right, var(--warning-soft), var(--card-bg));
+  box-shadow: var(--shadow-xl), 0 0 0 1px var(--warning-soft);
+}
+
+.toast--warning .toast__icon {
+  color: var(--warning);
+  animation: toast-icon-bounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.toast--info {
+  border-left-color: var(--info);
+  background: linear-gradient(to right, var(--info-soft), var(--card-bg));
+  box-shadow: var(--shadow-xl), 0 0 0 1px var(--info-soft);
+}
+
+.toast--info .toast__icon {
+  color: var(--info);
+  animation: toast-icon-bounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes toast-icon-bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .toast {
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    left: var(--spacing-md);
+    min-width: auto;
+    max-width: none;
+  }
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .toast {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+  }
+
+  .toast__close:hover {
+    background: var(--bg-hover);
+  }
+}

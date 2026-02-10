@@ -1,0 +1,44 @@
+{
+  "name": "gestao-organista",
+  "version": "3.0.29",
+  "description": "Sistema de gestão de organistas para igrejas",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "nodemon server/index.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "install-all": "npm install && cd client && npm install",
+    "create-admin": "node server/scripts/createAdmin.js",
+    "migrate-rodizios": "node server/scripts/migrate-rodizios-funcao.js",
+    "migrate-usuarios-igrejas": "node server/scripts/migrate-usuarios-igrejas.js",
+    "migrate-indexes": "node server/scripts/migrate-indexes-acesso.js",
+    "migrate-ordem-igreja": "node server/scripts/migrate-ordem-por-igreja.js",
+    "diagnostico": "node server/scripts/diagnostico-usuario.js",
+    "migrate-indexes-acesso": "node server/scripts/migrate-indexes-acesso.js",
+    "migrate-tipo-usuario": "node server/scripts/addTipoUsuario.js",
+    "migrate-tipo-usuario-instrutoras": "node server/scripts/updateTipoUsuarioInstrutoras.js"
+  },
+  "keywords": ["organista", "igreja", "gestão"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "mysql2": "^3.6.5",
+    "pdfkit": "^0.13.0",
+    "node-cron": "^3.0.3",
+    "axios": "^1.6.2",
+    "body-parser": "^1.20.2",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "express-session": "^1.17.3",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.4.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2"
+  }
+}

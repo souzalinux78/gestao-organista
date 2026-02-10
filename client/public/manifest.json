@@ -1,0 +1,45 @@
+{
+  "short_name": "Gestão Organistas",
+  "name": "Sistema de Gestão de Organistas",
+  "description": "Sistema completo para gerenciar organistas, igrejas, cultos e rodízios",
+  "icons": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#243b53",
+  "background_color": "#243b53",
+  "orientation": "any",
+  "scope": "/",
+  "categories": ["productivity", "utilities"],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Organistas",
+      "short_name": "Organistas",
+      "description": "Gerenciar organistas",
+      "url": "/organistas",
+      "icons": [{ "src": "/icons/icon-512.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Rodízios",
+      "short_name": "Rodízios",
+      "description": "Gerar rodízios",
+      "url": "/rodizios",
+      "icons": [{ "src": "/icons/icon-512.png", "sizes": "512x512" }]
+    }
+  ]
+}

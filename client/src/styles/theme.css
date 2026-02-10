@@ -1,0 +1,288 @@
+/* ============================================
+   THEME SYSTEM - Dark/Light Mode
+   Sistema profissional de temas
+   ============================================ */
+
+/* === LIGHT THEME (Default) === */
+:root {
+  /* Backgrounds */
+  --bg-main: var(--bg-page);
+  --bg-card: var(--bg-surface);
+  --bg-hover: var(--bg-muted);
+  --bg-overlay: var(--bg-muted);
+  
+  /* Text Colors */
+  --text-main: var(--text-primary);
+  --text-muted: var(--text-secondary);
+  --text-light: var(--text-secondary);
+  --text-inverse: var(--text-inverse);
+  
+  /* Primary Colors */
+  --primary: var(--accent-primary);
+  --primary-hover: var(--accent-secondary);
+  --primary-light: var(--accent-secondary);
+  --primary-dark: var(--accent-primary);
+  --primary-soft: var(--accent-secondary);
+  --primary-glow: var(--accent-secondary);
+  
+  /* Layout Colors (Admin Panel Style) */
+  --sidebar-bg: var(--dark-primary);
+  --sidebar-hover: var(--dark-secondary);
+  --sidebar-active: var(--dark-secondary);
+  --header-bg: linear-gradient(90deg, var(--dark-primary), var(--dark-secondary));
+  --header-text: var(--text-inverse);
+  
+  /* Secondary Colors */
+  --secondary: var(--bg-muted);
+  --secondary-light: var(--bg-muted);
+  --secondary-dark: var(--border-default);
+  --secondary-soft: var(--bg-muted);
+  
+  /* Accent Colors */
+  --accent: var(--accent-primary);
+  --accent-light: var(--accent-secondary);
+  --accent-dark: var(--accent-primary);
+  --accent-soft: var(--accent-secondary);
+  
+  /* Status Colors */
+  --success: var(--accent-secondary);
+  --success-light: var(--accent-secondary);
+  --success-dark: var(--accent-secondary);
+  --success-soft: var(--accent-secondary);
+  --danger: var(--accent-secondary);
+  --danger-light: var(--accent-secondary);
+  --danger-dark: var(--accent-secondary);
+  --danger-soft: var(--accent-secondary);
+  --warning: var(--accent-secondary);
+  --warning-light: var(--accent-secondary);
+  --warning-dark: var(--accent-secondary);
+  --warning-soft: var(--accent-secondary);
+  --info: var(--accent-secondary);
+  --info-light: var(--accent-secondary);
+  --info-dark: var(--accent-secondary);
+  --info-soft: var(--accent-secondary);
+  
+  /* Borders */
+  --border: var(--border-default);
+  --border-light: var(--border-default);
+  --border-medium: var(--border-default);
+  --border-dark: var(--border-default);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 var(--app-secondary);
+  --shadow: 0 1px 3px 0 var(--app-secondary), 0 1px 2px 0 var(--app-secondary);
+  --shadow-md: 0 4px 6px -1px var(--app-secondary), 0 2px 4px -1px var(--app-secondary);
+  --shadow-lg: 0 10px 15px -3px var(--app-secondary), 0 4px 6px -2px var(--app-secondary);
+  --shadow-xl: 0 20px 25px -5px var(--app-secondary), 0 10px 10px -5px var(--app-secondary);
+  --shadow-2xl: 0 25px 50px -12px var(--app-secondary);
+  --shadow-primary: 0 4px 14px var(--app-secondary);
+  --shadow-accent: 0 4px 14px var(--app-secondary);
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  
+  /* Compatibility */
+  --bg: var(--bg-main);
+  --bg-secondary: var(--bg-card);
+  --card-bg: var(--bg-card);
+  --card-border: var(--border);
+  --card-hover: var(--bg-hover);
+  --text: var(--text-main);
+  --text-secondary: var(--text-muted);
+  --white: var(--bg-card);
+  --blue-primary: var(--primary);
+  --blue-light: var(--primary-light);
+  --blue-dark: var(--primary-dark);
+  --blue-soft: var(--primary-soft);
+  
+  /* Variantes adicionais */
+  --primary-soft: var(--app-text);
+  --primary-glow: var(--app-text);
+  --secondary-light: var(--app-text);
+  --secondary-dark: var(--app-text);
+  --secondary-soft: var(--app-text);
+  --accent-light: var(--app-text);
+  --accent-dark: var(--app-text);
+  --accent-soft: var(--app-text);
+  --success-light: var(--app-text);
+  --success-dark: var(--app-text);
+  --success-soft: var(--app-text);
+  --danger-light: var(--app-text);
+  --danger-dark: var(--app-text);
+  --danger-soft: var(--app-text);
+  --warning-light: var(--app-text);
+  --warning-dark: var(--app-text);
+  --info-light: var(--app-text);
+  --info-dark: var(--app-text);
+  
+  /* Gray scale */
+  --gray-50: var(--app-text);
+  --gray-100: var(--app-text);
+  --gray-200: var(--border);
+  --gray-300: var(--border-medium);
+  --gray-400: var(--text-light);
+  --gray-500: var(--text-muted);
+  --gray-600: var(--app-text);
+  --gray-700: var(--app-text);
+  --gray-800: var(--app-text);
+  --gray-900: var(--app-text);
+  
+  /* Gold/Accent compatibility */
+  --gold-primary: var(--accent);
+  --gold-light: var(--accent-light);
+  --gold-dark: var(--accent-dark);
+}
+
+/* === DARK THEME === */
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-main: var(--bg-page);
+  --bg-card: var(--bg-surface);
+  --bg-hover: var(--bg-muted);
+  --bg-overlay: var(--bg-muted);
+  
+  /* Text Colors */
+  --text-main: var(--text-primary);
+  --text-muted: var(--text-secondary);
+  --text-light: var(--text-secondary);
+  --text-inverse: var(--text-inverse);
+  
+  /* Primary Colors */
+  --primary: var(--accent-primary);
+  --primary-hover: var(--accent-secondary);
+  --primary-light: var(--accent-secondary);
+  --primary-dark: var(--accent-primary);
+  --primary-soft: var(--accent-secondary);
+  --primary-glow: var(--accent-secondary);
+  
+  /* Secondary Colors */
+  --secondary: var(--bg-muted);
+  --secondary-light: var(--bg-muted);
+  --secondary-dark: var(--border-default);
+  --secondary-soft: var(--bg-muted);
+  
+  /* Accent Colors */
+  --accent: var(--accent-primary);
+  --accent-light: var(--accent-secondary);
+  --accent-dark: var(--accent-primary);
+  --accent-soft: var(--accent-secondary);
+  
+  /* Status Colors */
+  --success: var(--accent-secondary);
+  --success-light: var(--accent-secondary);
+  --success-dark: var(--accent-secondary);
+  --success-soft: var(--accent-secondary);
+  --danger: var(--accent-secondary);
+  --danger-light: var(--accent-secondary);
+  --danger-dark: var(--accent-secondary);
+  --danger-soft: var(--accent-secondary);
+  --warning: var(--accent-secondary);
+  --warning-light: var(--accent-secondary);
+  --warning-dark: var(--accent-secondary);
+  --info: var(--accent-secondary);
+  --info-light: var(--accent-secondary);
+  --info-dark: var(--accent-secondary);
+  
+  /* Borders */
+  --border: var(--border-default);
+  --border-light: var(--border-default);
+  --border-medium: var(--border-default);
+  --border-dark: var(--border-default);
+  
+  /* Shadows (mais sutis no dark) */
+  --shadow-sm: 0 1px 2px 0 var(--app-secondary);
+  --shadow: 0 1px 3px 0 var(--app-secondary), 0 1px 2px 0 var(--app-secondary);
+  --shadow-md: 0 4px 6px -1px var(--app-secondary), 0 2px 4px -1px var(--app-secondary);
+  --shadow-lg: 0 10px 15px -3px var(--app-secondary), 0 4px 6px -2px var(--app-secondary);
+  --shadow-xl: 0 20px 25px -5px var(--app-secondary), 0 10px 10px -5px var(--app-secondary);
+  --shadow-2xl: 0 25px 50px -12px var(--app-secondary);
+  --shadow-primary: 0 4px 14px var(--app-secondary);
+  --shadow-accent: 0 4px 14px var(--app-secondary);
+  
+  /* Compatibility */
+  --white: var(--bg-card);
+  --bg: var(--bg-main);
+  --bg-secondary: var(--bg-card);
+  --card-bg: var(--bg-card);
+  --card-border: var(--border);
+  --card-hover: var(--bg-hover);
+  --text: var(--text-main);
+  --text-secondary: var(--text-muted);
+  --blue-primary: var(--primary);
+  --blue-light: var(--primary-light);
+  --blue-dark: var(--primary-dark);
+  --blue-soft: var(--primary-soft);
+  
+  /* Variantes adicionais */
+  --primary-soft: var(--app-text);
+  --primary-glow: var(--app-text);
+  --secondary-light: var(--app-text);
+  --secondary-dark: var(--app-text);
+  --secondary-soft: var(--app-text);
+  --accent-light: var(--app-text);
+  --accent-dark: var(--app-text);
+  --accent-soft: var(--app-text);
+  --success-light: var(--app-text);
+  --success-dark: var(--app-text);
+  --success-soft: var(--app-text);
+  --danger-light: var(--app-text);
+  --danger-dark: var(--app-text);
+  --danger-soft: var(--app-text);
+  --warning-light: var(--app-text);
+  --warning-dark: var(--app-text);
+  --info-light: var(--app-text);
+  --info-dark: var(--app-text);
+  
+  /* Gray scale */
+  --gray-50: var(--app-text);
+  --gray-100: var(--app-text);
+  --gray-200: var(--border);
+  --gray-300: var(--border-medium);
+  --gray-400: var(--text-light);
+  --gray-500: var(--text-muted);
+  --gray-600: var(--app-text);
+  --gray-700: var(--app-text);
+  --gray-800: var(--app-text);
+  --gray-900: var(--app-text);
+  
+  /* Gold/Accent compatibility */
+  --gold-primary: var(--accent);
+  --gold-light: var(--accent-light);
+  --gold-dark: var(--accent-dark);
+}
+
+/* === TRANSITIONS SUAVES === */
+* {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+/* Elementos que não devem ter transição */
+button,
+a,
+input,
+select,
+textarea,
+svg,
+img {
+  transition: background-color 0.2s ease, 
+              color 0.2s ease, 
+              border-color 0.2s ease,
+              box-shadow 0.2s ease,
+              transform 0.2s ease,
+              opacity 0.2s ease;
+}
+
+/* === DETECÇÃO DE PREFERÊNCIA DO SISTEMA === */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    /* Aplicar dark theme se usuário não escolheu manualmente */
+    /* Isso será sobrescrito pelo JavaScript se houver preferência salva */
+  }
+}
