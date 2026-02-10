@@ -128,34 +128,32 @@ router.put('/:id/ciclos/:numero', authenticate, async (req, res) => {
   }
 });
 
-// ==============================================================================
-// CORREÇÃO: Rota recriada para trazer 'ciclo' e 'ordem' explicitamente do banco
-// ==============================================================================
+// CORREÇÃO: Trazendo ciclo e ordem explicitamente (ciclo_itens: numero_ciclo -> ciclo, posicao -> ordem)
 router.get('/:id/ciclos-organistas', authenticate, async (req, res) => {
   try {
     const igrejaId = parseInt(req.params.id);
     if (isNaN(igrejaId)) return res.status(400).json({ error: 'ID da igreja inválido' });
-    
+
     if (req.user.role !== 'admin') {
       const igrejas = await getUserIgrejas(req.user.id, false, getTenantId(req));
       if (!igrejas.some(i => i.id === igrejaId)) return res.status(403).json({ error: 'Acesso negado a esta igreja' });
     }
 
     const pool = db.getDb();
-    // Consulta SQL direta que garante o retorno das colunas ciclo e ordem
-    const [organistas] = await pool.execute(`
-      SELECT 
+    const [organistas] = await pool.execute(
+      `SELECT 
         o.id, 
         o.nome, 
-        o.oficializada, 
+        COALESCE(oi.oficializada, o.oficializada, 0) AS oficializada, 
         o.ativa,
-        co.ciclo, 
-        co.ordem
-      FROM organistas o
-      JOIN ciclo_organistas co ON co.organista_id = o.id
-      WHERE co.igreja_id = ?
-      ORDER BY co.ciclo ASC, co.ordem ASC
-    `, [igrejaId]);
+        ci.numero_ciclo AS ciclo, 
+        ci.posicao AS ordem
+       FROM organistas o
+       INNER JOIN ciclo_itens ci ON ci.organista_id = o.id AND ci.igreja_id = ?
+       LEFT JOIN organistas_igreja oi ON oi.organista_id = o.id AND oi.igreja_id = ?
+       ORDER BY ci.numero_ciclo ASC, ci.posicao ASC`,
+      [igrejaId, igrejaId]
+    );
 
     res.json(organistas);
   } catch (error) {
