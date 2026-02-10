@@ -6,7 +6,7 @@ const { authenticate, getUserIgrejas, invalidateIgrejasCache } = require('../mid
 const { tenantResolver, getTenantId } = require('../middleware/tenantResolver');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
-const { DIAS_SEMANA } = require('../utils/dateHelpers');
+const { getPesoDiaSemanaBr } = require('../utils/dateHelpers');
 
 // Listar igrejas (filtrado por usuário e tenant, admin vê todas se sem tenant)
 router.get('/', authenticate, tenantResolver, async (req, res) => {
@@ -76,9 +76,10 @@ router.get('/:id/ciclos', authenticate, async (req, res) => {
       [igrejaId]
     );
     const cultosOrdenados = [...cultos].sort((a, b) => {
-      const da = DIAS_SEMANA[a.dia_semana?.toLowerCase()] ?? 99;
-      const db_ = DIAS_SEMANA[b.dia_semana?.toLowerCase()] ?? 99;
-      return da - db_;
+      const pa = getPesoDiaSemanaBr(a.dia_semana);
+      const pb = getPesoDiaSemanaBr(b.dia_semana);
+      if (pa !== pb) return pa - pb;
+      return (a.hora || '').localeCompare(b.hora || '');
     });
     res.json({
       igreja_id: igrejaId,

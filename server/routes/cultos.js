@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../database/db');
 const { authenticate, getUserIgrejas } = require('../middleware/auth');
 const { tenantResolver, getTenantId } = require('../middleware/tenantResolver');
+const { getPesoDiaSemanaBr } = require('../utils/dateHelpers');
 
 // Listar cultos (filtrado por igrejas do usuário e tenant)
 router.get('/', authenticate, tenantResolver, async (req, res) => {
@@ -21,10 +22,16 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
       `SELECT c.*, i.nome as igreja_nome 
        FROM cultos c
        INNER JOIN igrejas i ON c.igreja_id = i.id
-       WHERE c.igreja_id IN (${placeholders})
-       ORDER BY i.nome, c.dia_semana, c.hora`,
+       WHERE c.igreja_id IN (${placeholders})`,
       igrejaIds
     );
+    rows.sort((a, b) => {
+      if (a.igreja_nome !== b.igreja_nome) return (a.igreja_nome || '').localeCompare(b.igreja_nome || '');
+      const pa = getPesoDiaSemanaBr(a.dia_semana);
+      const pb = getPesoDiaSemanaBr(b.dia_semana);
+      if (pa !== pb) return pa - pb;
+      return (a.hora || '').localeCompare(b.hora || '');
+    });
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -49,9 +56,15 @@ router.get('/igreja/:igreja_id', authenticate, async (req, res) => {
     
     const pool = db.getDb();
     const [rows] = await pool.execute(
-      'SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1 ORDER BY dia_semana, hora',
+      'SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1',
       [req.params.igreja_id]
     );
+    rows.sort((a, b) => {
+      const pa = getPesoDiaSemanaBr(a.dia_semana);
+      const pb = getPesoDiaSemanaBr(b.dia_semana);
+      if (pa !== pb) return pa - pb;
+      return (a.hora || '').localeCompare(b.hora || '');
+    });
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });

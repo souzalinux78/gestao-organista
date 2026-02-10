@@ -9,7 +9,7 @@
  */
 
 const db = require('../database/db');
-const { getProximaData, adicionarMeses, formatarData, calcularHoraMeiaHora, DIAS_SEMANA } = require('../utils/dateHelpers');
+const { getProximaData, adicionarMeses, formatarData, calcularHoraMeiaHora, getPesoDiaSemanaBr } = require('../utils/dateHelpers');
 const rodizioRepository = require('./rodizioRepository');
 const cicloRepository = require('./cicloRepository');
 
@@ -80,14 +80,14 @@ async function salvarPonteirosPorCiclo(pool, igrejaId, ponteiros) {
 }
 
 /**
- * Ordena cultos por ordem cronológica semanal: dia_semana (Dom=0 a Sáb=6) e hora.
+ * Ordena cultos por ordem cronológica semanal brasileira: Segunda (1) … Domingo (7), depois hora.
  * O 1º da lista = Slot 1, 2º = Slot 2, etc. (Culto N → Ciclo N).
  */
 function ordenarCultosPorSlot(cultos) {
   return [...cultos].sort((a, b) => {
-    const diaA = DIAS_SEMANA[(a.dia_semana || '').toLowerCase()] ?? 99;
-    const diaB = DIAS_SEMANA[(b.dia_semana || '').toLowerCase()] ?? 99;
-    if (diaA !== diaB) return diaA - diaB;
+    const pesoA = getPesoDiaSemanaBr(a.dia_semana);
+    const pesoB = getPesoDiaSemanaBr(b.dia_semana);
+    if (pesoA !== pesoB) return pesoA - pesoB;
     const horaA = a.hora ? (typeof a.hora === 'string' ? a.hora : a.hora.toTimeString?.().slice(0, 8) || '00:00:00') : '00:00:00';
     const horaB = b.hora ? (typeof b.hora === 'string' ? b.hora : b.hora.toTimeString?.().slice(0, 8) || '00:00:00') : '00:00:00';
     return horaA.localeCompare(horaB);

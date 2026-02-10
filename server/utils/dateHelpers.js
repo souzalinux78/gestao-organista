@@ -13,6 +13,22 @@ const DIAS_SEMANA = {
   'sábado': 6
 };
 
+/** Ordenação semana brasileira: Segunda = 1, Domingo = 7 (para sort de cultos/ciclos). */
+const PESOS_DIA_SEMANA_BR = {
+  'segunda': 1,
+  'terça': 2, 'terca': 2,
+  'quarta': 3,
+  'quinta': 4,
+  'sexta': 5,
+  'sábado': 6, 'sabado': 6,
+  'domingo': 7
+};
+
+function getPesoDiaSemanaBr(diaSemana) {
+  if (!diaSemana) return 99;
+  return PESOS_DIA_SEMANA_BR[String(diaSemana).toLowerCase().trim()] ?? 99;
+}
+
 /**
  * Obtém a próxima data de um dia da semana a partir de uma data inicial
  * @param {string} diaSemana - Nome do dia da semana (ex: 'segunda', 'quarta')
@@ -91,5 +107,7 @@ module.exports = {
   adicionarMeses,
   formatarData,
   calcularHoraMeiaHora,
-  DIAS_SEMANA
+  DIAS_SEMANA,
+  PESOS_DIA_SEMANA_BR,
+  getPesoDiaSemanaBr
 };

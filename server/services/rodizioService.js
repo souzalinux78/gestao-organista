@@ -1,5 +1,5 @@
 const db = require('../database/db');
-const { getProximaData, adicionarMeses, formatarData, calcularHoraMeiaHora, DIAS_SEMANA } = require('../utils/dateHelpers');
+const { getProximaData, adicionarMeses, formatarData, calcularHoraMeiaHora, getPesoDiaSemanaBr } = require('../utils/dateHelpers');
 const rodizioRepository = require('./rodizioRepository');
 const { gerarRodizioComCiclos } = require('./rodizioCicloService');
 
@@ -260,9 +260,9 @@ const gerarRodizio = async (igrejaId, periodoMeses, cicloInicial = null, dataIni
       [igrejaId]
     );
     const cultos = cultosRaw.sort((a, b) => {
-      const diaA = DIAS_SEMANA[a.dia_semana?.toLowerCase()] ?? 99;
-      const diaB = DIAS_SEMANA[b.dia_semana?.toLowerCase()] ?? 99;
-      return diaA - diaB;
+      const pesoA = getPesoDiaSemanaBr(a.dia_semana);
+      const pesoB = getPesoDiaSemanaBr(b.dia_semana);
+      return pesoA !== pesoB ? pesoA - pesoB : (a.hora || '').localeCompare(b.hora || '');
     });
     if (cultos.length === 0) throw new Error('Nenhum culto ativo encontrado para esta igreja');
 
@@ -288,9 +288,9 @@ const _gerarRodizioLegado = async (igrejaId, periodoMeses, cicloInicial = null, 
       [igrejaId]
     );
     const cultos = cultosRaw.sort((a, b) => {
-      const diaA = DIAS_SEMANA[a.dia_semana?.toLowerCase()] ?? 99;
-      const diaB = DIAS_SEMANA[b.dia_semana?.toLowerCase()] ?? 99;
-      return diaA - diaB;
+      const pesoA = getPesoDiaSemanaBr(a.dia_semana);
+      const pesoB = getPesoDiaSemanaBr(b.dia_semana);
+      return pesoA !== pesoB ? pesoA - pesoB : (a.hora || '').localeCompare(b.hora || '');
     });
     if (cultos.length === 0) throw new Error('Nenhum culto ativo encontrado para esta igreja');
 
