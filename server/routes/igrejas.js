@@ -19,10 +19,7 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
     const temTenantId = await cachedColumnExists('igrejas', 'tenant_id');
     
     // Admin vê todas as igrejas com informações adicionais
-    // Se admin tem tenantId null, vê todas (acesso global)
-    // Se admin tem tenantId específico, filtra por tenant
     if (req.user.role === 'admin' && !tenantId) {
-      // Colunas opcionais (podem não existir em instalações novas)
       const temMesmaOrganista = await cachedColumnExists('igrejas', 'mesma_organista_ambas_funcoes');
       const temRodizioCiclo = await cachedColumnExists('igrejas', 'rodizio_ciclo');
       const colsExtra = [];
@@ -131,16 +128,35 @@ router.put('/:id/ciclos/:numero', authenticate, async (req, res) => {
   }
 });
 
-// Listar organistas da igreja (para popular ciclos na UI)
+// ==============================================================================
+// CORREÇÃO: Rota recriada para trazer 'ciclo' e 'ordem' explicitamente do banco
+// ==============================================================================
 router.get('/:id/ciclos-organistas', authenticate, async (req, res) => {
   try {
     const igrejaId = parseInt(req.params.id);
     if (isNaN(igrejaId)) return res.status(400).json({ error: 'ID da igreja inválido' });
+    
     if (req.user.role !== 'admin') {
       const igrejas = await getUserIgrejas(req.user.id, false, getTenantId(req));
       if (!igrejas.some(i => i.id === igrejaId)) return res.status(403).json({ error: 'Acesso negado a esta igreja' });
     }
-    const organistas = await cicloRepository.getOrganistasDaIgreja(igrejaId);
+
+    const pool = db.getDb();
+    // Consulta SQL direta que garante o retorno das colunas ciclo e ordem
+    const [organistas] = await pool.execute(`
+      SELECT 
+        o.id, 
+        o.nome, 
+        o.oficializada, 
+        o.ativa,
+        co.ciclo, 
+        co.ordem
+      FROM organistas o
+      JOIN ciclo_organistas co ON co.organista_id = o.id
+      WHERE co.igreja_id = ?
+      ORDER BY co.ciclo ASC, co.ordem ASC
+    `, [igrejaId]);
+
     res.json(organistas);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -279,8 +295,6 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
       );
       
       // Associar automaticamente todas as organistas que não estão associadas a nenhuma igreja
-      // Isso resolve o problema de usuários que criaram organistas antes de criar uma igreja
-      // Quando criam a primeira igreja, todas as organistas "órfãs" são associadas automaticamente
       const [organistasOrfas] = await pool.execute(
         `SELECT o.id, o.oficializada
          FROM organistas o
@@ -430,7 +444,6 @@ router.get('/:id/organistas', authenticate, async (req, res) => {
     
     const pool = db.getDb();
     // CORREÇÃO: Remover filtros de oficializada - listar TODAS as organistas ativas vinculadas
-    // Organistas não oficializadas e de meia hora também devem aparecer
     const [rows] = await pool.execute(
       `SELECT o.*, oi.oficializada as associacao_oficializada
        FROM organistas o
