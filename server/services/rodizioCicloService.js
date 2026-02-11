@@ -232,13 +232,5 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicial, dataI
 
 module.exports = {
   gerarRodizioComCiclos,
-  // Placeholders
-  gerarPreviaEscala: async () => [],
-  formatarCultoNome: () => '',
-  CicloIterator: class {},
-  ordenarCultosPorSlot: () => {},
-  cultoNaoPermiteAlunas: () => {},
-  organistaEmDiaConsecutivo: () => {},
-  carregarPonteirosPorCiclo: async () => {},
-  salvarPonteirosPorCiclo: async () => {}
+  gerarPreviaEscala: async () => []
 };
