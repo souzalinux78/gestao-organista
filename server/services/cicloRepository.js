@@ -1,12 +1,13 @@
 /**
  * Repository para ciclo_itens (Gestão de Ciclos).
- * N cultos = N ciclos; cada ciclo é uma lista ordenada de organistas por posição.
+ * Responsável por salvar e recuperar a ordem dos organistas nos ciclos.
+ * Tabela oficial: ciclo_itens
  */
 
 const db = require('../database/db');
 
 /**
- * Quantidade de cultos ativos da igreja (= quantidade de ciclos).
+ * Retorna a quantidade de cultos ativos (que define quantos ciclos existem).
  */
 async function getQuantidadeCultos(igrejaId) {
   const pool = db.getDb();
@@ -18,8 +19,7 @@ async function getQuantidadeCultos(igrejaId) {
 }
 
 /**
- * Lista itens de um ciclo (igreja + número do ciclo), ordenados por posição.
- * Retorna organista_id, posicao e dados da organista (nome, oficializada).
+ * Lista itens de um ciclo específico, ordenados pela posição.
  */
 async function getCicloItens(igrejaId, numeroCiclo) {
   const pool = db.getDb();
@@ -39,34 +39,65 @@ async function getCicloItens(igrejaId, numeroCiclo) {
 }
 
 /**
- * Salva a ordem de um ciclo: substitui todos os itens pelo array [ { organista_id, posicao } ].
- * posicao pode ser 0-based ou 1-based; normalizamos como 0-based internamente e gravamos 1-based se preferir (vou 0-based para facilitar índices).
+ * Salva a ordem de um ciclo: LIMPA e INSERE novamente na tabela ciclo_itens.
+ * Função padronizada para ser chamada pela Rota e pelo Service.
  */
-async function saveCicloItens(igrejaId, numeroCiclo, itens) {
+async function salvarCiclo(igrejaId, numeroCiclo, itens) {
   const pool = db.getDb();
-  const conn = await pool.getConnection();
+  const connection = await pool.getConnection();
+
   try {
-    await conn.beginTransaction();
-    await conn.execute('DELETE FROM ciclo_itens WHERE igreja_id = ? AND numero_ciclo = ?', [igrejaId, numeroCiclo]);
-    for (let i = 0; i < itens.length; i++) {
-      const { organista_id } = itens[i];
-      const posicao = typeof itens[i].posicao === 'number' ? itens[i].posicao : i;
-      await conn.execute(
-        'INSERT INTO ciclo_itens (igreja_id, numero_ciclo, organista_id, posicao) VALUES (?, ?, ?, ?)',
-        [igrejaId, numeroCiclo, organista_id, posicao]
-      );
+    await connection.beginTransaction();
+
+    console.log(`[Repository] Salvando Ciclo ${numeroCiclo} para Igreja ${igrejaId}. Itens: ${itens?.length}`);
+
+    // 1. Limpa o ciclo atual na tabela CORRETA (ciclo_itens)
+    await connection.execute(
+      'DELETE FROM ciclo_itens WHERE igreja_id = ? AND numero_ciclo = ?',
+      [igrejaId, numeroCiclo]
+    );
+
+    // 2. Insere os novos itens
+    if (itens && Array.isArray(itens) && itens.length > 0) {
+      
+      const values = [];
+      const placeholders = [];
+      
+      // Garante que a ordem siga a sequência do array enviado
+      itens.forEach((item, index) => {
+        // Tenta pegar o ID de todas as formas possíveis que o frontend possa mandar
+        const organistaId = item.organista_id || item.id || (item.organista && item.organista.id);
+        
+        // A posição é o índice + 1 (1º, 2º, 3º...)
+        // Se o frontend mandou 'ordem', usamos, senão usamos o índice
+        const posicao = item.ordem || (index + 1);
+
+        if (organistaId) {
+          values.push(igrejaId, numeroCiclo, organistaId, posicao);
+          placeholders.push('(?, ?, ?, ?)');
+        }
+      });
+
+      if (values.length > 0) {
+        const query = `INSERT INTO ciclo_itens (igreja_id, numero_ciclo, organista_id, posicao) VALUES ${placeholders.join(', ')}`;
+        await connection.execute(query, values);
+      }
     }
-    await conn.commit();
-  } catch (e) {
-    await conn.rollback();
-    throw e;
+
+    await connection.commit();
+    return { success: true };
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('[CicloRepository] Erro ao salvar ciclo:', error);
+    throw error;
   } finally {
-    conn.release();
+    connection.release();
   }
 }
 
 /**
- * Lista organistas da igreja (para popular ciclos). Retorna id, nome, oficializada.
+ * Lista organistas da igreja para popular a tela de seleção.
  */
 async function getOrganistasDaIgreja(igrejaId) {
   const pool = db.getDb();
@@ -84,22 +115,80 @@ async function getOrganistasDaIgreja(igrejaId) {
 }
 
 /**
- * Para geração de rodízio: retorna lista de organistas de um ciclo ordenada por posição,
- * com id, nome, oficializada (1 ou 0).
+ * Retorna uma lista simples de organistas de um ciclo (usado internamente).
  */
 async function getCicloComoListaOrganistas(igrejaId, numeroCiclo) {
   const itens = await getCicloItens(igrejaId, numeroCiclo);
   return itens.map(item => ({
     id: item.organista_id,
     nome: item.organista_nome,
-    oficializada: item.oficializada === 1 || item.oficializada === true
+    oficializada: Boolean(item.oficializada)
   }));
 }
+
+/**
+ * Fila Mestra: TODAS as organistas de TODOS os ciclos.
+ * [C1...] -> [C2...] -> [C3...]
+ */
+async function getFilaMestra(igrejaId) {
+  const pool = db.getDb();
+  const [rows] = await pool.execute(
+    `SELECT ci.numero_ciclo, ci.posicao, ci.organista_id,
+            o.nome as organista_nome,
+            COALESCE(oi.oficializada, o.oficializada, 0) as oficializada
+     FROM ciclo_itens ci
+     INNER JOIN organistas o ON o.id = ci.organista_id
+     LEFT JOIN organistas_igreja oi ON oi.organista_id = o.id AND oi.igreja_id = ci.igreja_id
+     WHERE ci.igreja_id = ?
+     ORDER BY ci.numero_ciclo ASC, ci.posicao ASC`,
+    [igrejaId]
+  );
+  
+  return rows.map(r => ({
+    id: r.organista_id,
+    nome: r.organista_nome,
+    oficializada: Boolean(r.oficializada),
+    numero_ciclo: r.numero_ciclo
+  }));
+}
+
+/**
+ * Fila Mestra OFICIAIS: Apenas organistas oficializadas.
+ * Usado pelo Gerador de Rodízio para pular alunas.
+ */
+async function getFilaMestraOficiais(igrejaId) {
+  const pool = db.getDb();
+  const [rows] = await pool.execute(
+    `SELECT ci.numero_ciclo, ci.posicao, ci.organista_id,
+            o.nome as organista_nome,
+            COALESCE(oi.oficializada, o.oficializada, 0) as oficializada
+     FROM ciclo_itens ci
+     INNER JOIN organistas o ON o.id = ci.organista_id
+     LEFT JOIN organistas_igreja oi ON oi.organista_id = o.id AND oi.igreja_id = ci.igreja_id
+     WHERE ci.igreja_id = ?
+       AND (o.oficializada = 1 OR oi.oficializada = 1)
+     ORDER BY ci.numero_ciclo ASC, ci.posicao ASC`,
+    [igrejaId]
+  );
+  
+  return rows.map(r => ({
+    id: r.organista_id,
+    nome: r.organista_nome,
+    ciclo: r.numero_ciclo,
+    numero_ciclo: r.numero_ciclo
+  }));
+}
+
+// Mantendo compatibilidade de nomes antigos (alias)
+const saveCicloItens = salvarCiclo;
 
 module.exports = {
   getQuantidadeCultos,
   getCicloItens,
-  saveCicloItens,
+  salvarCiclo,      
+  saveCicloItens,   
   getOrganistasDaIgreja,
-  getCicloComoListaOrganistas
+  getCicloComoListaOrganistas,
+  getFilaMestra,
+  getFilaMestraOficiais
 };

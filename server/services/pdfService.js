@@ -8,7 +8,7 @@ const gerarPDFRodizio = (rodizios) => {
         return reject(new Error('Nenhum rodízio para gerar PDF'));
       }
       
-      const doc = new PDFDocument({ margin: 50 });
+      const doc = new PDFDocument({ margin: 30, size: 'A4' });
       const chunks = [];
       
       doc.on('data', chunk => chunks.push(chunk));
@@ -16,13 +16,12 @@ const gerarPDFRodizio = (rodizios) => {
       doc.on('error', reject);
       
       // Cabeçalho
-      const igrejaNome = rodizios[0].igreja_nome;
-      doc.fontSize(20).text(`Rodízio de Organistas - ${igrejaNome}`, { align: 'center' });
-      doc.moveDown();
+      const igrejaNome = rodizios[0].igreja_nome || 'Igreja';
+      doc.fontSize(18).text(`Rodízio de Organistas - ${igrejaNome}`, { align: 'center' });
+      doc.moveDown(0.5);
       
-      // Período
       if (rodizios[0].periodo_inicio && rodizios[0].periodo_fim) {
-        doc.fontSize(12).text(
+        doc.fontSize(11).text(
           `Período: ${formatarDataBR(rodizios[0].periodo_inicio)} a ${formatarDataBR(rodizios[0].periodo_fim)}`,
           { align: 'center' }
         );
@@ -31,47 +30,84 @@ const gerarPDFRodizio = (rodizios) => {
       
       doc.moveDown();
       
-      // Tabela
+      // --- CONFIGURAÇÃO DA TABELA (Colunas Ajustadas) ---
       let yPos = doc.y;
       const lineHeight = 20;
-      const colWidths = { data: 100, dia: 80, hora: 80, organista: 250 };
       
-      // Cabeçalho da tabela
+      // Posições X fixas para alinhamento perfeito
+      const colX = {
+        data: 40,
+        dia: 100,
+        hora: 140,
+        ciclo: 190,  // Coluna Ciclo separada
+        funcao: 240,
+        organista: 350
+      };
+      
+      // Títulos
       doc.fontSize(10).font('Helvetica-Bold');
-      doc.text('Data', 50, yPos);
-      doc.text('Dia', 50 + colWidths.data, yPos);
-      doc.text('Hora', 50 + colWidths.data + colWidths.dia, yPos);
-      doc.text('Função', 50 + colWidths.data + colWidths.dia + colWidths.hora, yPos);
-      doc.text('Organista', 50 + colWidths.data + colWidths.dia + colWidths.hora + 80, yPos);
+      doc.text('Data', colX.data, yPos);
+      doc.text('Dia', colX.dia, yPos);
+      doc.text('Hora', colX.hora, yPos);
+      doc.text('Ciclo', colX.ciclo, yPos);
+      doc.text('Função', colX.funcao, yPos);
+      doc.text('Organista', colX.organista, yPos);
       
-      yPos += lineHeight;
-      doc.moveTo(50, yPos).lineTo(550, yPos).stroke();
-      yPos += 5;
+      yPos += 15;
+      doc.moveTo(40, yPos).lineTo(555, yPos).stroke();
+      yPos += 10;
       
       // Dados
-      doc.font('Helvetica');
-      rodizios.forEach(rodizio => {
-        if (yPos > 700) {
+      doc.font('Helvetica').fontSize(10);
+      
+      rodizios.forEach((rodizio, index) => {
+        // Quebra de página
+        if (yPos > 730) {
           doc.addPage();
           yPos = 50;
+          // Repete cabeçalho
+          doc.fontSize(10).font('Helvetica-Bold');
+          doc.text('Data', colX.data, yPos);
+          doc.text('Dia', colX.dia, yPos);
+          doc.text('Hora', colX.hora, yPos);
+          doc.text('Ciclo', colX.ciclo, yPos);
+          doc.text('Função', colX.funcao, yPos);
+          doc.text('Organista', colX.organista, yPos);
+          yPos += 15;
+          doc.moveTo(40, yPos).lineTo(555, yPos).stroke();
+          yPos += 10;
+          doc.font('Helvetica').fontSize(10);
+        }
+        
+        // Zebra
+        if (index % 2 === 0) {
+          doc.save();
+          doc.fillColor('#f5f5f5');
+          doc.rect(40, yPos - 4, 515, lineHeight).fill();
+          doc.restore();
         }
         
         const dataFormatada = formatarDataBR(rodizio.data_culto);
         const diaFormatado = formatarDiaSemana(rodizio.dia_semana || '');
-        // Formatar hora para HH:MM (remover segundos se existirem)
-        let horaFormatada = rodizio.hora_culto || rodizio.hora || '';
-        if (horaFormatada && horaFormatada.includes(':')) {
-          const partes = horaFormatada.split(':');
-          horaFormatada = `${partes[0]}:${partes[1]}`;
-        }
-        const funcaoTexto = rodizio.funcao === 'meia_hora' ? 'Meia Hora' : 'Tocar no Culto';
-        const organistaNome = rodizio.organista_nome || 'Não definido';
+        let horaFormatada = rodizio.hora_culto || rodizio.hora || '-';
+        if (horaFormatada.includes(':')) horaFormatada = horaFormatada.substring(0, 5);
         
-        doc.fontSize(9).text(dataFormatada, 50, yPos);
-        doc.text(diaFormatado, 50 + colWidths.data, yPos);
-        doc.text(horaFormatada, 50 + colWidths.data + colWidths.dia, yPos);
-        doc.text(funcaoTexto, 50 + colWidths.data + colWidths.dia + colWidths.hora, yPos);
-        doc.text(organistaNome, 50 + colWidths.data + colWidths.dia + colWidths.hora + 80, yPos);
+        const funcaoTexto = rodizio.funcao === 'meia_hora' ? 'Meia Hora' : 'Tocar no Culto';
+        
+        // CORREÇÃO VISUAL: Garante que o ciclo apareça limpo
+        const cicloVal = rodizio.ciclo || rodizio.ciclo_origem || '-';
+        
+        // Remove "(Ciclo X)" do nome para não duplicar
+        let organistaNome = rodizio.organista_nome || '';
+        organistaNome = organistaNome.replace(/\s*\(Ciclo \d+\)/gi, '').trim();
+
+        doc.fillColor('black');
+        doc.text(dataFormatada, colX.data, yPos);
+        doc.text(diaFormatado, colX.dia, yPos);
+        doc.text(horaFormatada, colX.hora, yPos);
+        doc.text(String(cicloVal), colX.ciclo, yPos); // Valor do Ciclo
+        doc.text(funcaoTexto, colX.funcao, yPos);
+        doc.text(organistaNome, colX.organista, yPos);
         
         yPos += lineHeight;
       });
@@ -84,61 +120,23 @@ const gerarPDFRodizio = (rodizios) => {
 };
 
 const formatarDataBR = (dataStr) => {
-  if (!dataStr) return 'Data não informada';
-  
+  if (!dataStr) return '';
   try {
-    // Se for uma string ISO (com T e Z)
-    if (typeof dataStr === 'string' && dataStr.includes('T')) {
-      const data = new Date(dataStr);
-      if (!isNaN(data.getTime())) {
-        const dia = String(data.getDate()).padStart(2, '0');
-        const mes = String(data.getMonth() + 1).padStart(2, '0');
-        const ano = data.getFullYear();
-        return `${dia}/${mes}/${ano}`;
-      }
-      // Tentar parsear formato YYYY-MM-DDTHH:MM:SS
-      const partes = dataStr.split('T')[0].split('-');
-      if (partes.length === 3) {
-        return `${partes[2]}/${partes[1]}/${partes[0]}`;
-      }
-    }
-    
-    // Se já está no formato YYYY-MM-DD
-    if (typeof dataStr === 'string' && dataStr.includes('-') && !dataStr.includes('T')) {
-      const [ano, mes, dia] = dataStr.split('-');
-      if (ano && mes && dia) {
-        return `${dia}/${mes}/${ano}`;
-      }
-    }
-    
-    // Se é um objeto Date
-    if (dataStr instanceof Date) {
-      const dia = String(dataStr.getDate()).padStart(2, '0');
-      const mes = String(dataStr.getMonth() + 1).padStart(2, '0');
-      const ano = dataStr.getFullYear();
-      return `${dia}/${mes}/${ano}`;
-    }
-    
-    return String(dataStr);
-  } catch (error) {
-    console.error('Erro ao formatar data no PDF:', error, dataStr);
-    return String(dataStr);
-  }
+    const data = new Date(dataStr);
+    if (isNaN(data.getTime())) return String(dataStr);
+    const dia = String(data.getDate()).padStart(2, '0');
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const ano = data.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+  } catch (e) { return String(dataStr); }
 };
 
-const formatarDiaSemana = (diaSemana) => {
-  const dias = {
-    'domingo': 'Dom',
-    'segunda': 'Seg',
-    'terça': 'Ter',
-    'quarta': 'Qua',
-    'quinta': 'Qui',
-    'sexta': 'Sex',
-    'sábado': 'Sáb'
-  };
-  return dias[diaSemana.toLowerCase()] || diaSemana;
+const formatarDiaSemana = (dia) => {
+  const map = { 'domingo': 'Dom', 'segunda': 'Seg', 'terça': 'Ter', 'quarta': 'Qua', 'quinta': 'Qui', 'sexta': 'Sex', 'sábado': 'Sáb' };
+  return map[String(dia).toLowerCase()] || dia;
 };
 
-module.exports = {
-  gerarPDFRodizio
-};
+// Mantém export da função escala para não quebrar
+const gerarPDFEscala = gerarPDFRodizio;
+
+module.exports = { gerarPDFRodizio, gerarPDFEscala };

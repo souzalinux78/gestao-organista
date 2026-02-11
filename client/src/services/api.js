@@ -210,6 +210,17 @@ export const limparRodiziosIgreja = (igrejaId, periodoInicio, periodoFim) => {
 };
 export const testarWebhook = () => api.post('/rodizios/testar-webhook');
 
+// Escalas (Gestão de Escalas - histórico e snapshot)
+export const gerarPreviaEscala = (igrejaId, dataInicio, dataFim) =>
+  api.post('/escalas/gerar-previa', { igreja_id: igrejaId, data_inicio: dataInicio, data_fim: dataFim });
+export const listEscalas = (igrejaId) => api.get('/escalas', { params: { igreja_id: igrejaId } });
+export const getEscala = (id) => api.get(`/escalas/${id}`);
+export const salvarEscala = (payload) => api.post('/escalas', payload);
+export const deleteEscala = (id) => api.delete(`/escalas/${id}`);
+export const getEscalaPDF = (id) => api.get(`/escalas/${id}/pdf`, { responseType: 'blob' });
+export const getEscalaPDFPrevia = (payload) =>
+  api.post('/escalas/pdf-previa', payload, { responseType: 'blob' });
+
 // Notificações
 export const getNotificacoes = () => api.get('/notificacoes');
 export const enviarNotificacao = (rodizioId) => api.post(`/notificacoes/enviar/${rodizioId}`);

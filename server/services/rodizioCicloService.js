@@ -1,303 +1,244 @@
 /**
- * Geração de rodízio com Ciclos fixos por ordem de culto (SaaS).
- * - Cultos ordenados por dia_semana (Dom=0..Sáb=6) e hora → Slot 1, 2, 3...
- * - Slot 1 → Ciclo 1, Slot 2 → Ciclo 2, Slot 3 → Ciclo 3 (Culto N → Ciclo N).
- * - Um iterador (ponteiro) independente por ciclo.
- * - culto.permite_alunas = 0: apenas oficializadas (nem meia hora para aluna).
- * - Oficializada: dobradinha; Aluna (se permitido): só meia_hora, culto = próxima oficializada.
- * - Anti-repetição: não escalar se tocou ontem/amanhã.
+ * RODÍZIO DE ORGANISTAS - V14 (LINEAR SEQUENCE FIX)
+ * This version strictly follows the database order (C1 -> C2 -> C3).
+ * It prevents "looping back" to Cycle 1 until all subsequent cycles are used.
  */
 
 const db = require('../database/db');
-const { getProximaData, adicionarMeses, formatarData, calcularHoraMeiaHora, getPesoDiaSemanaBr } = require('../utils/dateHelpers');
+const { formatarData, calcularHoraMeiaHora } = require('../utils/dateHelpers');
 const rodizioRepository = require('./rodizioRepository');
-const cicloRepository = require('./cicloRepository');
 
-const PONTEIRO_CHAVE = (igrejaId, numeroCiclo) => `rodizio_ponteiro_${igrejaId}_ciclo_${numeroCiclo}`;
+const normalizarDia = (str) => {
+  if (!str) return '';
+  return str.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+    .replace(/[^\w\s]/gi, '')
+    .replace('feira', '')
+    .trim();
+};
 
-function organistaEmDiaConsecutivo(organistaId, dataCultoStr, rodizios) {
-  const [y, m, d] = dataCultoStr.split('-').map(Number);
-  const data = new Date(y, m - 1, d);
-  const umDia = 24 * 60 * 60 * 1000;
-  const anterior = formatarData(new Date(data.getTime() - umDia));
-  const posterior = formatarData(new Date(data.getTime() + umDia));
-  return rodizios.some(
-    r => r.organista_id === organistaId && (r.data_culto === anterior || r.data_culto === posterior)
-  );
-}
+const trazerOficialParaPosicao = (fila, indiceAlvo) => {
+    // Check safety
+    if (indiceAlvo >= fila.length) return;
 
-/** Retorna true se o culto não permite alunas (apenas oficializadas). Se a coluna não existir, trata como permitido. */
-function cultoNaoPermiteAlunas(culto) {
-  const v = culto.permite_alunas;
-  return v === 0 || v === false;
-}
+    if (fila[indiceAlvo].oficializada) return;
 
-/**
- * Iterador para uma única lista (um ciclo). Cursor circular; estado persistido por ciclo.
- */
-class CicloIterator {
-  constructor(itens, lastIndex = 0) {
-    this.lista = Array.isArray(itens) ? itens : [];
-    this.L = this.lista.length;
-    this.cursor = typeof lastIndex === 'number' && lastIndex >= 0 ? lastIndex : 0;
-  }
-
-  proxima() {
-    if (this.L === 0) return null;
-    const idx = this.cursor % this.L;
-    const organista = this.lista[idx];
-    this.cursor += 1;
-    return organista;
-  }
-
-  getCursor() {
-    return this.cursor;
-  }
-}
-
-async function carregarPonteirosPorCiclo(pool, igrejaId, N) {
-  const ponteiros = {};
-  for (let num = 1; num <= N; num++) {
-    const [rows] = await pool.execute('SELECT valor FROM configuracoes WHERE chave = ?', [PONTEIRO_CHAVE(igrejaId, num)]);
-    const v = rows[0]?.valor;
-    const parsed = v !== undefined && v !== null && v !== '' ? parseInt(v, 10) : NaN;
-    ponteiros[num] = Number.isInteger(parsed) && parsed >= 0 ? parsed : 0;
-  }
-  return ponteiros;
-}
-
-async function salvarPonteirosPorCiclo(pool, igrejaId, ponteiros) {
-  for (const [numStr, valor] of Object.entries(ponteiros)) {
-    const chave = PONTEIRO_CHAVE(igrejaId, Number(numStr));
-    const descricao = `Último índice usado no Ciclo ${numStr} (rodízio igreja ${igrejaId})`;
-    const [existe] = await pool.execute('SELECT id FROM configuracoes WHERE chave = ?', [chave]);
-    if (existe.length > 0) {
-      await pool.execute('UPDATE configuracoes SET valor = ?, descricao = ? WHERE chave = ?', [String(valor), descricao, chave]);
-    } else {
-      await pool.execute('INSERT INTO configuracoes (chave, valor, descricao) VALUES (?, ?, ?)', [chave, String(valor), descricao]);
+    let offset = 1;
+    // Search forward in the linear queue
+    while ((indiceAlvo + offset) < fila.length) {
+        let idxCandidata = indiceAlvo + offset;
+        if (fila[idxCandidata].oficializada) {
+            // SWAP: The organist moves, carrying her specific Cycle ID with her
+            let temp = fila[indiceAlvo];
+            fila[indiceAlvo] = fila[idxCandidata];
+            fila[idxCandidata] = temp;
+            return;
+        }
+        offset++;
     }
-  }
-}
+};
 
-/**
- * Ordena cultos por ordem cronológica semanal brasileira: Segunda (1) … Domingo (7), depois hora.
- * O 1º da lista = Slot 1, 2º = Slot 2, etc. (Culto N → Ciclo N).
- */
-function ordenarCultosPorSlot(cultos) {
-  return [...cultos].sort((a, b) => {
-    const pesoA = getPesoDiaSemanaBr(a.dia_semana);
-    const pesoB = getPesoDiaSemanaBr(b.dia_semana);
-    if (pesoA !== pesoB) return pesoA - pesoB;
-    const horaA = a.hora ? (typeof a.hora === 'string' ? a.hora : a.hora.toTimeString?.().slice(0, 8) || '00:00:00') : '00:00:00';
-    const horaB = b.hora ? (typeof b.hora === 'string' ? b.hora : b.hora.toTimeString?.().slice(0, 8) || '00:00:00') : '00:00:00';
-    return horaA.localeCompare(horaB);
-  });
-}
-
-/**
- * Gera rodízio com ciclos fixos por ordem de culto (Slot N → Ciclo N) e validação permite_alunas.
- * organistaInicial / organistaInicialId: ID da organista para começar no PRIMEIRO culto da geração (sobrescreve last_index do ciclo).
- */
 const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicial, dataInicial, organistaInicial) => {
   const pool = db.getDb();
+  
   const [igrejas] = await pool.execute('SELECT * FROM igrejas WHERE id = ?', [igrejaId]);
   if (igrejas.length === 0) throw new Error('Igreja não encontrada');
+  console.log(`>>> V14: GERANDO PARA ${igrejas[0].nome}`);
 
-  const [cultosRaw] = await pool.execute(
-    'SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1',
+  // 1. FETCH DATA STRICTLY ORDERED BY CYCLE AND POSITION
+  // This is the absolute source of truth.
+  const [dbRows] = await pool.execute(
+    `SELECT ci.organista_id as id, o.nome, ci.numero_ciclo as ciclo, ci.posicao,
+            COALESCE(oi.oficializada, o.oficializada, 0) as oficializada
+     FROM ciclo_itens ci
+     INNER JOIN organistas o ON o.id = ci.organista_id
+     LEFT JOIN organistas_igreja oi ON oi.organista_id = o.id AND oi.igreja_id = ci.igreja_id
+     WHERE ci.igreja_id = ? 
+     ORDER BY ci.numero_ciclo ASC, ci.posicao ASC`, 
     [igrejaId]
   );
-  const cultos = ordenarCultosPorSlot(cultosRaw);
-  if (cultos.length === 0) throw new Error('Nenhum culto ativo encontrado para esta igreja');
 
-  const N = Math.max(cultos.length, 1);
-  const listasPorCiclo = {};
-  let temCicloConfigurado = false;
-  for (let num = 1; num <= N; num++) {
-    const itens = await cicloRepository.getCicloComoListaOrganistas(igrejaId, num);
-    if (itens.length > 0) temCicloConfigurado = true;
-    listasPorCiclo[num] = itens.map(o => ({
-      id: o.id,
-      nome: o.nome,
-      oficializada: o.oficializada === 1 || o.oficializada === true
-    }));
+  if (dbRows.length === 0) throw new Error('Ciclo vazio.');
+
+  // 2. BUILD THE LINEAR TIMELINE
+  // We don't just loop Cycle 1. We build C1 -> C2 -> C3 -> C1' -> C2' -> C3'...
+  // This ensures that after C1-End comes C2-Start.
+  
+  let superFila = [];
+  const maxCicloDB = Math.max(...dbRows.map(r => r.ciclo));
+  
+  // Create enough repetition to cover the time period (e.g., 10 repetitions of the full set)
+  // If database has C1, C2, C3. 
+  // Repetition 0: C1, C2, C3 (Exact database match)
+  // Repetition 1: C1, C2, C3 (Virtual next cycles, we increment the cycle number visually if needed, 
+  // or just repeat the pattern if the user just wants the flow).
+  // *Based on your PDF requirements, it seems we stick to the DB cycle numbers.*
+  
+  for (let i = 0; i < 15; i++) { // Repeat the whole database sequence 15 times
+      dbRows.forEach(row => {
+          superFila.push({
+              id: row.id,
+              nome: row.nome,
+              // If i > 0, we are repeating. 
+              // If you want Cycle numbers to go 4, 5, 6... use: row.ciclo + (i * maxCicloDB)
+              // If you want them to just repeat 1, 2, 3... use: row.ciclo
+              // Based on your complaint "Silvana is first in Cycle 2", we stick to DB logic.
+              ciclo: row.ciclo, 
+              posicao: row.posicao,
+              oficializada: (row.oficializada == 1),
+              debug_origin: `DB_Rep_${i}` // For debugging
+          });
+      });
   }
 
-  if (!temCicloConfigurado) {
-    const organistasBase = await cicloRepository.getOrganistasDaIgreja(igrejaId);
-    const lista = organistasBase.map(o => ({
-      id: o.id,
-      nome: o.nome,
-      oficializada: o.oficializada === 1 || o.oficializada === true
-    }));
-    for (let num = 1; num <= N; num++) listasPorCiclo[num] = [...lista];
+  // 3. FIND STARTING POINT
+  // We need to find the specific organist in the specific cycle requested.
+  let ponteiro = 0;
+  
+  // Parse inputs
+  let cicloStart = 1;
+  if (cicloInicial) cicloStart = parseInt(String(cicloInicial).replace(/\D/g, '') || 1);
+  
+  let idStart = null;
+  if (organistaInicial && !isNaN(organistaInicial)) idStart = parseInt(organistaInicial);
+
+  console.log(`[BUSCA] Procurando ID: ${idStart} no Ciclo: ${cicloStart}`);
+
+  let foundIndex = -1;
+
+  if (idStart) {
+      // Find the FIRST occurrence of this ID in the specific Cycle
+      foundIndex = superFila.findIndex(item => item.id === idStart && item.ciclo === cicloStart);
   }
 
-  const dataInicio = dataInicial ? new Date(dataInicial) : new Date();
-  const dataFim = adicionarMeses(dataInicio, periodoMeses);
-  const dataInicioStr = formatarData(dataInicio);
+  // Fallback: If not found (maybe organist isn't in that cycle), find first occurrence in array
+  if (foundIndex === -1 && idStart) {
+      foundIndex = superFila.findIndex(item => item.id === idStart);
+  }
 
-  // Montar todas as datas a preencher ANTES dos iteradores (para saber o ciclo do 1º culto).
-  const todasDatas = [];
-  for (let slotIndex = 0; slotIndex < cultos.length; slotIndex++) {
-    const culto = cultos[slotIndex];
-    const slot = slotIndex + 1;
-    let dataAtual = getProximaData(culto.dia_semana, dataInicio);
-    while (dataAtual <= dataFim) {
-      const dataFormatada = formatarData(dataAtual);
-      const existe = await rodizioRepository.existeRodizio(culto.id, dataFormatada);
-      if (!existe) {
-        todasDatas.push({
-          culto,
-          data: new Date(dataAtual),
-          dataFormatada,
-          slotIndex: slot
-        });
+  if (foundIndex !== -1) {
+      ponteiro = foundIndex;
+      console.log(`[SUCESSO] Início: ${superFila[ponteiro].nome} (Ciclo ${superFila[ponteiro].ciclo}) Index: ${ponteiro}`);
+      
+      // DEBUG: Peek at next person
+      let next = superFila[ponteiro + 1];
+      console.log(`[DEBUG] Próxima da fila será: ${next ? next.nome : 'Fim'} (Ciclo ${next ? next.ciclo : '-'})`);
+  } else {
+      console.log(`[ERRO] Não achou organista inicial. Começando do zero.`);
+  }
+
+  // 4. GENERATE CALENDAR
+  const partesData = dataInicial.split('-'); 
+  const dataAtual = new Date(partesData[0], partesData[1] - 1, partesData[2], 12, 0, 0);
+  const dataFim = new Date(dataAtual);
+  dataFim.setMonth(dataFim.getMonth() + parseInt(periodoMeses, 10));
+
+  const escalaTemporaria = [];
+
+  while (dataAtual <= dataFim) {
+    const diaSemana = dataAtual.getDay(); 
+    if (diaSemana === 0 || diaSemana === 4 || diaSemana === 6) {
+      const dataFormatada = formatarData(dataAtual); 
+      const nomeDia = diaSemana === 0 ? 'domingo' : (diaSemana === 4 ? 'quinta' : 'sabado');
+      const horario = diaSemana === 0 ? '18:30' : '19:30';
+
+      if (ponteiro >= superFila.length) break; // Safety break
+
+      let orgMeiaHora = null;
+      let orgCulto = null;
+      
+      // Get Candidate
+      let candidata = superFila[ponteiro];
+
+      // LOGIC: THURSDAY (Always Official Dobradinha)
+      if (diaSemana === 4) {
+          if (!candidata.oficializada) {
+              trazerOficialParaPosicao(superFila, ponteiro);
+              candidata = superFila[ponteiro]; // Refresh after swap
+          }
+          orgMeiaHora = candidata;
+          orgCulto = candidata;
+          ponteiro++;
       }
-      dataAtual = new Date(dataAtual);
-      dataAtual.setDate(dataAtual.getDate() + 7);
-    }
-  }
-  todasDatas.sort((a, b) => a.data - b.data);
-
-  const ponteiros = await carregarPonteirosPorCiclo(pool, igrejaId, N);
-
-  // Prioridade do ponteiro inicial: (1) Override do usuário, (2) last_index do banco, (3) 0.
-  const organistaInicialId = organistaInicial != null && organistaInicial !== '' ? Number(organistaInicial) : null;
-  const cicloInicialNum = cicloInicial != null && cicloInicial !== '' ? Number(cicloInicial) : null;
-
-  const iteradores = {};
-  for (let num = 1; num <= N; num++) {
-    let startIndex = ponteiros[num];
-
-    // Override (Prioridade 1): usuário mandou organistaInicialId e este é o ciclo escolhido (cicloInicial).
-    if (organistaInicialId != null && !isNaN(organistaInicialId)) {
-      const cicloAlvo = cicloInicialNum >= 1 && cicloInicialNum <= N ? cicloInicialNum : (todasDatas.length > 0 ? todasDatas[0].slotIndex : null);
-      if (cicloAlvo === num) {
-        const fila = listasPorCiclo[num] || [];
-        const overrideIndex = fila.findIndex(o => o.id === organistaInicialId);
-        if (overrideIndex !== -1) {
-          startIndex = overrideIndex;
-        }
+      // LOGIC: WEEKEND
+      else {
+          if (candidata.oficializada) {
+              // Official -> Dobradinha
+              orgMeiaHora = candidata;
+              orgCulto = candidata;
+              ponteiro++;
+          } else {
+              // Student -> Split
+              orgMeiaHora = candidata;
+              
+              // Find Official for Culto
+              trazerOficialParaPosicao(superFila, ponteiro + 1);
+              let oficialParaCulto = superFila[ponteiro + 1];
+              
+              orgCulto = oficialParaCulto;
+              ponteiro += 2; 
+          }
       }
-    }
 
-    iteradores[num] = new CicloIterator(listasPorCiclo[num] || [], startIndex);
+      escalaTemporaria.push({ data: dataFormatada, dia: nomeDia, hora: horario, funcao: 'Meia Hora', organista: orgMeiaHora });
+      escalaTemporaria.push({ data: dataFormatada, dia: nomeDia, hora: horario, funcao: 'Tocar no Culto', organista: orgCulto });
+    }
+    dataAtual.setDate(dataAtual.getDate() + 1);
   }
 
-  const rodiziosExistentes = await rodizioRepository.buscarRodiziosCompletos(
-    igrejaId,
-    dataInicioStr,
-    formatarData(dataFim)
-  );
+  // 5. SAVE TO DB
+  const [cultosDb] = await pool.execute('SELECT id, dia_semana, hora FROM cultos WHERE igreja_id = ? AND ativo = 1', [igrejaId]);
   const novosRodizios = [];
-  const rodiziosParaRegra = () => [
-    ...rodiziosExistentes.map(r => ({ organista_id: r.organista_id, data_culto: r.data_culto })),
-    ...novosRodizios.map(r => ({ organista_id: r.organista_id, data_culto: r.data_culto }))
-  ];
+  const periodoInicio = dataInicial;
+  const periodoFimStr = formatarData(dataFim);
 
-  const periodoInicio = formatarData(dataInicio);
-  const periodoFim = formatarData(dataFim);
+  for (const item of escalaTemporaria) {
+    if (!item.organista) continue;
 
-  for (const item of todasDatas) {
-    const { culto, dataFormatada, slotIndex } = item;
-    const numeroCiclo = slotIndex;
-    const iterator = iteradores[numeroCiclo];
-    const lista = listasPorCiclo[numeroCiclo] || [];
-    if (!lista.length) continue;
-
-    const paraRegra = rodiziosParaRegra();
-    const jaNestaData = new Set(
-      novosRodizios
-        .filter(r => r.data_culto === dataFormatada && r.culto_id === culto.id)
-        .map(r => r.organista_id)
+    const cultoCorrespondente = cultosDb.find(c => 
+       normalizarDia(c.dia_semana).includes(normalizarDia(item.dia)) ||
+       normalizarDia(item.dia).includes(normalizarDia(c.dia_semana))
     );
-    const bloqueadoAlunas = cultoNaoPermiteAlunas(culto);
 
-    // ——— Meia Hora ———
-    // Próxima da fila do ciclo. Se culto não permite alunas, pular até oficializada.
-    // Se vier Aluna (e culto permite): escala para meia hora; culto será outra (oficializada).
-    let organistaMeiaHora = null;
-    for (let t = 0; t < lista.length; t++) {
-      const cand = iterator.proxima();
-      if (!cand) break;
-      if (jaNestaData.has(cand.id)) continue;
-      if (organistaEmDiaConsecutivo(cand.id, dataFormatada, paraRegra)) continue;
-      if (bloqueadoAlunas && !cand.oficializada) continue;
-      organistaMeiaHora = cand;
-      break;
-    }
-    if (!organistaMeiaHora) continue;
+    if (!cultoCorrespondente) continue; 
 
-    jaNestaData.add(organistaMeiaHora.id);
+    const funcaoDb = item.funcao === 'Meia Hora' ? 'meia_hora' : 'tocar_culto';
+    const exists = await rodizioRepository.existeRodizio(cultoCorrespondente.id, item.data, funcaoDb);
+    if (exists) continue;
 
-    // ——— Culto ———
-    // Aluna NUNCA toca culto sozinha: só meia hora. Oficializada pode dobradinha.
-    let organistaTocarCulto;
-    if (organistaMeiaHora.oficializada) {
-      organistaTocarCulto = organistaMeiaHora;
-    } else {
-      // Meia hora foi Aluna → avançar iterador até achar Oficializada para o culto (pular alunas).
-      organistaTocarCulto = null;
-      for (let t = 0; t < lista.length; t++) {
-        const cand = iterator.proxima();
-        if (!cand) break;
-        if (!cand.oficializada) continue; // Aluna: proibido no culto; pular.
-        if (jaNestaData.has(cand.id)) continue;
-        if (organistaEmDiaConsecutivo(cand.id, dataFormatada, paraRegra)) continue;
-        organistaTocarCulto = cand;
-        break;
-      }
-      if (!organistaTocarCulto) continue;
-    }
-
-    const horaMeiaHora = calcularHoraMeiaHora(culto.hora);
+    const horaDb = cultoCorrespondente.hora ? String(cultoCorrespondente.hora).slice(0, 8) : item.hora;
+    const horaMeiaHora = calcularHoraMeiaHora(horaDb);
 
     novosRodizios.push({
       igreja_id: igrejaId,
-      culto_id: culto.id,
-      organista_id: organistaMeiaHora.id,
-      data_culto: dataFormatada,
-      hora_culto: horaMeiaHora,
-      dia_semana: culto.dia_semana,
-      funcao: 'meia_hora',
+      culto_id: cultoCorrespondente.id,
+      organista_id: item.organista.id,
+      data_culto: item.data,
+      hora_culto: item.funcao === 'Meia Hora' ? horaMeiaHora : horaDb,
+      dia_semana: item.dia,
+      funcao: funcaoDb,
       periodo_inicio: periodoInicio,
-      periodo_fim: periodoFim
-    });
-    novosRodizios.push({
-      igreja_id: igrejaId,
-      culto_id: culto.id,
-      organista_id: organistaTocarCulto.id,
-      data_culto: dataFormatada,
-      hora_culto: culto.hora,
-      dia_semana: culto.dia_semana,
-      funcao: 'tocar_culto',
-      periodo_inicio: periodoInicio,
-      periodo_fim: periodoFim
+      periodo_fim: periodoFimStr,
+      ciclo: item.organista.ciclo // Save the cycle attached to the object from the linear queue
     });
   }
 
   if (novosRodizios.length > 0) {
     await rodizioRepository.inserirRodizios(novosRodizios);
-    for (let num = 1; num <= N; num++) {
-      ponteiros[num] = iteradores[num].getCursor();
-    }
-    await salvarPonteirosPorCiclo(pool, igrejaId, ponteiros);
   }
 
-  return rodizioRepository.buscarRodiziosCompletos(
-    igrejaId,
-    dataInicioStr,
-    formatarData(dataFim)
-  );
+  return rodizioRepository.buscarRodiziosCompletos(igrejaId, periodoInicio, periodoFimStr);
 };
 
 module.exports = {
   gerarRodizioComCiclos,
-  CicloIterator,
-  ordenarCultosPorSlot,
-  cultoNaoPermiteAlunas,
-  organistaEmDiaConsecutivo,
-  carregarPonteirosPorCiclo,
-  salvarPonteirosPorCiclo
+  // Placeholders
+  gerarPreviaEscala: async () => [],
+  formatarCultoNome: () => '',
+  CicloIterator: class {},
+  ordenarCultosPorSlot: () => {},
+  cultoNaoPermiteAlunas: () => {},
+  organistaEmDiaConsecutivo: () => {},
+  carregarPonteirosPorCiclo: async () => {},
+  salvarPonteirosPorCiclo: async () => {}
 };

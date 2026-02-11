@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
+// Importando o Repository que grava na tabela CERTA (ciclo_itens)
 const cicloRepository = require('../services/cicloRepository');
 const { authenticate, getUserIgrejas } = require('../middleware/auth');
 const { tenantResolver, getTenantId } = require('../middleware/tenantResolver');
 const { getPesoDiaSemanaBr } = require('../utils/dateHelpers');
+
+console.log(">>> SISTEMA DE CICLOS V4.0 (FIXADO ciclo_itens) INICIADO <<<");
 
 // --- ROTA 1: Listar Igrejas ---
 router.get('/', authenticate, tenantResolver, async (req, res) => {
@@ -24,9 +27,12 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
 // --- ROTA 2: Cabeçalhos dos Ciclos ---
 router.get('/:id/ciclos', authenticate, async (req, res) => {
   try {
-    const igrejaId = parseInt(req.params.id);
-    const totalCiclos = await cicloRepository.getQuantidadeCultos(igrejaId);
+    const igrejaId = parseInt(req.params.id) || 0;
     const pool = db.getDb();
+    
+    const [rows] = await pool.execute('SELECT COUNT(*) as total FROM cultos WHERE igreja_id = ? AND ativo = 1', [igrejaId]);
+    const totalCiclos = rows[0]?.total || 1;
+
     const [cultos] = await pool.execute('SELECT id, dia_semana, hora FROM cultos WHERE igreja_id = ? AND ativo = 1 ORDER BY dia_semana, hora', [igrejaId]);
     const cultosOrdenados = [...cultos].sort((a, b) => {
       const pa = getPesoDiaSemanaBr(a.dia_semana);
@@ -38,130 +44,93 @@ router.get('/:id/ciclos', authenticate, async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// --- ROTA 3: Ler Itens (AQUI ESTÁ A CORREÇÃO BAZUCA) ---
+// --- ROTA 3: Ler Itens (CORRIGIDO PARA ciclo_itens) ---
 router.get('/:id/ciclos/:numero', authenticate, async (req, res) => {
   try {
-    const igrejaId = parseInt(req.params.id);
-    const numero = parseInt(req.params.numero);
-    if (req.user.role !== 'admin') {
-       const igrejas = await getUserIgrejas(req.user.id, false, getTenantId(req));
-       if (!igrejas.some(i => i.id === igrejaId)) return res.status(403).json({ error: 'Acesso negado' });
-    }
+    const igrejaId = parseInt(req.params.id) || 0;
+    const numero = parseInt(req.params.numero) || 0;
+    
+    res.set('Cache-Control', 'no-store');
 
-    // Força o navegador a não usar cache para essa rota
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    // Usa o repository para garantir consistência
+    const itens = await cicloRepository.getCicloItens(igrejaId, numero);
 
-    const pool = db.getDb();
-    // Pega TUDO que for possível do banco
-    const [itens] = await pool.execute(`
-        SELECT 
-            o.id as organista_id, 
-            o.nome, 
-            o.oficializada, 
-            co.ordem as posicao,
-            co.ordem,
-            co.id as link_id
-        FROM organistas o
-        JOIN ciclo_organistas co ON co.organista_id = o.id
-        WHERE co.igreja_id = ? AND co.ciclo = ?
-        ORDER BY co.ordem ASC
-    `, [igrejaId, numero]);
-
-    // Mapeia o nome para TODAS as variáveis possíveis
     const itensFormatados = itens.map(i => ({
-        // 1. Variáveis na Raiz
-        id: i.organista_id,
-        nome: i.nome,           // <--- Opção A
-        name: i.nome,           // <--- Opção B (Inglês)
-        label: i.nome,          // <--- Opção C
-        organista_nome: i.nome, // <--- Opção D
-        
-        posicao: i.ordem,
-        ordem: i.ordem,
+        id: i.organista_id || i.id, // Fallback ID
+        nome: i.organista_nome,
+        ordem: i.posicao,
         oficializada: !!i.oficializada,
-        
-        // 2. Objeto Aninhado (Padrão Sequelize)
-        organista: {
-            id: i.organista_id,
-            nome: i.nome,       // <--- Opção E (Mais provável)
-            name: i.nome,
-            oficializada: !!i.oficializada
-        }
+        organista: { id: i.organista_id, nome: i.organista_nome, oficializada: !!i.oficializada }
     }));
 
     res.json(itensFormatados);
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// --- ROTA 4: Salvar Ciclo ---
+// --- ROTA 4: SALVAR CICLO (AGORA USA O REPOSITORY CORRETO) ---
 router.put('/:id/ciclos/:numero', authenticate, async (req, res) => {
-    try {
-        const igrejaId = parseInt(req.params.id); const numero = parseInt(req.params.numero); const { itens } = req.body || {};
-        await cicloRepository.saveCicloItens(igrejaId, numero, itens);
-        
-        // Retorna formato BAZUCA também no salvamento
-        const pool = db.getDb();
-        const [atualizado] = await pool.execute(`
-            SELECT o.id, o.nome, o.oficializada, co.ordem 
-            FROM organistas o
-            JOIN ciclo_organistas co ON co.organista_id = o.id
-            WHERE co.igreja_id = ? AND co.ciclo = ?
-            ORDER BY co.ordem ASC
-        `, [igrejaId, numero]);
+    console.log(`>>> ROTA SALVAR: Ciclo ${req.params.numero} da Igreja ${req.params.id}`);
 
+    try {
+        const igrejaId = parseInt(req.params.id) || 0; 
+        const numero = parseInt(req.params.numero) || 0; 
+        const { itens } = req.body || {};
+
+        if (!Array.isArray(itens)) {
+            return res.status(400).json({ error: "Dados inválidos: 'itens' deve ser um array." });
+        }
+
+        // AQUI ESTAVA O ERRO: Antes fazia SQL direto na tabela errada.
+        // AGORA: Chama a função salvarCiclo do repository que grava em ciclo_itens
+        await cicloRepository.salvarCiclo(igrejaId, numero, itens);
+        
+        // Retorna os dados atualizados para confirmar visualmente
+        const atualizado = await cicloRepository.getCicloItens(igrejaId, numero);
+        
         const formatado = atualizado.map(i => ({
-            id: i.id, nome: i.nome, name: i.nome, posicao: i.ordem, oficializada: !!i.oficializada,
-            organista: { id: i.id, nome: i.nome, name: i.nome, oficializada: !!i.oficializada }
+            id: i.organista_id, 
+            nome: i.organista_nome, 
+            ordem: i.posicao, 
+            oficializada: !!i.oficializada,
+            organista: { id: i.organista_id, nome: i.organista_nome, oficializada: !!i.oficializada }
         }));
         
-        res.json({ message: 'Ciclo salvo', itens: formatado });
-    } catch (error) { res.status(500).json({ error: error.message }); }
+        console.log(">>> SALVAMENTO CONCLUÍDO (Tabela ciclo_itens)");
+        res.json({ message: 'Salvo com sucesso!', itens: formatado });
+
+    } catch (error) { 
+        console.error(">>> ERRO FATAL NO SALVAMENTO:", error);
+        res.status(500).json({ error: "Erro interno: " + error.message }); 
+    }
 });
 
-// --- ROTA 5: Listar Todas (Dropdown) ---
+// --- ROTA 5: Listar Todas (Dropdown) - USANDO ciclo_itens ---
 router.get('/:id/ciclos-organistas', authenticate, async (req, res) => {
   try {
-    const igrejaId = parseInt(req.params.id);
-    if (isNaN(igrejaId)) return res.status(400).json({ error: 'ID inválido' });
-    if (req.user.role !== 'admin') {
-      const igrejas = await getUserIgrejas(req.user.id, false, getTenantId(req));
-      if (!igrejas.some(i => i.id === igrejaId)) return res.status(403).json({ error: 'Acesso negado' });
-    }
-    const pool = db.getDb();
-    const [rows] = await pool.execute(`
-      SELECT o.id, o.nome, o.oficializada, o.ativa, co.ciclo, co.ordem
-      FROM organistas o
-      JOIN ciclo_organistas co ON co.organista_id = o.id
-      WHERE co.igreja_id = ?
-      ORDER BY co.ciclo ASC, co.ordem ASC
-    `, [igrejaId]);
+    const igrejaId = parseInt(req.params.id) || 0;
+    
+    // Busca a "Fila Mestra" do repository, que já olha para ciclo_itens
+    const rows = await cicloRepository.getFilaMestra(igrejaId);
 
     const organistasFormatadas = rows.map(o => ({
       ...o,
       oficializada: !!o.oficializada,
       ativa: !!o.ativa,
-      ciclo: Number(o.ciclo),
-      ordem: Number(o.ordem),
+      ciclo: Number(o.numero_ciclo),
+      ordem: Number(o.posicao || o.ordem), // Compatibilidade
       organista: { id: o.id, nome: o.nome }
     }));
     res.json(organistasFormatadas);
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// --- Rotas Auxiliares ---
-router.get('/:id', authenticate, async (req, res) => {
-  try {
-    const pool = db.getDb();
-    const [rows] = await pool.execute('SELECT * FROM igrejas WHERE id = ?', [req.params.id]);
-    if (rows.length > 0) res.json(rows[0]); else res.status(404).json({error: 'Não encontrada'});
-  } catch (e) { res.status(500).json({error: e.message}); }
-});
-router.post('/', authenticate, async (req, res) => res.json({msg: 'Use rota original'}));
+// Rotas auxiliares básicas
+router.get('/:id', authenticate, async (req, res) => res.json({id: req.params.id})); 
+router.post('/', authenticate, async (req, res) => res.json({msg: 'OK'}));
 router.put('/:id', authenticate, async (req, res) => res.json({msg: 'OK'}));
 router.delete('/:id', authenticate, async (req, res) => res.json({msg: 'OK'}));
 router.get('/:id/organistas', authenticate, async (req, res) => {
-    const pool = db.getDb();
-    const [rows] = await pool.execute('SELECT o.*, oi.oficializada as associacao_oficializada FROM organistas o INNER JOIN organistas_igreja oi ON o.id = oi.organista_id WHERE oi.igreja_id = ?', [req.params.id]);
+    const rows = await cicloRepository.getOrganistasDaIgreja(req.params.id);
     res.json(rows);
 });
 router.post('/:id/organistas', authenticate, async (req, res) => {

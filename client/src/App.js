@@ -19,6 +19,7 @@ const RelatoriosAdmin = lazy(() => import('./pages/RelatoriosAdmin'));
 const Relatorios = lazy(() => import('./pages/Relatorios'));
 const Configuracoes = lazy(() => import('./pages/Configuracoes'));
 const Ciclos = lazy(() => import('./pages/Ciclos'));
+const Escalas = lazy(() => import('./pages/Escalas'));
 
 function PrivateRoute({ children }) {
   const { user, loading, logout } = useAuth();
@@ -85,6 +86,7 @@ function AppContent() {
               <Route path="/cultos" element={<PrivateRoute><Cultos user={user} /></PrivateRoute>} />
               <Route path="/rodizios" element={<PrivateRoute><Rodizios user={user} /></PrivateRoute>} />
               <Route path="/ciclos" element={<PrivateRoute><Ciclos user={user} /></PrivateRoute>} />
+              <Route path="/escalas" element={<PrivateRoute><Escalas user={user} /></PrivateRoute>} />
               {user?.role === 'admin' && (
                 <>
                   <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
@@ -157,6 +159,10 @@ function Sidebar({ user, location }) {
           <Link to="/ciclos" className={`sidebar-nav__item ${location.pathname === '/ciclos' ? 'active' : ''}`} onClick={closeSidebar}>
             <span className="sidebar-nav__icon">🔄</span>
             <span className="sidebar-nav__text">Ciclos</span>
+          </Link>
+          <Link to="/escalas" className={`sidebar-nav__item ${location.pathname === '/escalas' ? 'active' : ''}`} onClick={closeSidebar}>
+            <span className="sidebar-nav__icon">📋</span>
+            <span className="sidebar-nav__text">Escalas</span>
           </Link>
           {user?.role === 'admin' && (
             <>

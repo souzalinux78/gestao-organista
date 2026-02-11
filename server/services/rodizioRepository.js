@@ -19,7 +19,8 @@ const RODIZIO_BASE_QUERY = `
          i.encarregado_regional_nome, 
          i.encarregado_regional_telefone,
          c.dia_semana, 
-         c.hora as hora_culto
+         c.hora as hora_culto,
+         COALESCE(r.ciclo_origem, (SELECT ci.numero_ciclo FROM ciclo_itens ci WHERE ci.igreja_id = r.igreja_id AND ci.organista_id = r.organista_id ORDER BY ci.numero_ciclo ASC LIMIT 1)) AS ciclo_origem
   FROM rodizios r
   INNER JOIN organistas o ON r.organista_id = o.id
   INNER JOIN igrejas i ON r.igreja_id = i.id
@@ -134,10 +135,11 @@ async function inserirRodizios(rodizios) {
   }
   
   const query = `INSERT INTO rodizios 
-    (igreja_id, culto_id, organista_id, data_culto, hora_culto, dia_semana, funcao, periodo_inicio, periodo_fim)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    (igreja_id, culto_id, organista_id, data_culto, hora_culto, dia_semana, funcao, periodo_inicio, periodo_fim, ciclo_origem)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   
   for (const rodizio of rodizios) {
+    const cicloOrigem = rodizio.ciclo_origem ?? rodizio.ciclo ?? null;
     await pool.execute(query, [
       rodizio.igreja_id ?? null,
       rodizio.culto_id ?? null,
@@ -147,7 +149,8 @@ async function inserirRodizios(rodizios) {
       rodizio.dia_semana ?? null,
       rodizio.funcao ?? null,
       rodizio.periodo_inicio ?? null,
-      rodizio.periodo_fim ?? null
+      rodizio.periodo_fim ?? null,
+      cicloOrigem
     ]);
   }
 }

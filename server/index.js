@@ -114,6 +114,7 @@ const organistasRoutes = require('./routes/organistas');
 const igrejasRoutes = require('./routes/igrejas');
 const cultosRoutes = require('./routes/cultos');
 const rodiziosRoutes = require('./routes/rodizios');
+const escalasRoutes = require('./routes/escalas');
 const notificacoesRoutes = require('./routes/notificacoes');
 const diagnosticoRoutes = require('./routes/diagnostico');
 const adminRoutes = require('./routes/admin');
@@ -151,6 +152,7 @@ if (rateLimit && apiLimiter) {
   app.use('/api/igrejas', apiLimiter, igrejasRoutes);
   app.use('/api/cultos', apiLimiter, cultosRoutes);
   app.use('/api/rodizios', apiLimiter, rodiziosRoutes);
+  app.use('/api/escalas', apiLimiter, escalasRoutes);
   app.use('/api/notificacoes', apiLimiter, notificacoesRoutes);
   app.use('/api/diagnostico', apiLimiter, diagnosticoRoutes);
   app.use('/api/admin', apiLimiter, adminRoutes);
@@ -161,6 +163,7 @@ if (rateLimit && apiLimiter) {
   app.use('/api/igrejas', igrejasRoutes);
   app.use('/api/cultos', cultosRoutes);
   app.use('/api/rodizios', rodiziosRoutes);
+  app.use('/api/escalas', escalasRoutes);
   app.use('/api/notificacoes', notificacoesRoutes);
   app.use('/api/diagnostico', diagnosticoRoutes);
   app.use('/api/admin', adminRoutes);

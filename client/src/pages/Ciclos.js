@@ -1,326 +1,341 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  getIgrejas,
-  getCiclosIgreja,
-  getCicloItens,
-  saveCicloItens,
-  getOrganistasParaCiclos
-} from '../services/api';
-import './Ciclos.css';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
-function Ciclos({ user }) {
+// --- ESTILOS VISUAIS ---
+const styles = {
+  container: { padding: '20px', backgroundColor: '#f8f9fa', minHeight: '100vh', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" },
+  header: { marginBottom: '25px', backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #eaeaea' },
+  label: { display: 'block', marginBottom: '8px', fontWeight: '600', color: '#555' },
+  select: { padding: '10px', fontSize: '16px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', maxWidth: '400px' },
+  
+  // Grid ajustado (Wrap)
+  grid: { display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' },
+  
+  card: { 
+    background: 'white', borderRadius: '8px', padding: '20px', 
+    width: '350px', 
+    border: '1px solid #e0e0e0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+    display: 'flex', flexDirection: 'column'
+  },
+  cardHeader: { marginBottom: '15px' },
+  cycleTitle: { margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#333' },
+  cycleSubtitle: { margin: 0, fontSize: '14px', color: '#888', marginTop: '4px' },
+  
+  listContainer: { minHeight: '200px' },
+  
+  item: { 
+    padding: '10px 12px', marginBottom: '8px', backgroundColor: '#fff', 
+    // CORREÇÃO: Usando a propriedade border completa sempre
+    border: '1px solid #f0f0f0', 
+    borderRadius: '6px', 
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+  },
+  dragging: { 
+    backgroundColor: '#fff9c4', 
+    // CORREÇÃO: Substituindo apenas a cor ou redefinindo o border completo, nunca misturando
+    border: '1px solid #fbc02d', 
+    boxShadow: '0 5px 15px rgba(0,0,0,0.1)' 
+  },
+  
+  rank: { fontWeight: 'bold', color: '#555', width: '25px', fontSize: '14px' },
+  name: { flex: 1, fontSize: '15px', color: '#333', fontWeight: '500' },
+  
+  badge: { fontSize: '11px', padding: '4px 8px', borderRadius: '4px', fontWeight: '600', textTransform: 'uppercase', marginLeft: '8px' },
+  badgeOficial: { backgroundColor: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9' },
+  badgeAluna: { backgroundColor: '#fff3e0', color: '#ef6c00', border: '1px solid #ffe0b2' },
+  
+  btnIcon: { background: 'none', border: '1px solid #eee', cursor: 'pointer', color: '#d32f2f', borderRadius: '4px', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  
+  cardFooter: { marginTop: '20px', borderTop: '1px solid #f5f5f5', paddingTop: '15px' },
+  btnAddMode: { background: 'none', border: 'none', color: '#d4b106', cursor: 'pointer', fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', padding: '10px' },
+  
+  addArea: { display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: '#f9f9f9', padding: '10px', borderRadius: '6px', border: '1px solid #eee' },
+  addSelect: { padding: '8px', borderRadius: '4px', border: '1px solid #ddd', width: '100%' },
+  btnAddActions: { display: 'flex', gap: '5px' },
+  btnAddConfirm: { padding: '8px', backgroundColor: '#2e7d32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', flex: 1 },
+  btnAddCancel: { padding: '8px', backgroundColor: '#e0e0e0', color: '#333', border: 'none', borderRadius: '4px', cursor: 'pointer', flex: 1 },
+  
+  btnSave: { width: '100%', padding: '10px', backgroundColor: '#d4b106', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px', fontSize: '14px' }
+};
+
+export default function Ciclos() {
   const [igrejas, setIgrejas] = useState([]);
-  const [igrejaId, setIgrejaId] = useState('');
-  const [ciclosInfo, setCiclosInfo] = useState(null);
-  const [itensPorCiclo, setItensPorCiclo] = useState({});
-  const [organistasDisponiveis, setOrganistasDisponiveis] = useState([]);
+  const [igrejaSelecionada, setIgrejaSelecionada] = useState('');
+  const [todasOrganistas, setTodasOrganistas] = useState([]); 
+  const [ciclos, setCiclos] = useState({ 1: [], 2: [], 3: [] });
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(null);
-  const [alert, setAlert] = useState(null);
-  const [dragState, setDragState] = useState({ ciclo: null, index: null });
+  
+  // Estado para controlar Adicionar
+  const [adicionandoEmCiclo, setAdicionandoEmCiclo] = useState(null); 
+  const [organistaSelecionadaParaAdicionar, setOrganistaSelecionadaParaAdicionar] = useState('');
 
-  const loadIgrejas = useCallback(async () => {
+  const infoCiclos = {
+    1: { dia: 'Quinta', hora: '19:30' },
+    2: { dia: 'Sábado', hora: '19:30' },
+    3: { dia: 'Domingo', hora: '18:30' }
+  };
+
+  const getToken = () => localStorage.getItem('token');
+  const api = axios.create({ baseURL: '/api', headers: { 'Authorization': `Bearer ${getToken()}` } });
+
+  useEffect(() => { carregarIgrejas(); }, []);
+
+  useEffect(() => {
+    if (igrejaSelecionada) {
+      carregarCiclos(igrejaSelecionada);
+      carregarTodasOrganistas(igrejaSelecionada);
+    }
+  }, [igrejaSelecionada]);
+
+  const carregarIgrejas = async () => {
     try {
-      const res = await getIgrejas();
-      setIgrejas(res.data);
-    } catch (e) {
-      setAlert({ message: 'Erro ao carregar igrejas', type: 'error' });
+      const response = await api.get('/igrejas');
+      const lista = response.data;
+      setIgrejas(lista);
+      if (lista.length > 0) setIgrejaSelecionada(lista[0].id);
+      else setLoading(false);
+    } catch (error) {
+      console.error("Erro ao carregar igrejas:", error);
+      setLoading(false);
+    }
+  };
+
+  const carregarTodasOrganistas = async (idIgreja) => {
+    try {
+      const response = await api.get(`/igrejas/${idIgreja}/organistas`);
+      setTodasOrganistas(response.data || []);
+    } catch (error) {
+      console.error("Erro ao carregar lista de organistas:", error);
+    }
+  };
+
+  const carregarCiclos = async (idIgreja) => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/igrejas/${idIgreja}/ciclos-organistas`);
+      const dados = response.data;
+      
+      const organizados = { 1: [], 2: [], 3: [] };
+      dados.forEach((item, index) => {
+        const numCiclo = item.ciclo || 1;
+        if (!organizados[numCiclo]) organizados[numCiclo] = [];
+        
+        // Determina o ID real da organista para usar na chave
+        const orgId = item.organista_id || (item.organista && item.organista.id) || item.id;
+        
+        organizados[numCiclo].push({
+          ...item,
+          uniqueId: `C${numCiclo}-ORG${orgId}-IDX${index}`
+        });
+      });
+
+      Object.keys(organizados).forEach(key => {
+        organizados[key].sort((a, b) => a.ordem - b.ordem);
+      });
+
+      setCiclos(organizados);
+    } catch (error) {
+      console.error("Erro ao carregar ciclos:", error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    loadIgrejas();
-  }, [loadIgrejas]);
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
 
-  useEffect(() => {
-    if (user?.role !== 'admin' && igrejas.length === 1) {
-      setIgrejaId(igrejas[0].id.toString());
+    const { source, destination } = result;
+    const cicloOrigem = source.droppableId;
+    const cicloDestino = destination.droppableId;
+
+    const novosCiclos = { ...ciclos };
+    const listaOrigem = [...novosCiclos[cicloOrigem]];
+    const listaDestino = cicloOrigem === cicloDestino ? listaOrigem : [...novosCiclos[cicloDestino]];
+
+    const [removido] = listaOrigem.splice(source.index, 1);
+    listaDestino.splice(destination.index, 0, removido);
+
+    novosCiclos[cicloOrigem] = listaOrigem;
+    novosCiclos[cicloDestino] = listaDestino;
+    setCiclos(novosCiclos);
+  };
+
+  const removerOrganista = (numCiclo, index) => {
+    if (!window.confirm("Remover esta organista do ciclo?")) return;
+    const novosCiclos = { ...ciclos };
+    novosCiclos[numCiclo].splice(index, 1);
+    setCiclos(novosCiclos);
+  };
+
+  const abrirAdicionar = (numCiclo) => {
+    setAdicionandoEmCiclo(numCiclo);
+    setOrganistaSelecionadaParaAdicionar('');
+  };
+
+  const confirmarAdicao = (numCiclo) => {
+    if (!organistaSelecionadaParaAdicionar) return;
+    
+    // Converte para string para garantir comparação correta
+    const idBusca = String(organistaSelecionadaParaAdicionar);
+    const organistaOriginal = todasOrganistas.find(o => String(o.id) === idBusca);
+    
+    if (!organistaOriginal) {
+        alert("Erro: Organista não encontrada na lista.");
+        return;
     }
-  }, [igrejas, user]);
 
-  useEffect(() => {
-    if (!igrejaId) {
-      setCiclosInfo(null);
-      setItensPorCiclo({});
-      setOrganistasDisponiveis([]);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const [resCiclos, resOrganistas] = await Promise.all([
-          getCiclosIgreja(igrejaId),
-          getOrganistasParaCiclos(igrejaId)
-        ]);
-        if (cancelled) return;
-        setCiclosInfo(resCiclos.data);
-        setOrganistasDisponiveis(resOrganistas.data || []);
-        const ciclos = resCiclos.data?.ciclos || [];
-        const itens = {};
-        for (const c of ciclos) {
-          const num = c.numero_ciclo;
-          const resItens = await getCicloItens(igrejaId, num);
-          if (!cancelled) itens[num] = resItens.data || [];
-        }
-        if (!cancelled) setItensPorCiclo(itens);
-      } catch (e) {
-        if (!cancelled) setAlert({ message: e.response?.data?.error || 'Erro ao carregar ciclos', type: 'error' });
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [igrejaId]);
-
-  const showAlert = (message, type = 'success') => {
-    setAlert({ message, type });
-    setTimeout(() => setAlert(null), 5000);
-  };
-
-  const handleDragStart = (numeroCiclo, index) => {
-    setDragState({ ciclo: numeroCiclo, index });
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (numeroCiclo, dropIndex) => {
-    const { ciclo, index: dragIndex } = dragState;
-    if (ciclo !== numeroCiclo || dragIndex === null || dragIndex === dropIndex) {
-      setDragState({ ciclo: null, index: null });
-      return;
-    }
-    const list = [...(itensPorCiclo[numeroCiclo] || [])];
-    const [removed] = list.splice(dragIndex, 1);
-    let insertAt = dropIndex;
-    if (dropIndex > dragIndex) insertAt -= 1;
-    list.splice(insertAt, 0, removed);
-    setItensPorCiclo(prev => ({ ...prev, [numeroCiclo]: list }));
-    setDragState({ ciclo: null, index: null });
-  };
-
-  const handleSalvarCiclo = async (numeroCiclo) => {
-    const itens = itensPorCiclo[numeroCiclo] || [];
-    const payload = itens.map((item, posicao) => ({
-      organista_id: item.organista_id,
-      posicao
-    }));
-    setSaving(numeroCiclo);
-    try {
-      await saveCicloItens(igrejaId, numeroCiclo, payload);
-      showAlert(`Ciclo ${numeroCiclo} salvo.`);
-    } catch (e) {
-      showAlert(e.response?.data?.error || 'Erro ao salvar', 'error');
-    } finally {
-      setSaving(null);
-    }
-  };
-
-  const handleAdicionarAoCiclo = (numeroCiclo, organista) => {
-    const list = itensPorCiclo[numeroCiclo] || [];
-    if (list.some(i => i.organista_id === organista.id)) return;
-    const novo = {
-      id: list.length + 1,
-      organista_id: organista.id,
-      organista_nome: organista.nome,
-      oficializada: organista.oficializada,
-      posicao: list.length
+    const novosCiclos = { ...ciclos };
+    
+    const novoItem = {
+      organista_id: organistaOriginal.id,
+      id: organistaOriginal.id, // Fallback
+      nome: organistaOriginal.nome,
+      oficializada: organistaOriginal.oficializada,
+      organista: { nome: organistaOriginal.nome, id: organistaOriginal.id },
+      uniqueId: `C${numCiclo}-NEW${organistaOriginal.id}-${Date.now()}`
     };
-    setItensPorCiclo(prev => ({
-      ...prev,
-      [numeroCiclo]: [...(prev[numeroCiclo] || []), novo]
-    }));
+
+    novosCiclos[numCiclo].push(novoItem);
+    setCiclos(novosCiclos);
+    
+    setAdicionandoEmCiclo(null);
+    setOrganistaSelecionadaParaAdicionar('');
   };
 
-  const handleRemoverDoCiclo = (numeroCiclo, index) => {
-    const list = [...(itensPorCiclo[numeroCiclo] || [])];
-    list.splice(index, 1);
-    setItensPorCiclo(prev => ({ ...prev, [numeroCiclo]: list }));
+  const salvarCiclo = async (numeroCiclo) => {
+    if (!igrejaSelecionada) return;
+    try {
+      const itens = ciclos[numeroCiclo];
+      const itensLimpos = itens.map((item, index) => {
+        // Tenta pegar o ID de todas as formas possíveis
+        const idReal = item.organista_id || (item.organista && item.organista.id) || item.id;
+        
+        if (!idReal) return null;
+        return { organista_id: parseInt(idReal), ordem: index + 1 };
+      }).filter(Boolean);
+
+      console.log(`Salvando Ciclo ${numeroCiclo}...`, itensLimpos);
+      await api.put(`/igrejas/${igrejaSelecionada}/ciclos/${numeroCiclo}`, { itens: itensLimpos });
+      
+      await carregarCiclos(igrejaSelecionada);
+      alert(`✅ Ciclo ${numeroCiclo} salvo com sucesso!`);
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      alert("Erro ao salvar.");
+    }
   };
 
-  const moveUp = (numeroCiclo, index) => {
-    if (index <= 0) return;
-    const list = [...(itensPorCiclo[numeroCiclo] || [])];
-    [list[index - 1], list[index]] = [list[index], list[index - 1]];
-    setItensPorCiclo(prev => ({ ...prev, [numeroCiclo]: list }));
+  // Filtra as organistas disponíveis para o dropdown (remove as que já estão no ciclo)
+  const getOrganistasDisponiveis = (numCiclo) => {
+    if (!todasOrganistas.length) return [];
+    
+    const cicloAtual = ciclos[numCiclo] || [];
+    const idsNoCiclo = cicloAtual.map(c => String(c.organista_id || (c.organista && c.organista.id) || c.id));
+    
+    return todasOrganistas.filter(o => !idsNoCiclo.includes(String(o.id)));
   };
-
-  const moveDown = (numeroCiclo, index) => {
-    const list = itensPorCiclo[numeroCiclo] || [];
-    if (index >= list.length - 1) return;
-    const newList = [...list];
-    [newList[index], newList[index + 1]] = [newList[index + 1], newList[index]];
-    setItensPorCiclo(prev => ({ ...prev, [numeroCiclo]: newList }));
-  };
-
-  if (loading) {
-    return (
-      <div className="page-ciclos">
-        <p>Carregando...</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="page-ciclos">
-      <header className="page-ciclos__header">
-        <h1>Gestão de Ciclos</h1>
-        <p className="page-ciclos__subtitle">
-          N cultos = N ciclos. Defina a ordem das organistas em cada ciclo. O rodízio alterna qual ciclo atende cada culto por semana.
-        </p>
-      </header>
-
-      {alert && (
-        <div className={`alert alert--${alert.type}`}>
-          {alert.message}
-        </div>
-      )}
-
-      <div className="page-ciclos__filtro">
-        <label>Igreja</label>
-        <select
-          value={igrejaId}
-          onChange={(e) => setIgrejaId(e.target.value)}
-          className="page-ciclos__select"
-        >
-          <option value="">Selecione</option>
-          {igrejas.map((i) => (
-            <option key={i.id} value={i.id}>{i.nome}</option>
-          ))}
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h3>Gestão de Ciclos</h3>
+        <label style={styles.label}>Selecione a Igreja:</label>
+        <select style={styles.select} value={igrejaSelecionada} onChange={(e) => setIgrejaSelecionada(e.target.value)}>
+          {igrejas.map(ig => <option key={ig.id} value={ig.id}>{ig.nome}</option>)}
         </select>
       </div>
 
-      {!igrejaId && (
-        <p className="page-ciclos__empty">Selecione uma igreja para gerenciar os ciclos.</p>
-      )}
+      {loading ? <p style={{textAlign:'center'}}>Carregando...</p> : (
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div style={styles.grid}>
+            {[1, 2, 3].map(numCiclo => (
+              <div key={numCiclo} style={styles.card}>
+                
+                <div style={styles.cardHeader}>
+                    <h3 style={styles.cycleTitle}>Ciclo {numCiclo}</h3>
+                    <p style={styles.cycleSubtitle}>
+                        {infoCiclos[numCiclo]?.dia} {infoCiclos[numCiclo]?.hora}
+                    </p>
+                </div>
 
-      {igrejaId && ciclosInfo && ciclosInfo.total_ciclos === 0 && (
-        <p className="page-ciclos__empty">Esta igreja não possui cultos ativos. Cadastre cultos para criar ciclos.</p>
-      )}
-
-      {igrejaId && ciclosInfo && ciclosInfo.total_ciclos > 0 && (
-        <div className="ciclos-grid">
-          {(ciclosInfo.ciclos || []).map((c) => (
-            <section key={c.numero_ciclo} className="ciclo-card">
-              <h2 className="ciclo-card__titulo">
-                Ciclo {c.numero_ciclo}
-                {c.culto && (
-                  <span className="ciclo-card__culto">
-                    {c.culto.dia_semana} {c.culto.hora && String(c.culto.hora).slice(0, 5)}
-                  </span>
-                )}
-              </h2>
-              <p className="ciclo-card__dica">Use as setas para reordenar ou arraste. Salve após alterar.</p>
-              <ul className="ciclo-lista" onDragOver={handleDragOver}>
-                {(itensPorCiclo[c.numero_ciclo] || []).map((item, index) => {
-                  const list = itensPorCiclo[c.numero_ciclo] || [];
-                  const isFirst = index === 0;
-                  const isLast = index === list.length - 1;
-                  const isOficial = item.oficializada === 1 || item.oficializada === true;
-                  return (
-                    <li
-                      key={`${item.organista_id}-${index}`}
-                      className="ciclo-lista__item"
-                      draggable
-                      onDragStart={(ev) => {
-                        handleDragStart(c.numero_ciclo, index);
-                        ev.dataTransfer.setData('text/plain', String(index));
-                        ev.dataTransfer.effectAllowed = 'move';
-                      }}
-                      onDragOver={(ev) => {
-                        ev.preventDefault();
-                        ev.dataTransfer.dropEffect = 'move';
-                      }}
-                      onDrop={(ev) => {
-                        ev.preventDefault();
-                        ev.stopPropagation();
-                        handleDrop(c.numero_ciclo, index);
+                <Droppable droppableId={String(numCiclo)}>
+                  {(provided, snapshot) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      style={{ 
+                          ...styles.listContainer,
+                          backgroundColor: snapshot.isDraggingOver ? '#fafafa' : 'transparent'
                       }}
                     >
-                      <span className="ciclo-lista__ordem" aria-label={`Posição ${index + 1}`}>
-                        {index + 1}º
-                      </span>
-                      <span className="ciclo-lista__nome">{item.organista_nome}</span>
-                      {isOficial ? (
-                        <span className="ciclo-lista__badge ciclo-lista__badge--oficial" title="Oficializada (pode tocar culto e meia hora)">
-                          <span className="ciclo-lista__badge-icon" aria-hidden>✓</span> Oficial
-                        </span>
-                      ) : (
-                        <span className="ciclo-lista__badge ciclo-lista__badge--aluna" title="Aluna (apenas meia hora)">
-                          Aluna
-                        </span>
-                      )}
-                      <div className="ciclo-lista__acoes">
-                        <button
-                          type="button"
-                          className="ciclo-lista__btn ciclo-lista__btn--up"
-                          onClick={() => moveUp(c.numero_ciclo, index)}
-                          disabled={isFirst}
-                          title="Subir uma posição"
-                          aria-label="Subir uma posição"
-                        >
-                          ▲
-                        </button>
-                        <button
-                          type="button"
-                          className="ciclo-lista__btn ciclo-lista__btn--down"
-                          onClick={() => moveDown(c.numero_ciclo, index)}
-                          disabled={isLast}
-                          title="Descer uma posição"
-                          aria-label="Descer uma posição"
-                        >
-                          ▼
-                        </button>
-                        <button
-                          type="button"
-                          className="ciclo-lista__remover"
-                          onClick={() => handleRemoverDoCiclo(c.numero_ciclo, index)}
-                          title="Remover do ciclo"
-                          aria-label="Remover do ciclo"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              <div className="ciclo-card__acoes">
-                <details className="ciclo-add">
-                  <summary>Adicionar organista</summary>
-                  <ul className="ciclo-add-lista">
-                    {organistasDisponiveis
-                      .filter((o) => !(itensPorCiclo[c.numero_ciclo] || []).some((i) => i.organista_id === o.id))
-                      .map((o) => (
-                        <li key={o.id}>
-                          <button
-                            type="button"
-                            onClick={() => handleAdicionarAoCiclo(c.numero_ciclo, o)}
-                          >
-                            {o.nome} {o.oficializada ? '✓' : '(Aluna)'}
-                          </button>
-                        </li>
+                      {ciclos[numCiclo]?.map((item, index) => (
+                        <Draggable key={item.uniqueId} draggableId={item.uniqueId} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              style={{
+                                ...styles.item,
+                                ...provided.draggableProps.style,
+                                ...(snapshot.isDragging ? styles.dragging : {})
+                              }}
+                            >
+                              <div style={{display:'flex', alignItems:'center', flex:1}}>
+                                <span style={styles.rank}>{index + 1}º</span>
+                                <span style={styles.name}>{item.nome || item.organista?.nome}</span>
+                              </div>
+                              {item.oficializada ? 
+                                <span style={{...styles.badge, ...styles.badgeOficial}}>Oficial</span> : 
+                                <span style={{...styles.badge, ...styles.badgeAluna}}>Aluna</span>
+                              }
+                              <button style={styles.btnIcon} onClick={() => removerOrganista(numCiclo, index)}>✕</button>
+                            </div>
+                          )}
+                        </Draggable>
                       ))}
-                    {organistasDisponiveis.length === 0 && <li>Nenhuma organista na igreja.</li>}
-                  </ul>
-                </details>
-                <button
-                  type="button"
-                  className="ciclo-card__salvar"
-                  disabled={saving === c.numero_ciclo}
-                  onClick={() => handleSalvarCiclo(c.numero_ciclo)}
-                >
-                  {saving === c.numero_ciclo ? 'Salvando...' : 'Salvar ciclo'}
-                </button>
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+
+                <div style={styles.cardFooter}>
+                    {adicionandoEmCiclo === numCiclo ? (
+                        <div style={styles.addArea}>
+                            <label style={{fontSize:12, fontWeight:'bold'}}>Selecione para adicionar:</label>
+                            <select 
+                                style={styles.addSelect}
+                                value={organistaSelecionadaParaAdicionar}
+                                onChange={e => setOrganistaSelecionadaParaAdicionar(e.target.value)}
+                            >
+                                <option value="">Selecione...</option>
+                                {getOrganistasDisponiveis(numCiclo).map(o => (
+                                    <option key={o.id} value={o.id}>{o.nome}</option>
+                                ))}
+                            </select>
+                            <div style={styles.btnAddActions}>
+                                <button style={styles.btnAddConfirm} onClick={() => confirmarAdicao(numCiclo)}>Confirmar</button>
+                                <button style={styles.btnAddCancel} onClick={() => setAdicionandoEmCiclo(null)}>Cancelar</button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button style={styles.btnAddMode} onClick={() => abrirAdicionar(numCiclo)}>
+                           + Adicionar Organista
+                        </button>
+                    )}
+                    
+                    <button onClick={() => salvarCiclo(numCiclo)} style={styles.btnSave}>
+                        Salvar Ciclo
+                    </button>
+                </div>
+
               </div>
-            </section>
-          ))}
-        </div>
+            ))}
+          </div>
+        </DragDropContext>
       )}
     </div>
   );
 }
-
-export default Ciclos;

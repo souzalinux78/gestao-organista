@@ -41,6 +41,7 @@ const init = async () => {
     
     // Verificar e adicionar coluna funcao se necessário (migração)
     await migrateRodiziosFuncao();
+    await migrateRodiziosCicloOrigem();
     await migrateTipoUsuario();
     await migrateTelefoneUsuario();
     await migrateCicloItens();
@@ -395,6 +396,36 @@ const migrateRodiziosFuncao = async () => {
   } catch (error) {
     console.error('⚠️ Erro na migração da coluna funcao:', error.message);
     // Não falha a inicialização se a migração falhar
+  }
+};
+
+// Migração: adicionar coluna ciclo_origem em rodizios (ciclo da fila no momento da escala)
+const migrateRodiziosCicloOrigem = async () => {
+  try {
+    const [columns] = await pool.execute(
+      `SELECT COLUMN_NAME 
+       FROM INFORMATION_SCHEMA.COLUMNS 
+       WHERE TABLE_SCHEMA = DATABASE() 
+       AND TABLE_NAME = 'rodizios' 
+       AND COLUMN_NAME = 'ciclo_origem'`
+    );
+    if (columns.length === 0) {
+      console.log('🔄 Adicionando coluna ciclo_origem na tabela rodizios...');
+      await pool.execute(`
+        ALTER TABLE rodizios 
+        ADD COLUMN ciclo_origem INT NULL 
+        AFTER periodo_fim
+      `);
+      console.log('✅ Coluna ciclo_origem adicionada com sucesso!');
+    } else {
+      console.log('✅ Coluna ciclo_origem já existe na tabela rodizios.');
+    }
+  } catch (error) {
+    if (error.code === 'ER_DUP_FIELDNAME') {
+      console.log('ℹ️ Coluna ciclo_origem já existe.');
+    } else {
+      console.error('⚠️ Erro na migração da coluna ciclo_origem:', error.message);
+    }
   }
 };
 

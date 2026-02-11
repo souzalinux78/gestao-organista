@@ -581,6 +581,23 @@ input {
   color: var(--text-main) !important;
 }
 
+/* Campo Igreja em Gerar Rodízio: garantir que o nome da igreja apareça legível (não em cinza) */
+.rodizios__select-igreja {
+  color: var(--text-primary) !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  background-color: var(--bg-card) !important;
+  opacity: 1 !important;
+}
+.rodizios__select-igreja:disabled {
+  color: var(--text-primary) !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  opacity: 1 !important;
+}
+.rodizios__select-igreja option {
+  color: var(--text-primary) !important;
+  background: var(--bg-card) !important;
+}
+
 /* Garantir que inputs de data também mostrem o texto */
 input[type="date"],
 input[type="text"][placeholder*="dd/mm"],
