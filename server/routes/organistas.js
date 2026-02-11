@@ -446,16 +446,28 @@ router.put('/:id', authenticate, tenantResolver, async (req, res) => {
   }
 });
 
-// Deletar organista
+// Deletar organista (remove antes as referências em tabelas dependentes para evitar FK constraint)
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const pool = db.getDb();
-    const [result] = await pool.execute('DELETE FROM organistas WHERE id = ?', [req.params.id]);
-    
+    const organistaId = req.params.id;
+
+    // Remover referências em tabelas dependentes (evita FK constraint em qualquer versão do schema)
+    await pool.execute('DELETE FROM ciclo_itens WHERE organista_id = ?', [organistaId]);
+    await pool.execute('DELETE FROM organistas_igreja WHERE organista_id = ?', [organistaId]);
+    await pool.execute('DELETE FROM rodizios WHERE organista_id = ?', [organistaId]);
+    try {
+      await pool.execute('DELETE FROM ciclo_organistas WHERE organista_id = ?', [organistaId]);
+    } catch (e) {
+      if (e.code !== 'ER_NO_SUCH_TABLE') throw e;
+    }
+
+    const [result] = await pool.execute('DELETE FROM organistas WHERE id = ?', [organistaId]);
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Organista não encontrada' });
     }
-    
+
     res.json({ message: 'Organista deletada com sucesso' });
   } catch (error) {
     res.status(500).json({ error: error.message });
