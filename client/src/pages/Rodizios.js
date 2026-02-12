@@ -203,13 +203,18 @@ function Rodizios({ user }) {
 
   const handleLimparERefazer = async () => {
     if (!gerarForm.igreja_id) { showAlert('Selecione uma igreja', 'error'); return; }
-    if (!window.confirm('Isso apagará a escala atual e gerará uma nova. Continuar?')) return;
+
+    let dataInicial = gerarForm.data_inicial;
+    if (dataInicial && dataInicial.includes('/')) dataInicial = parseDataBrasileira(dataInicial);
+
+    const msgConfirm = dataInicial
+      ? `Serão apagados apenas os rodízios a partir de ${formatarDataBrasileira(dataInicial)}. Os anteriores serão mantidos. Depois será gerada uma nova escala. Continuar?`
+      : 'Isso apagará toda a escala atual e gerará uma nova. Continuar?';
+    if (!window.confirm(msgConfirm)) return;
 
     try {
       setLoadingGerar(true);
-      await limparRodiziosIgreja(gerarForm.igreja_id);
-      let dataInicial = gerarForm.data_inicial;
-      if (dataInicial && dataInicial.includes('/')) dataInicial = parseDataBrasileira(dataInicial);
+      await limparRodiziosIgreja(gerarForm.igreja_id, dataInicial || undefined, undefined);
 
       const response = await gerarRodizio(
         parseInt(gerarForm.igreja_id),
