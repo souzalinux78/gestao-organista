@@ -6,7 +6,40 @@
 -- =====================================================
 
 -- =====================================================
--- Passo 1: Criar tabela ciclos (se não existir)
+-- Passo 1: Criar tabelas escalas e escala_itens
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `escalas` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `igreja_id` INT NOT NULL,
+  `nome_referencia` VARCHAR(255) NOT NULL COMMENT 'Ex: 2º Trimestre 2026',
+  `data_inicio` DATE NOT NULL,
+  `data_fim` DATE NOT NULL,
+  `status` VARCHAR(20) NOT NULL DEFAULT 'Rascunho' COMMENT 'Rascunho ou Publicada',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_escalas_igreja (igreja_id),
+  INDEX idx_escalas_status (status),
+  CONSTRAINT escalas_ibfk_1 FOREIGN KEY (igreja_id) REFERENCES igrejas(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `escala_itens` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `escala_id` INT NOT NULL,
+  `data` DATE NOT NULL,
+  `hora` TIME DEFAULT NULL COMMENT 'Hora do culto ou da meia hora',
+  `culto_nome` VARCHAR(255) NOT NULL,
+  `funcao` VARCHAR(30) DEFAULT NULL COMMENT 'meia_hora ou tocar_culto',
+  `organista_id` INT DEFAULT NULL COMMENT 'Pode ser NULL se organista foi excluída do cadastro',
+  `organista_nome` VARCHAR(255) NOT NULL COMMENT 'Texto fixo para histórico',
+  `ciclo_origem` INT NOT NULL COMMENT 'Número do ciclo de onde veio (1, 2, 3...)',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_escala_itens_escala (escala_id),
+  INDEX idx_escala_itens_data (data),
+  CONSTRAINT escala_itens_ibfk_1 FOREIGN KEY (escala_id) REFERENCES escalas(id) ON DELETE CASCADE,
+  CONSTRAINT escala_itens_ibfk_2 FOREIGN KEY (organista_id) REFERENCES organistas(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Passo 2: Criar tabela ciclos (se não existir)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS `ciclos` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -21,7 +54,7 @@ CREATE TABLE IF NOT EXISTS `ciclos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- Passo 2: Adicionar coluna ciclo_id em ciclo_itens
+-- Passo 3: Adicionar coluna ciclo_id em ciclo_itens
 -- =====================================================
 SET @dbname = DATABASE();
 SET @tablename = 'ciclo_itens';
@@ -37,7 +70,7 @@ EXECUTE alterIfNotExists;
 DEALLOCATE PREPARE alterIfNotExists;
 
 -- =====================================================
--- Passo 3: Adicionar índice em ciclo_id
+-- Passo 4: Adicionar índice em ciclo_id
 -- =====================================================
 SET @preparedStatement = (SELECT IF(
   (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
@@ -50,7 +83,7 @@ EXECUTE alterIfNotExists;
 DEALLOCATE PREPARE alterIfNotExists;
 
 -- =====================================================
--- Passo 4: Adicionar foreign key
+-- Passo 5: Adicionar foreign key
 -- =====================================================
 SET @preparedStatement = (SELECT IF(
   (SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
@@ -63,7 +96,7 @@ EXECUTE alterIfNotExists;
 DEALLOCATE PREPARE alterIfNotExists;
 
 -- =====================================================
--- Passo 5: MIGRAR - Criar ciclos baseado em ciclo_organistas
+-- Passo 6: MIGRAR - Criar ciclos baseado em ciclo_organistas
 -- =====================================================
 INSERT IGNORE INTO ciclos (igreja_id, nome, ordem, ativo, created_at)
 SELECT DISTINCT 
@@ -110,7 +143,7 @@ WHERE ci.numero_ciclo IS NOT NULL AND ci.numero_ciclo > 0
 ORDER BY ci.igreja_id, ci.numero_ciclo;
 
 -- =====================================================
--- Passo 6: Popular ciclo_id em ciclo_itens
+-- Passo 7: Popular ciclo_id em ciclo_itens
 -- =====================================================
 UPDATE ciclo_itens ci
 INNER JOIN ciclos c ON c.igreja_id = ci.igreja_id AND c.ordem = ci.numero_ciclo
@@ -118,7 +151,7 @@ SET ci.ciclo_id = c.id
 WHERE ci.ciclo_id IS NULL;
 
 -- =====================================================
--- Passo 7: VERIFICAÇÃO - Resumo por Igreja
+-- Passo 8: VERIFICAÇÃO - Resumo por Igreja
 -- =====================================================
 
 SELECT '========== RESUMO DA MIGRAÇÃO ==========' as info;
