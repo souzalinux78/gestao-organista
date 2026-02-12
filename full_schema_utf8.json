@@ -1,0 +1,306 @@
+﻿Banco de dados 'gestao_organista' verificado/criado
+Conectado ao banco de dados MySQL
+Tabelas criadas com sucesso
+Ô£à Coluna funcao j├í existe na tabela rodizios.
+Ô£à Coluna ciclo_origem j├í existe na tabela rodizios.
+Ôä╣´©Å  Campo tipo_usuario j├í possui o valor "instrutoras" no ENUM.
+Ôä╣´©Å  Campo telefone j├í existe na tabela usuarios.
+­ƒöä Iniciando migra├º├úo multi-tenant (FASE 1)...
+­ƒôª Criando tabela tenants...
+Ô£à Tabela tenants criada!
+­ƒôª Criando tenant padr├úo...
+Ô£à Tenant padr├úo criado (ID: 1)
+­ƒôª Adicionando coluna tenant_id em usuarios...
+Ôä╣´©Å  Coluna tenant_id j├í existe.
+­ƒôª Migrando usu├írios existentes para tenant padr├úo...
+Ô£à 0 usu├írio(s) migrado(s) para tenant padr├úo!
+­ƒôè Estat├¡sticas da migra├º├úo:
+   - Total de usu├írios: 3
+   - Usu├írios com tenant: 3
+   - Usu├írios sem tenant: 0
+Ô£à Migra├º├úo multi-tenant (FASE 1) conclu├¡da com sucesso!
+­ƒöä Iniciando migra├º├úo multi-tenant FASE 2...
+Ô£à Tenant padr├úo encontrado (ID: 1)
+­ƒôª Adicionando tenant_id em igrejas...
+Ôä╣´©Å  Coluna tenant_id j├í existe em igrejas.
+Ô£à 0 igreja(s) migrada(s)!
+­ƒôª Adicionando tenant_id em organistas...
+Ôä╣´©Å  Coluna tenant_id j├í existe em organistas.
+Ô£à 0 organista(s) migrada(s)!
+­ƒôè Estat├¡sticas da migra├º├úo FASE 2:
+   Igrejas:
+     - Total: 9
+     - Com tenant: 9
+     - Sem tenant: 0
+   Organistas:
+     - Total: 31
+     - Com tenant: 31
+     - Sem tenant: 0
+Ô£à Migra├º├úo multi-tenant FASE 2 conclu├¡da com sucesso!
+­ƒöä Iniciando migra├º├úo multi-tenant FASE 5...
+Ô£à Tenant padr├úo encontrado (ID: 1)
+­ƒôª Verificando usu├írios sem tenant_id...
+Ôä╣´©Å  Todos os usu├írios j├í t├¬m tenant_id
+­ƒôª Verificando igrejas sem tenant_id...
+Ôä╣´©Å  Todas as igrejas j├í t├¬m tenant_id
+­ƒôª Verificando organistas sem tenant_id...
+Ôä╣´©Å  Todos os organistas j├í t├¬m tenant_id
+­ƒöÆ Tornando tenant_id NOT NULL em usuarios...
+Ôä╣´©Å  tenant_id j├í ├® NOT NULL em usuarios
+­ƒöÆ Tornando tenant_id NOT NULL em igrejas...
+Ôä╣´©Å  tenant_id j├í ├® NOT NULL em igrejas
+­ƒöÆ Tornando tenant_id NOT NULL em organistas...
+Ôä╣´©Å  tenant_id j├í ├® NOT NULL em organistas
+­ƒôè Estat├¡sticas finais:
+   Usu├írios: 3 total, 3 com tenant
+   Igrejas: 9 total, 9 com tenant
+   Organistas: 31 total, 31 com tenant
+Ô£à Migra├º├úo multi-tenant FASE 5 conclu├¡da com sucesso!
+{
+  "igrejas": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": null,
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "tenant_id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "MUL",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "nome",
+      "Type": "varchar(255)",
+      "Null": "NO",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "endereco",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "encarregado_local_nome",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "encarregado_local_telefone",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "encarregado_regional_nome",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "encarregado_regional_telefone",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "created_at",
+      "Type": "datetime",
+      "Null": "YES",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED"
+    },
+    {
+      "Field": "mesma_organista_ambas_funcoes",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    }
+  ],
+  "organistas": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": null,
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "tenant_id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "MUL",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "nome",
+      "Type": "varchar(255)",
+      "Null": "NO",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "telefone",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "email",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "oficializada",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "categoria",
+      "Type": "enum('oficial','rjm','aluna')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "oficial",
+      "Extra": ""
+    },
+    {
+      "Field": "ativa",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "pode_tocar_rjm",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "created_at",
+      "Type": "datetime",
+      "Null": "YES",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED"
+    }
+  ],
+  "cultos": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": null,
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "igreja_id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "MUL",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "ciclo_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "dia_semana",
+      "Type": "varchar(20)",
+      "Null": "NO",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "hora",
+      "Type": "time",
+      "Null": "NO",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "tipo",
+      "Type": "enum('culto_oficial','rjm','outro')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "culto_oficial",
+      "Extra": ""
+    },
+    {
+      "Field": "ativo",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "eh_rjm",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "permite_alunas",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "created_at",
+      "Type": "datetime",
+      "Null": "YES",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED"
+    }
+  ]
+}

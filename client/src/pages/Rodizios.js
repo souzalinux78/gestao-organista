@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRodizios, gerarRodizio, getRodizioPDF, limparRodiziosIgreja, testarWebhook, updateRodizio, importarRodizio } from '../services/api';
-import { getIgrejas, getCultosIgreja, getOrganistasIgreja } from '../services/api';
+import { getIgrejas, getCiclosIgreja, getOrganistasIgreja } from '../services/api';
 import { formatarDataBrasileira, parseDataBrasileira, aplicarMascaraData } from '../utils/dateHelpers';
-import { useAuth } from '../contexts/AuthContext'; 
+import { useAuth } from '../contexts/AuthContext';
 
 function Rodizios({ user }) {
   const navigate = useNavigate();
-  
+
   // CORREÇÃO: Hook chamado incondicionalmente (sempre executa)
   const { user: authUser } = useAuth();
-  
+
   // Define quem é o usuário atual (o da prop ou o do contexto)
   const currentUser = user || authUser;
 
@@ -33,7 +33,7 @@ function Rodizios({ user }) {
   });
   const [arquivoCSV, setArquivoCSV] = useState(null);
   const [loadingImportar, setLoadingImportar] = useState(false);
-  const [cultosIgreja, setCultosIgreja] = useState([]);
+  const [ciclosIgreja, setCiclosIgreja] = useState([]);
   const [organistasIgreja, setOrganistasIgreja] = useState([]);
   const [alert, setAlert] = useState(null);
 
@@ -55,26 +55,27 @@ function Rodizios({ user }) {
 
   useEffect(() => {
     if (gerarForm.igreja_id) {
-      loadCultosIgreja(gerarForm.igreja_id);
+      loadCiclosIgreja(gerarForm.igreja_id);
       loadOrganistasIgreja(gerarForm.igreja_id);
     } else {
-      setCultosIgreja([]);
+      setCiclosIgreja([]);
       setOrganistasIgreja([]);
       setGerarForm(prev => ({ ...prev, ciclo_inicial: '', organista_inicial: '' }));
     }
   }, [gerarForm.igreja_id]);
 
-  const loadCultosIgreja = async (igrejaId) => {
+  const loadCiclosIgreja = async (igrejaId) => {
     try {
-      const response = await getCultosIgreja(igrejaId);
-      const cultosAtivos = response.data.filter(c => c.ativo === 1);
-      setCultosIgreja(cultosAtivos);
-      if (cultosAtivos.length === 1 && !gerarForm.ciclo_inicial) {
-        setGerarForm(prev => ({ ...prev, ciclo_inicial: '1' }));
+      const response = await getCiclosIgreja(igrejaId);
+      // O backend agora retorna { igreja_id, total_ciclos, ciclos: [...] }
+      const listaCiclos = response.data.ciclos || [];
+      setCiclosIgreja(listaCiclos);
+      if (listaCiclos.length > 0 && !gerarForm.ciclo_inicial) {
+        setGerarForm(prev => ({ ...prev, ciclo_inicial: listaCiclos[0].id.toString() }));
       }
     } catch (error) {
-      console.error('Erro ao carregar cultos:', error);
-      setCultosIgreja([]);
+      console.error('Erro ao carregar ciclos:', error);
+      setCiclosIgreja([]);
     }
   };
 
@@ -106,7 +107,7 @@ function Rodizios({ user }) {
       if (filtros.igreja_id) params.igreja_id = filtros.igreja_id;
       if (filtros.periodo_inicio) params.periodo_inicio = filtros.periodo_inicio;
       if (filtros.periodo_fim) params.periodo_fim = filtros.periodo_fim;
-      
+
       const response = await getRodizios(params);
       setRodizios(response.data);
     } catch (error) {
@@ -159,16 +160,16 @@ function Rodizios({ user }) {
     e.preventDefault();
     if (!gerarForm.igreja_id) { showAlert('Selecione uma igreja', 'error'); return; }
     if (!gerarForm.ciclo_inicial) { showAlert('Selecione o ciclo inicial', 'error'); return; }
-    
+
     try {
       setLoadingGerar(true);
       let dataInicial = gerarForm.data_inicial;
       if (dataInicial && dataInicial.includes('/')) {
         dataInicial = parseDataBrasileira(dataInicial);
       }
-      
+
       const response = await gerarRodizio(
-        parseInt(gerarForm.igreja_id), 
+        parseInt(gerarForm.igreja_id),
         gerarForm.periodo_meses,
         parseInt(gerarForm.ciclo_inicial),
         dataInicial || null,
@@ -187,7 +188,7 @@ function Rodizios({ user }) {
   const handleLimparRodizios = async () => {
     if (!gerarForm.igreja_id) { showAlert('Selecione uma igreja', 'error'); return; }
     if (!window.confirm('Tem certeza? Isso apagará toda a escala atual.')) return;
-    
+
     try {
       setLoadingGerar(true);
       await limparRodiziosIgreja(gerarForm.igreja_id);
@@ -244,23 +245,23 @@ function Rodizios({ user }) {
   };
 
   const handleTestarWebhook = async () => {
-      try { setLoadingWebhook(true); await testarWebhook(); showAlert('Webhook OK!'); } 
-      catch { showAlert('Erro Webhook', 'error'); } finally { setLoadingWebhook(false); }
+    try { setLoadingWebhook(true); await testarWebhook(); showAlert('Webhook OK!'); }
+    catch { showAlert('Erro Webhook', 'error'); } finally { setLoadingWebhook(false); }
   };
-  
-  const handleImportarRodizio = async () => { 
-      if (!gerarForm.igreja_id || !arquivoCSV) { showAlert('Selecione igreja e CSV', 'error'); return; }
-      try {
-          setLoadingImportar(true);
-          const reader = new FileReader();
-          reader.onload = async (e) => {
-              await importarRodizio(parseInt(gerarForm.igreja_id), e.target.result);
-              showAlert('Importado com sucesso!');
-              loadRodizios();
-          };
-          reader.readAsText(arquivoCSV);
-      } catch { showAlert('Erro ao importar', 'error'); } 
-      finally { setLoadingImportar(false); }
+
+  const handleImportarRodizio = async () => {
+    if (!gerarForm.igreja_id || !arquivoCSV) { showAlert('Selecione igreja e CSV', 'error'); return; }
+    try {
+      setLoadingImportar(true);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        await importarRodizio(parseInt(gerarForm.igreja_id), e.target.result);
+        showAlert('Importado com sucesso!');
+        loadRodizios();
+      };
+      reader.readAsText(arquivoCSV);
+    } catch { showAlert('Erro ao importar', 'error'); }
+    finally { setLoadingImportar(false); }
   };
 
   const formatarData = (d) => formatarDataBrasileira(d);
@@ -272,11 +273,11 @@ function Rodizios({ user }) {
       <div className="card">
         <h2>Gerar Rodízio</h2>
         {alert && <div className={`alert alert-${alert.type}`}>{alert.message}</div>}
-        
+
         <form onSubmit={handleGerarRodizio} className="form--spaced">
           <div className="form-group">
             <label>Igreja *</label>
-            <select className="rodizios__select-igreja" value={gerarForm.igreja_id} onChange={e => setGerarForm({...gerarForm, igreja_id: e.target.value})} required disabled={currentUser?.role !== 'admin'}>
+            <select className="rodizios__select-igreja" value={gerarForm.igreja_id} onChange={e => setGerarForm({ ...gerarForm, igreja_id: e.target.value })} required disabled={currentUser?.role !== 'admin'}>
               <option value="">Selecione...</option>
               {igrejas.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
             </select>
@@ -284,7 +285,7 @@ function Rodizios({ user }) {
 
           <div className="form-group">
             <label>Período *</label>
-            <select value={gerarForm.periodo_meses} onChange={e => setGerarForm({...gerarForm, periodo_meses: parseInt(e.target.value)})}>
+            <select value={gerarForm.periodo_meses} onChange={e => setGerarForm({ ...gerarForm, periodo_meses: parseInt(e.target.value) })}>
               <option value={3}>3 meses</option>
               <option value={6}>6 meses</option>
               <option value={12}>12 meses</option>
@@ -293,14 +294,14 @@ function Rodizios({ user }) {
 
           <div className="form-group">
             <label>Data Inicial</label>
-            <input type="text" placeholder="dd/mm/yyyy" value={gerarForm.data_inicial} onChange={e => setGerarForm({...gerarForm, data_inicial: aplicarMascaraData(e.target.value)})} maxLength={10} />
+            <input type="text" placeholder="dd/mm/yyyy" value={gerarForm.data_inicial} onChange={e => setGerarForm({ ...gerarForm, data_inicial: aplicarMascaraData(e.target.value) })} maxLength={10} />
             <small className="form-hint">Deixe em branco para começar hoje.</small>
           </div>
 
           {gerarForm.igreja_id && organistasIgreja.length > 0 && (
             <div className="form-group">
               <label>Organista Inicial</label>
-              <select value={gerarForm.organista_inicial} onChange={e => setGerarForm({...gerarForm, organista_inicial: e.target.value})}>
+              <select value={gerarForm.organista_inicial} onChange={e => setGerarForm({ ...gerarForm, organista_inicial: e.target.value })}>
                 <option value="">Começar pela primeira da fila</option>
                 {organistasIgreja.map((organista) => (
                   <option key={organista.id} value={organista.id}>
@@ -312,12 +313,16 @@ function Rodizios({ user }) {
             </div>
           )}
 
-          {gerarForm.igreja_id && cultosIgreja.length > 0 && (
+          {gerarForm.igreja_id && ciclosIgreja.length > 0 && (
             <div className="form-group">
               <label>Ciclo Inicial *</label>
-              <select value={gerarForm.ciclo_inicial} onChange={e => setGerarForm({...gerarForm, ciclo_inicial: e.target.value})} required>
+              <select value={gerarForm.ciclo_inicial} onChange={e => setGerarForm({ ...gerarForm, ciclo_inicial: e.target.value })} required>
                 <option value="">Selecione...</option>
-                {Array.from({length: cultosIgreja.length}, (_, i) => i + 1).map(c => <option key={c} value={c}>Ciclo {c}</option>)}
+                {ciclosIgreja.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome || `Ciclo ${c.ordem || c.id}`}
+                  </option>
+                ))}
               </select>
             </div>
           )}
@@ -333,40 +338,41 @@ function Rodizios({ user }) {
             <button type="button" className="btn btn-primary" onClick={handleTestarWebhook} disabled={loadingWebhook}>Testar Webhook</button>
           </div>
         </form>
-        
-        <div className="form-section" style={{marginTop:'20px', paddingTop:'20px', borderTop:'1px solid #eee'}}>
-            <h3>Importar CSV</h3>
-            <input type="file" accept=".csv" onChange={e => setArquivoCSV(e.target.files[0])} />
-            <button type="button" className="btn btn-primary" onClick={handleImportarRodizio} disabled={loadingImportar || !arquivoCSV} style={{marginTop:'10px'}}>Importar</button>
+
+        <div className="form-section" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #eee' }}>
+          <h3>Importar CSV</h3>
+          <input type="file" accept=".csv" onChange={e => setArquivoCSV(e.target.files[0])} />
+          <button type="button" className="btn btn-primary" onClick={handleImportarRodizio} disabled={loadingImportar || !arquivoCSV} style={{ marginTop: '10px' }}>Importar</button>
         </div>
       </div>
 
       <div className="card">
         <h2>Rodízios Gerados</h2>
         <div className="btn-row btn-row--no-margin">
-            <select value={filtros.igreja_id} onChange={e => setFiltros({...filtros, igreja_id: e.target.value})}>
-                <option value="">Todas as igrejas</option>
-                {igrejas.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
-            </select>
-            <button className="btn btn-success" onClick={handleGerarPDF} disabled={!filtros.igreja_id}>Gerar PDF</button>
+          <select value={filtros.igreja_id} onChange={e => setFiltros({ ...filtros, igreja_id: e.target.value })}>
+            <option value="">Todas as igrejas</option>
+            {igrejas.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+          </select>
+          <button className="btn btn-success" onClick={handleGerarPDF} disabled={!filtros.igreja_id}>Gerar PDF</button>
         </div>
 
         {rodizios.length === 0 ? <div className="empty">Nenhum rodízio</div> : (
           <div className="table-wrapper">
             <table className="table">
               <thead>
-                <tr><th>Data</th><th>Dia</th><th>Hora</th><th>Função</th><th>Organista</th><th>Tel</th><th>Ações</th></tr>
+                <tr><th>Data</th><th>Dia</th><th>Hora</th><th>Ciclo</th><th>Função</th><th>Organista</th><th>Tel</th><th>Ações</th></tr>
               </thead>
               <tbody>
                 {rodizios.map(r => (
                   <tr key={r.id}>
                     <td className="td-strong table__nowrap">{formatarData(r.data_culto)}</td>
                     <td className="text-capitalize">{r.dia_semana}</td>
-                    <td>{r.hora_culto ? r.hora_culto.slice(0,5) : '-'}</td>
+                    <td>{r.hora_culto ? r.hora_culto.slice(0, 5) : '-'}</td>
+                    <td>{r.ciclo_nome || r.ciclo_origem || '-'}</td>
                     <td>
-                        <span className={`badge ${r.funcao === 'meia_hora' ? 'badge--warn' : 'badge--info'}`}>
-                            {r.funcao === 'meia_hora' ? 'Meia Hora' : 'Culto'}
-                        </span>
+                      <span className={`badge ${r.funcao === 'meia_hora' ? 'badge--warn' : (r.culto_tipo === 'rjm' ? 'badge--success' : 'badge--info')}`}>
+                        {r.funcao === 'meia_hora' ? 'Meia Hora' : (r.culto_tipo === 'rjm' ? 'RJM' : 'Culto')}
+                      </span>
                     </td>
                     <td className="table__cell--break">
                       {editandoRodizio === r.id ? (
@@ -385,9 +391,9 @@ function Rodizios({ user }) {
                         </div>
                       ) : (
                         <button className="btn btn-primary" onClick={(e) => {
-                            e.preventDefault();
-                            if(organistasIgreja.length===0) loadOrganistasIgreja(r.igreja_id);
-                            handleIniciarEdicao(r);
+                          e.preventDefault();
+                          if (organistasIgreja.length === 0) loadOrganistasIgreja(r.igreja_id);
+                          handleIniciarEdicao(r);
                         }}>✏️ Editar</button>
                       )}
                     </td>

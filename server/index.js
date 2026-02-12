@@ -71,7 +71,7 @@ if (rateLimit) {
     message: 'Muitas tentativas de login. Tente novamente em alguns minutos.',
     skipSuccessfulRequests: true // Não contar requisições bem-sucedidas
   });
-  
+
   // Rate limit geral para outras rotas da API
   apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
@@ -79,7 +79,7 @@ if (rateLimit) {
     standardHeaders: true,
     legacyHeaders: false
   });
-  
+
   console.log('[INFO] Rate limiting ativado');
   console.log('[INFO] Login: máximo 20 tentativas por 15 minutos');
   console.log('[INFO] API geral: máximo 500 requisições por 15 minutos');
@@ -96,9 +96,9 @@ app.use(session({
   secret: envConfig.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { 
+  cookie: {
     secure: process.env.NODE_ENV === 'production', // HTTPS em produção
-    httpOnly: true, 
+    httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     sameSite: 'strict' // Proteção CSRF
   }
@@ -157,6 +157,7 @@ if (rateLimit && apiLimiter) {
   app.use('/api/diagnostico', apiLimiter, diagnosticoRoutes);
   app.use('/api/admin', apiLimiter, adminRoutes);
   app.use('/api/configuracoes', apiLimiter, configuracoesRoutes);
+  app.use('/api/ciclos', apiLimiter, require('./routes/ciclos'));
 } else {
   // Se rate limit não estiver disponível, usar rotas sem rate limit
   app.use('/api/organistas', organistasRoutes);
@@ -168,6 +169,7 @@ if (rateLimit && apiLimiter) {
   app.use('/api/diagnostico', diagnosticoRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/configuracoes', configuracoesRoutes);
+  app.use('/api/ciclos', require('./routes/ciclos'));
 }
 
 // Rota de health check
@@ -207,7 +209,7 @@ if (process.env.NODE_ENV !== 'production') {
 // Servir arquivos estáticos do build do React (apenas em produção)
 if (process.env.NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, '../client/build');
-  
+
   // Servir arquivos estáticos com headers anti-cache para HTML
   app.use(express.static(buildPath, {
     maxAge: 0, // Sem cache para garantir atualizações
@@ -226,14 +228,14 @@ if (process.env.NODE_ENV === 'production') {
       }
     }
   }));
-  
+
   // Todas as rotas não-API servem o index.html (SPA)
   app.get('*', (req, res, next) => {
     // Ignorar rotas da API
     if (req.path.startsWith('/api/')) {
       return next();
     }
-    
+
     // Servir index.html com headers anti-cache
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');

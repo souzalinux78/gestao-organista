@@ -1,0 +1,454 @@
+﻿Banco de dados 'gestao_organista' verificado/criado
+Conectado ao banco de dados MySQL
+Tabelas criadas com sucesso
+Ô£à Coluna funcao j├í existe na tabela rodizios.
+Ô£à Coluna ciclo_origem j├í existe na tabela rodizios.
+Ôä╣´©Å  Campo tipo_usuario j├í possui o valor "instrutoras" no ENUM.
+Ôä╣´©Å  Campo telefone j├í existe na tabela usuarios.
+­ƒöä Iniciando migra├º├úo multi-tenant (FASE 1)...
+­ƒôª Criando tabela tenants...
+Ô£à Tabela tenants criada!
+­ƒôª Criando tenant padr├úo...
+Ô£à Tenant padr├úo criado (ID: 1)
+­ƒôª Adicionando coluna tenant_id em usuarios...
+Ôä╣´©Å  Coluna tenant_id j├í existe.
+­ƒôª Migrando usu├írios existentes para tenant padr├úo...
+Ô£à 0 usu├írio(s) migrado(s) para tenant padr├úo!
+­ƒôè Estat├¡sticas da migra├º├úo:
+   - Total de usu├írios: 3
+   - Usu├írios com tenant: 3
+   - Usu├írios sem tenant: 0
+Ô£à Migra├º├úo multi-tenant (FASE 1) conclu├¡da com sucesso!
+­ƒöä Iniciando migra├º├úo multi-tenant FASE 2...
+Ô£à Tenant padr├úo encontrado (ID: 1)
+­ƒôª Adicionando tenant_id em igrejas...
+Ôä╣´©Å  Coluna tenant_id j├í existe em igrejas.
+Ô£à 0 igreja(s) migrada(s)!
+­ƒôª Adicionando tenant_id em organistas...
+Ôä╣´©Å  Coluna tenant_id j├í existe em organistas.
+Ô£à 0 organista(s) migrada(s)!
+­ƒôè Estat├¡sticas da migra├º├úo FASE 2:
+   Igrejas:
+     - Total: 9
+     - Com tenant: 9
+     - Sem tenant: 0
+   Organistas:
+     - Total: 31
+     - Com tenant: 31
+     - Sem tenant: 0
+Ô£à Migra├º├úo multi-tenant FASE 2 conclu├¡da com sucesso!
+­ƒöä Iniciando migra├º├úo multi-tenant FASE 5...
+Ô£à Tenant padr├úo encontrado (ID: 1)
+­ƒôª Verificando usu├írios sem tenant_id...
+Ôä╣´©Å  Todos os usu├írios j├í t├¬m tenant_id
+­ƒôª Verificando igrejas sem tenant_id...
+Ôä╣´©Å  Todas as igrejas j├í t├¬m tenant_id
+­ƒôª Verificando organistas sem tenant_id...
+Ôä╣´©Å  Todos os organistas j├í t├¬m tenant_id
+­ƒöÆ Tornando tenant_id NOT NULL em usuarios...
+Ôä╣´©Å  tenant_id j├í ├® NOT NULL em usuarios
+­ƒöÆ Tornando tenant_id NOT NULL em igrejas...
+Ôä╣´©Å  tenant_id j├í ├® NOT NULL em igrejas
+­ƒöÆ Tornando tenant_id NOT NULL em organistas...
+Ôä╣´©Å  tenant_id j├í ├® NOT NULL em organistas
+­ƒôè Estat├¡sticas finais:
+   Usu├írios: 3 total, 3 com tenant
+   Igrejas: 9 total, 9 com tenant
+   Organistas: 31 total, 31 com tenant
+Ô£à Migra├º├úo multi-tenant FASE 5 conclu├¡da com sucesso!
+{
+  "igrejas": [
+    {
+      "id": 1,
+      "nome": "Bairro do Cruzeiro"
+    },
+    {
+      "id": 2,
+      "nome": "CCB TESTE1"
+    },
+    {
+      "id": 3,
+      "nome": "Igreja Teste"
+    },
+    {
+      "id": 4,
+      "nome": "Igreja Teste"
+    },
+    {
+      "id": 5,
+      "nome": "Igreja Teste"
+    },
+    {
+      "id": 6,
+      "nome": "Igreja Teste"
+    },
+    {
+      "id": 7,
+      "nome": "Igreja Teste"
+    },
+    {
+      "id": 8,
+      "nome": "Igreja Teste"
+    },
+    {
+      "id": 999,
+      "nome": "Teste Ciclos"
+    }
+  ],
+  "cultos": [
+    {
+      "id": 5,
+      "igreja_id": 2,
+      "ciclo_id": 3,
+      "dia_semana": "segunda",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-11T17:29:33.000Z"
+    },
+    {
+      "id": 6,
+      "igreja_id": 2,
+      "ciclo_id": 3,
+      "dia_semana": "quarta",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-11T17:29:45.000Z"
+    },
+    {
+      "id": 9,
+      "igreja_id": 2,
+      "ciclo_id": 3,
+      "dia_semana": "domingo",
+      "hora": "10:00:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 1,
+      "permite_alunas": 1,
+      "created_at": "2026-02-11T17:37:06.000Z"
+    },
+    {
+      "id": 10,
+      "igreja_id": 3,
+      "ciclo_id": null,
+      "dia_semana": "quinta",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T11:01:56.000Z"
+    },
+    {
+      "id": 11,
+      "igreja_id": 3,
+      "ciclo_id": 6,
+      "dia_semana": "domingo",
+      "hora": "14:00:00",
+      "tipo": "rjm",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T11:01:56.000Z"
+    },
+    {
+      "id": 12,
+      "igreja_id": 5,
+      "ciclo_id": null,
+      "dia_semana": "quinta",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T11:03:08.000Z"
+    },
+    {
+      "id": 13,
+      "igreja_id": 5,
+      "ciclo_id": 8,
+      "dia_semana": "domingo",
+      "hora": "14:00:00",
+      "tipo": "rjm",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T11:03:08.000Z"
+    },
+    {
+      "id": 14,
+      "igreja_id": 6,
+      "ciclo_id": null,
+      "dia_semana": "quinta",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T11:04:15.000Z"
+    },
+    {
+      "id": 15,
+      "igreja_id": 6,
+      "ciclo_id": 10,
+      "dia_semana": "domingo",
+      "hora": "14:00:00",
+      "tipo": "rjm",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T11:04:15.000Z"
+    },
+    {
+      "id": 16,
+      "igreja_id": 7,
+      "ciclo_id": null,
+      "dia_semana": "quinta",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T11:11:35.000Z"
+    },
+    {
+      "id": 17,
+      "igreja_id": 7,
+      "ciclo_id": 12,
+      "dia_semana": "domingo",
+      "hora": "14:00:00",
+      "tipo": "rjm",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T11:11:35.000Z"
+    },
+    {
+      "id": 18,
+      "igreja_id": 8,
+      "ciclo_id": null,
+      "dia_semana": "quinta",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T11:13:14.000Z"
+    },
+    {
+      "id": 19,
+      "igreja_id": 8,
+      "ciclo_id": 14,
+      "dia_semana": "domingo",
+      "hora": "14:00:00",
+      "tipo": "rjm",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T11:13:14.000Z"
+    },
+    {
+      "id": 28,
+      "igreja_id": 999,
+      "ciclo_id": 19,
+      "dia_semana": "domingo",
+      "hora": "10:00:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T12:18:04.000Z"
+    },
+    {
+      "id": 29,
+      "igreja_id": 999,
+      "ciclo_id": 20,
+      "dia_semana": "domingo",
+      "hora": "14:00:00",
+      "tipo": "rjm",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T12:18:04.000Z"
+    },
+    {
+      "id": 33,
+      "igreja_id": 1,
+      "ciclo_id": 32,
+      "dia_semana": "Segunda",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T14:45:59.000Z"
+    },
+    {
+      "id": 34,
+      "igreja_id": 1,
+      "ciclo_id": 33,
+      "dia_semana": "Quarta",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T14:45:59.000Z"
+    },
+    {
+      "id": 35,
+      "igreja_id": 1,
+      "ciclo_id": 34,
+      "dia_semana": "Domingo",
+      "hora": "10:00:00",
+      "tipo": "rjm",
+      "ativo": 1,
+      "eh_rjm": 0,
+      "permite_alunas": 1,
+      "created_at": "2026-02-12T14:45:59.000Z"
+    }
+  ],
+  "ciclos": [
+    {
+      "id": 3,
+      "igreja_id": 2,
+      "nome": "Cultos",
+      "ordem": 1,
+      "ativo": 1,
+      "created_at": "2026-02-12T10:47:24.000Z"
+    },
+    {
+      "id": 4,
+      "igreja_id": 2,
+      "nome": "RJM",
+      "ordem": 2,
+      "ativo": 1,
+      "created_at": "2026-02-12T10:47:24.000Z"
+    },
+    {
+      "id": 5,
+      "igreja_id": 3,
+      "nome": "Ciclo Normal",
+      "ordem": 1,
+      "ativo": 1,
+      "created_at": "2026-02-12T11:01:56.000Z"
+    },
+    {
+      "id": 6,
+      "igreja_id": 3,
+      "nome": "RJM",
+      "ordem": 2,
+      "ativo": 1,
+      "created_at": "2026-02-12T11:01:56.000Z"
+    },
+    {
+      "id": 7,
+      "igreja_id": 5,
+      "nome": "Ciclo Normal",
+      "ordem": 1,
+      "ativo": 1,
+      "created_at": "2026-02-12T11:03:08.000Z"
+    },
+    {
+      "id": 8,
+      "igreja_id": 5,
+      "nome": "RJM",
+      "ordem": 2,
+      "ativo": 1,
+      "created_at": "2026-02-12T11:03:08.000Z"
+    },
+    {
+      "id": 9,
+      "igreja_id": 6,
+      "nome": "Ciclo Normal",
+      "ordem": 1,
+      "ativo": 1,
+      "created_at": "2026-02-12T11:04:15.000Z"
+    },
+    {
+      "id": 10,
+      "igreja_id": 6,
+      "nome": "RJM",
+      "ordem": 2,
+      "ativo": 1,
+      "created_at": "2026-02-12T11:04:15.000Z"
+    },
+    {
+      "id": 11,
+      "igreja_id": 7,
+      "nome": "Ciclo Normal",
+      "ordem": 1,
+      "ativo": 1,
+      "created_at": "2026-02-12T11:11:35.000Z"
+    },
+    {
+      "id": 12,
+      "igreja_id": 7,
+      "nome": "RJM",
+      "ordem": 2,
+      "ativo": 1,
+      "created_at": "2026-02-12T11:11:35.000Z"
+    },
+    {
+      "id": 13,
+      "igreja_id": 8,
+      "nome": "Ciclo Normal",
+      "ordem": 1,
+      "ativo": 1,
+      "created_at": "2026-02-12T11:13:14.000Z"
+    },
+    {
+      "id": 14,
+      "igreja_id": 8,
+      "nome": "RJM",
+      "ordem": 2,
+      "ativo": 1,
+      "created_at": "2026-02-12T11:13:14.000Z"
+    },
+    {
+      "id": 19,
+      "igreja_id": 999,
+      "nome": "Ciclo Oficial",
+      "ordem": 1,
+      "ativo": 1,
+      "created_at": "2026-02-12T12:18:04.000Z"
+    },
+    {
+      "id": 20,
+      "igreja_id": 999,
+      "nome": "Ciclo RJM",
+      "ordem": 2,
+      "ativo": 1,
+      "created_at": "2026-02-12T12:18:04.000Z"
+    },
+    {
+      "id": 32,
+      "igreja_id": 1,
+      "nome": "Ciclo A",
+      "ordem": 1,
+      "ativo": 1,
+      "created_at": "2026-02-12T14:45:59.000Z"
+    },
+    {
+      "id": 33,
+      "igreja_id": 1,
+      "nome": "Ciclo B",
+      "ordem": 2,
+      "ativo": 1,
+      "created_at": "2026-02-12T14:45:59.000Z"
+    },
+    {
+      "id": 34,
+      "igreja_id": 1,
+      "nome": "Ciclo RJM",
+      "ordem": 3,
+      "ativo": 1,
+      "created_at": "2026-02-12T14:45:59.000Z"
+    }
+  ]
+}

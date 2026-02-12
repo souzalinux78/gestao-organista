@@ -12,11 +12,11 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
     const tenantId = getTenantId(req);
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
-    
+
     if (igrejaIds.length === 0) {
       return res.json([]);
     }
-    
+
     const placeholders = igrejaIds.map(() => '?').join(',');
     const [rows] = await pool.execute(
       `SELECT c.*, i.nome as igreja_nome 
@@ -48,12 +48,12 @@ router.get('/igreja/:igreja_id', authenticate, async (req, res) => {
         'SELECT * FROM usuario_igreja WHERE usuario_id = ? AND igreja_id = ?',
         [req.user.id, req.params.igreja_id]
       );
-      
+
       if (associations.length === 0) {
         return res.status(403).json({ error: 'Acesso negado a esta igreja' });
       }
     }
-    
+
     const pool = db.getDb();
     const [rows] = await pool.execute(
       'SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1',
@@ -82,11 +82,11 @@ router.get('/:id', authenticate, async (req, res) => {
        WHERE c.id = ?`,
       [req.params.id]
     );
-    
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Culto não encontrado' });
     }
-    
+
     res.json(rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -97,7 +97,7 @@ router.get('/:id', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   try {
     const { igreja_id, dia_semana, hora, ativo, permite_alunas } = req.body;
-    
+
     // Verificar acesso à igreja
     if (req.user.role !== 'admin') {
       const pool = db.getDb();
@@ -105,27 +105,30 @@ router.post('/', authenticate, async (req, res) => {
         'SELECT * FROM usuario_igreja WHERE usuario_id = ? AND igreja_id = ?',
         [req.user.id, igreja_id]
       );
-      
+
       if (associations.length === 0) {
         return res.status(403).json({ error: 'Acesso negado a esta igreja' });
       }
     }
-    
+
     const pool = db.getDb();
-    
+
     const permiteAlunasVal = permite_alunas !== undefined ? (permite_alunas ? 1 : 0) : 1;
+    const tipoVal = req.body.tipo || 'culto_oficial';
+
     const [result] = await pool.execute(
-      'INSERT INTO cultos (igreja_id, dia_semana, hora, ativo, permite_alunas) VALUES (?, ?, ?, ?, ?)',
-      [igreja_id, dia_semana, hora, ativo !== undefined ? (ativo ? 1 : 0) : 1, permiteAlunasVal]
+      'INSERT INTO cultos (igreja_id, dia_semana, hora, ativo, permite_alunas, tipo) VALUES (?, ?, ?, ?, ?, ?)',
+      [igreja_id, dia_semana, hora, ativo !== undefined ? (ativo ? 1 : 0) : 1, permiteAlunasVal, tipoVal]
     );
-    
-    res.json({ 
-      id: result.insertId, 
-      igreja_id, 
-      dia_semana, 
-      hora, 
+
+    res.json({
+      id: result.insertId,
+      igreja_id,
+      dia_semana,
+      hora,
       ativo,
-      permite_alunas: permiteAlunasVal 
+      permite_alunas: permiteAlunasVal,
+      tipo: tipoVal
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -137,7 +140,7 @@ router.put('/:id', authenticate, async (req, res) => {
   try {
     const { dia_semana, hora, ativo, permite_alunas } = req.body;
     const pool = db.getDb();
-    
+
     // Verificar acesso ao culto (através da igreja)
     if (req.user.role !== 'admin') {
       const [cultos] = await pool.execute('SELECT igreja_id FROM cultos WHERE id = ?', [req.params.id]);
@@ -146,29 +149,31 @@ router.put('/:id', authenticate, async (req, res) => {
           'SELECT * FROM usuario_igreja WHERE usuario_id = ? AND igreja_id = ?',
           [req.user.id, cultos[0].igreja_id]
         );
-        
+
         if (associations.length === 0) {
           return res.status(403).json({ error: 'Acesso negado a este culto' });
         }
       }
     }
-    
+
     const permiteAlunasVal = permite_alunas !== undefined ? (permite_alunas ? 1 : 0) : 1;
+    const tipoVal = req.body.tipo || 'culto_oficial';
     const [result] = await pool.execute(
-      'UPDATE cultos SET dia_semana = ?, hora = ?, ativo = ?, permite_alunas = ? WHERE id = ?',
-      [dia_semana, hora, ativo ? 1 : 0, permiteAlunasVal, req.params.id]
+      'UPDATE cultos SET dia_semana = ?, hora = ?, ativo = ?, permite_alunas = ?, tipo = ? WHERE id = ?',
+      [dia_semana, hora, ativo ? 1 : 0, permiteAlunasVal, tipoVal, req.params.id]
     );
-    
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Culto não encontrado' });
     }
-    
-    res.json({ 
-      id: req.params.id, 
-      dia_semana, 
-      hora, 
+
+    res.json({
+      id: req.params.id,
+      dia_semana,
+      hora,
       ativo,
-      permite_alunas: permiteAlunasVal 
+      permite_alunas: permiteAlunasVal,
+      tipo: tipoVal
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -179,7 +184,7 @@ router.put('/:id', authenticate, async (req, res) => {
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const pool = db.getDb();
-    
+
     // Verificar acesso ao culto (através da igreja)
     if (req.user.role !== 'admin') {
       const [cultos] = await pool.execute('SELECT igreja_id FROM cultos WHERE id = ?', [req.params.id]);
@@ -188,19 +193,19 @@ router.delete('/:id', authenticate, async (req, res) => {
           'SELECT * FROM usuario_igreja WHERE usuario_id = ? AND igreja_id = ?',
           [req.user.id, cultos[0].igreja_id]
         );
-        
+
         if (associations.length === 0) {
           return res.status(403).json({ error: 'Acesso negado a este culto' });
         }
       }
     }
-    
+
     const [result] = await pool.execute('DELETE FROM cultos WHERE id = ?', [req.params.id]);
-    
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Culto não encontrado' });
     }
-    
+
     res.json({ message: 'Culto deletado com sucesso' });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -1,0 +1,142 @@
+[
+  {
+    "id": 154,
+    "igreja_id": 1,
+    "ciclo_id": 1,
+    "numero_ciclo": 0,
+    "organista_id": 47,
+    "posicao": 1,
+    "created_at": "2026-02-12T13:15:32.000Z",
+    "nome": "TESTE1"
+  },
+  {
+    "id": 155,
+    "igreja_id": 1,
+    "ciclo_id": 1,
+    "numero_ciclo": 0,
+    "organista_id": 48,
+    "posicao": 2,
+    "created_at": "2026-02-12T13:15:32.000Z",
+    "nome": "TESTE2"
+  },
+  {
+    "id": 156,
+    "igreja_id": 1,
+    "ciclo_id": 1,
+    "numero_ciclo": 0,
+    "organista_id": 49,
+    "posicao": 3,
+    "created_at": "2026-02-12T13:15:32.000Z",
+    "nome": "TESTE3"
+  },
+  {
+    "id": 157,
+    "igreja_id": 1,
+    "ciclo_id": 1,
+    "numero_ciclo": 0,
+    "organista_id": 50,
+    "posicao": 4,
+    "created_at": "2026-02-12T13:15:32.000Z",
+    "nome": "TESTE4"
+  },
+  {
+    "id": 158,
+    "igreja_id": 1,
+    "ciclo_id": 1,
+    "numero_ciclo": 0,
+    "organista_id": 51,
+    "posicao": 5,
+    "created_at": "2026-02-12T13:15:32.000Z",
+    "nome": "TESTE5"
+  },
+  {
+    "id": 159,
+    "igreja_id": 1,
+    "ciclo_id": 1,
+    "numero_ciclo": 0,
+    "organista_id": 52,
+    "posicao": 6,
+    "created_at": "2026-02-12T13:15:32.000Z",
+    "nome": "TESTE6"
+  },
+  {
+    "id": 180,
+    "igreja_id": 1,
+    "ciclo_id": 2,
+    "numero_ciclo": 2,
+    "organista_id": 53,
+    "posicao": 1,
+    "created_at": "2026-02-12T13:27:41.000Z",
+    "nome": "RJM1"
+  },
+  {
+    "id": 181,
+    "igreja_id": 1,
+    "ciclo_id": 2,
+    "numero_ciclo": 2,
+    "organista_id": 54,
+    "posicao": 2,
+    "created_at": "2026-02-12T13:27:41.000Z",
+    "nome": "RJM2"
+  },
+  {
+    "id": 183,
+    "igreja_id": 1,
+    "ciclo_id": 22,
+    "numero_ciclo": 22,
+    "organista_id": 47,
+    "posicao": 2,
+    "created_at": "2026-02-12T13:28:00.000Z",
+    "nome": "TESTE1"
+  },
+  {
+    "id": 182,
+    "igreja_id": 1,
+    "ciclo_id": 22,
+    "numero_ciclo": 22,
+    "organista_id": 48,
+    "posicao": 1,
+    "created_at": "2026-02-12T13:28:00.000Z",
+    "nome": "TESTE2"
+  },
+  {
+    "id": 184,
+    "igreja_id": 1,
+    "ciclo_id": 22,
+    "numero_ciclo": 22,
+    "organista_id": 49,
+    "posicao": 3,
+    "created_at": "2026-02-12T13:28:00.000Z",
+    "nome": "TESTE3"
+  },
+  {
+    "id": 185,
+    "igreja_id": 1,
+    "ciclo_id": 22,
+    "numero_ciclo": 22,
+    "organista_id": 50,
+    "posicao": 4,
+    "created_at": "2026-02-12T13:28:00.000Z",
+    "nome": "TESTE4"
+  },
+  {
+    "id": 186,
+    "igreja_id": 1,
+    "ciclo_id": 22,
+    "numero_ciclo": 22,
+    "organista_id": 51,
+    "posicao": 5,
+    "created_at": "2026-02-12T13:28:00.000Z",
+    "nome": "TESTE5"
+  },
+  {
+    "id": 187,
+    "igreja_id": 1,
+    "ciclo_id": 22,
+    "numero_ciclo": 22,
+    "organista_id": 52,
+    "posicao": 6,
+    "created_at": "2026-02-12T13:28:00.000Z",
+    "nome": "TESTE6"
+  }
+]

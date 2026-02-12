@@ -14,7 +14,7 @@ function Cultos({ user }) {
     dia_semana: '',
     hora: '',
     ativo: true,
-    permite_alunas: true
+    tipo: 'culto_oficial'
   });
   const [alert, setAlert] = useState(null);
 
@@ -71,13 +71,13 @@ function Cultos({ user }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validação: garantir que igreja_id está preenchido
     if (!formData.igreja_id) {
       showAlert('Por favor, selecione uma igreja', 'error');
       return;
     }
-    
+
     try {
       if (editing) {
         await updateCulto(editing.id, formData);
@@ -100,7 +100,7 @@ function Cultos({ user }) {
       dia_semana: culto.dia_semana,
       hora: culto.hora,
       ativo: culto.ativo === 1,
-      permite_alunas: culto.permite_alunas !== 0 && culto.permite_alunas !== false
+      tipo: culto.tipo || 'culto_oficial'
     });
     setShowForm(true);
   };
@@ -119,16 +119,16 @@ function Cultos({ user }) {
 
   const resetForm = () => {
     // Preservar igreja_id para usuários não-admin (que têm apenas 1 igreja)
-    const preservedIgrejaId = (user?.role !== 'admin' && igrejas.length === 1) 
-      ? igrejas[0].id.toString() 
+    const preservedIgrejaId = (user?.role !== 'admin' && igrejas.length === 1)
+      ? igrejas[0].id.toString()
       : '';
-    
+
     setFormData({
       igreja_id: preservedIgrejaId,
       dia_semana: '',
       hora: '',
       ativo: true,
-      permite_alunas: true
+      tipo: 'culto_oficial'
     });
     setEditing(null);
     setShowForm(false);
@@ -157,8 +157,8 @@ function Cultos({ user }) {
       <div className="card">
         <div className="page-header">
           <h2>Cultos</h2>
-          <button 
-            className="btn btn-primary" 
+          <button
+            className="btn btn-primary"
             onClick={() => {
               if (!showForm) {
                 // Ao abrir o formulário, garantir que a igreja está selecionada para usuários não-admin
@@ -168,16 +168,14 @@ function Cultos({ user }) {
                     igreja_id: prev.igreja_id || igrejas[0].id.toString(),
                     dia_semana: '',
                     hora: '',
-                    ativo: true,
-                    permite_alunas: true
+                    ativo: true
                   }));
                 } else {
                   setFormData(prev => ({
                     ...prev,
                     dia_semana: '',
                     hora: '',
-                    ativo: true,
-                    permite_alunas: true
+                    ativo: true
                   }));
                 }
               }
@@ -248,18 +246,18 @@ function Cultos({ user }) {
               />
             </div>
             <div className="form-group">
-              <label className="checkbox-field" title="Se desmarcado, o rodízio pulará alunas neste dia.">
-                <input
-                  type="checkbox"
-                  id="permite_alunas"
-                  checked={formData.permite_alunas}
-                  onChange={(e) => setFormData({ ...formData, permite_alunas: e.target.checked })}
-                  className="checkbox-input"
-                />
-                <span className="checkbox-label-text">Permite Alunas (Não Oficializadas)?</span>
-              </label>
-              <span className="form-hint">Se desmarcado, o rodízio pulará alunas neste dia.</span>
+              <label>Tipo *</label>
+              <select
+                value={formData.tipo}
+                onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                required
+              >
+                <option value="culto_oficial">Culto Oficial</option>
+                <option value="rjm">RJM</option>
+                <option value="outro">Outro (Extra)</option>
+              </select>
             </div>
+
             <div className="form-group">
               <label className="checkbox-field">
                 <input
@@ -332,18 +330,18 @@ function Cultos({ user }) {
               />
             </div>
             <div className="form-group">
-              <label className="checkbox-field" title="Se desmarcado, o rodízio pulará alunas neste dia.">
-                <input
-                  type="checkbox"
-                  id="edit_permite_alunas"
-                  checked={formData.permite_alunas}
-                  onChange={(e) => setFormData({ ...formData, permite_alunas: e.target.checked })}
-                  className="checkbox-input"
-                />
-                <span className="checkbox-label-text">Permite Alunas (Não Oficializadas)?</span>
-              </label>
-              <span className="form-hint">Se desmarcado, o rodízio pulará alunas neste dia.</span>
+              <label>Tipo *</label>
+              <select
+                value={formData.tipo}
+                onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                required
+              >
+                <option value="culto_oficial">Culto Oficial</option>
+                <option value="rjm">RJM</option>
+                <option value="outro">Outro (Extra)</option>
+              </select>
             </div>
+
             <div className="form-group">
               <label className="checkbox-field">
                 <input
@@ -372,6 +370,7 @@ function Cultos({ user }) {
                   <th>Igreja</th>
                   <th>Dia da Semana</th>
                   <th>Hora</th>
+                  <th>Tipo</th>
                   <th>Ativo</th>
                   <th>Ações</th>
                 </tr>
@@ -382,6 +381,7 @@ function Cultos({ user }) {
                     <td data-label="Igreja" className="td-wrap">{culto.igreja_nome}</td>
                     <td data-label="Dia da Semana">{culto.dia_semana}</td>
                     <td data-label="Hora">{culto.hora ? culto.hora.substring(0, 5) : '-'}</td>
+                    <td data-label="Tipo">{culto.tipo === 'rjm' ? 'RJM' : (culto.tipo === 'outro' ? 'Outro' : 'Oficial')}</td>
                     <td data-label="Ativo">{culto.ativo === 1 ? 'Sim' : 'Não'}</td>
                     <td data-label="Ações">
                       <div className="actions">

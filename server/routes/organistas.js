@@ -11,18 +11,18 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
     const pool = db.getDb();
     const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000);
     const tenantId = getTenantId(req);
-    
+
     // Obter igrejas do usuário (já filtradas por tenant)
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
-    
+
     if (igrejaIds.length === 0) {
       return res.json([]);
     }
-    
+
     // Verificar se a coluna ordem existe em organistas_igreja (com cache)
     const ordemColumnExists = await cachedColumnExists('organistas_igreja', 'ordem');
-    
+
     // Buscar organistas associadas às igrejas do usuário
     // Query compatível: funciona mesmo se a coluna ordem ainda não existir
     let rows;
@@ -54,7 +54,7 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
         timeout: dbTimeout
       });
     }
-    
+
     res.json(rows);
   } catch (error) {
     console.error('[DEBUG] Erro ao listar organistas:', error);
@@ -67,11 +67,11 @@ router.get('/:id', authenticate, tenantResolver, async (req, res) => {
   try {
     const pool = db.getDb();
     const tenantId = getTenantId(req);
-    
+
     // Obter igrejas do usuário (já filtradas por tenant)
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
-    
+
     // Verificar se a organista está associada a alguma igreja do usuário
     const [rows] = await pool.execute(
       `SELECT o.* 
@@ -80,11 +80,11 @@ router.get('/:id', authenticate, tenantResolver, async (req, res) => {
        WHERE o.id = ? AND oi.igreja_id IN (${igrejaIds.length > 0 ? igrejaIds.map(() => '?').join(',') : 'NULL'})`,
       igrejaIds.length > 0 ? [req.params.id, ...igrejaIds] : [req.params.id]
     );
-    
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Organista não encontrada ou acesso negado' });
     }
-    
+
     res.json(rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -96,26 +96,26 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
   const startTime = Date.now();
   let organistaId = null;
   let ordemValue = undefined;
-  
+
   try {
     console.log(`[DEBUG] Iniciando criação de organista - Usuário: ${req.user.id} (${req.user.role})`);
-    
+
     const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
     ordemValue = ordem;
     const pool = db.getDb();
     const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000); // Reduzido para 8s
-    
+
     // Validar nome obrigatório
     if (!nome || nome.trim() === '') {
       return res.status(400).json({ error: 'O nome da organista é obrigatório' });
     }
-    
+
     console.log(`[DEBUG] Validação OK - Nome: ${nome.trim()}`);
-    
+
     // Obter igrejas do usuário (com timeout e tratamento de erro)
     let igrejas = [];
     let igrejaIds = [];
-    
+
     try {
       console.log(`[DEBUG] Buscando igrejas do usuário ${req.user.id}...`);
       const getUserIgrejasStart = Date.now();
@@ -129,11 +129,11 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
       igrejas = [];
       igrejaIds = [];
     }
-    
+
     // Validar: usuário precisa ter pelo menos uma igreja para criar organista
     if (igrejaIds.length === 0) {
-      return res.status(400).json({ 
-        error: 'Você precisa ter pelo menos uma igreja cadastrada para criar organistas. Crie uma igreja primeiro.' 
+      return res.status(400).json({
+        error: 'Você precisa ter pelo menos uma igreja cadastrada para criar organistas. Crie uma igreja primeiro.'
       });
     }
 
@@ -152,25 +152,25 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
         values: [...igrejaIds, ordemNum],
         timeout: dbTimeout
       });
-      
+
       if (existing.length > 0) {
-        return res.status(400).json({ 
-          error: `Já existe uma organista com a ordem ${ordem} em uma das suas igrejas. Escolha outra ordem ou deixe em branco.` 
+        return res.status(400).json({
+          error: `Já existe uma organista com a ordem ${ordem} em uma das suas igrejas. Escolha outra ordem ou deixe em branco.`
         });
       }
     }
-    
+
     // Verificar se coluna tenant_id existe em organistas
     const temTenantIdOrganistas = await cachedColumnExists('organistas', 'tenant_id');
     const tenantId = getTenantId(req);
-    
+
     // Validar tenant_id (obrigatório após FASE 5)
     if (temTenantIdOrganistas && !tenantId && req.user.role !== 'admin') {
-      return res.status(400).json({ 
-        error: 'tenant_id é obrigatório. Usuário deve estar associado a um tenant.' 
+      return res.status(400).json({
+        error: 'tenant_id é obrigatório. Usuário deve estar associado a um tenant.'
       });
     }
-    
+
     // Obter tenant padrão se admin sem tenant (acesso global)
     let tenantIdParaOrganista = tenantId;
     if (temTenantIdOrganistas && !tenantId && req.user.role === 'admin') {
@@ -180,59 +180,83 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
       );
       tenantIdParaOrganista = tenants.length > 0 ? tenants[0].id : null;
     }
-    
+
     // Criar organista com tenant_id se disponível
     console.log(`[DEBUG] Criando organista no banco...`);
     const insertStart = Date.now();
-    
+
+    // Lógica robusta: Derivar oficializada da categoria se definida
+    // Isso garante consistência mesmo que o frontend mande dados conflitantes
+    let categoriaFinal = req.body.categoria;
+    let oficializadaFinal = oficializada;
+
+    if (categoriaFinal) {
+      if (categoriaFinal === 'oficial' || categoriaFinal === 'rjm') {
+        oficializadaFinal = true;
+      } else if (categoriaFinal === 'aluna') {
+        oficializadaFinal = false;
+      }
+    } else {
+      // Fallback se categoria não vier: usar oficializada para definir categoria
+      categoriaFinal = oficializada ? 'oficial' : 'aluna';
+      oficializadaFinal = oficializada;
+    }
+
     let sqlOrganista, valuesOrganista;
-    if (temTenantIdOrganistas && tenantIdParaOrganista) {
-      sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa, tenant_id) VALUES (?, ?, ?, ?, ?, ?)';
+
+    if (temTenantIdOrganistas) {
+      sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa, tenant_id, categoria) VALUES (?, ?, ?, ?, ?, ?, ?)';
       valuesOrganista = [
         nome.trim(),
         telefone || null,
         email || null,
-        oficializada ? 1 : 0,
+        oficializadaFinal ? 1 : 0,
         ativa !== undefined ? (ativa ? 1 : 0) : 1,
-        tenantIdParaOrganista
+        tenantIdParaOrganista,
+        categoriaFinal
       ];
     } else {
-      sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa) VALUES (?, ?, ?, ?, ?)';
+      // Compatibilidade: coluna não existe
+      sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa, categoria) VALUES (?, ?, ?, ?, ?, ?)';
       valuesOrganista = [
         nome.trim(),
         telefone || null,
         email || null,
-        oficializada ? 1 : 0,
-        ativa !== undefined ? (ativa ? 1 : 0) : 1
+        oficializadaFinal ? 1 : 0,
+        ativa !== undefined ? (ativa ? 1 : 0) : 1,
+        categoriaFinal
       ];
     }
-    
+
+    // Executar query
+    // Nota: Se tenantIdParaOrganista for NULL e a coluna for NOT NULL sem default, vai dar erro aqui.
+    // O script de ajuste de banco (fix_tenant_defaults.js) deve ter rodado para prevenir isso.
     const [result] = await pool.execute({
       sql: sqlOrganista,
       values: valuesOrganista,
       timeout: dbTimeout
     });
-    
+
     organistaId = result.insertId;
     console.log(`[DEBUG] Organista criada (${Date.now() - insertStart}ms) - ID: ${organistaId}`);
-    
+
     // Associar organista às igrejas do usuário
     try {
       console.log(`[DEBUG] Associando organista ${organistaId} às ${igrejaIds.length} igreja(s)...`);
       const assocStart = Date.now();
-      
+
       const oficializadaInt = oficializada ? 1 : 0;
       const ordemValue = ordem !== undefined && ordem !== '' ? Number(ordem) : null;
-      
+
       // Inserir associações (otimizado: INSERT múltiplo em vez de loop)
       if (igrejaIds.length > 0) {
         if (ordemColumnExists) {
           // Se coluna ordem existe, inserir com ordem (INSERT múltiplo)
           const placeholders = igrejaIds.map(() => '(?, ?, ?, ?)').join(', ');
-          const values = igrejaIds.flatMap(igrejaId => 
+          const values = igrejaIds.flatMap(igrejaId =>
             [organistaId, igrejaId, oficializadaInt, ordemValue]
           );
-          
+
           await pool.execute({
             sql: `INSERT INTO organistas_igreja (organista_id, igreja_id, oficializada, ordem) 
                   VALUES ${placeholders}`,
@@ -243,10 +267,10 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
         } else {
           // Se coluna ordem não existe, inserir sem ordem (INSERT múltiplo)
           const placeholders = igrejaIds.map(() => '(?, ?, ?)').join(', ');
-          const values = igrejaIds.flatMap(igrejaId => 
+          const values = igrejaIds.flatMap(igrejaId =>
             [organistaId, igrejaId, oficializadaInt]
           );
-          
+
           await pool.execute({
             sql: `INSERT INTO organistas_igreja (organista_id, igreja_id, oficializada) 
                   VALUES ${placeholders}`,
@@ -258,35 +282,35 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
       }
     } catch (assocError) {
       console.error(`[DEBUG] Erro ao associar organista às igrejas:`, assocError);
-      
+
       // Se for erro de ordem duplicada, dar mensagem específica
       if (assocError.code === 'ER_DUP_ENTRY') {
         if (assocError.message.includes('unique_organistas_igreja_ordem')) {
-          return res.status(400).json({ 
-            error: `Já existe uma organista com a ordem ${ordem} em uma das suas igrejas. Escolha outra ordem ou deixe em branco.` 
+          return res.status(400).json({
+            error: `Já existe uma organista com a ordem ${ordem} em uma das suas igrejas. Escolha outra ordem ou deixe em branco.`
           });
         } else if (assocError.message.includes('unique_organista_igreja')) {
-          return res.status(400).json({ 
-            error: 'Esta organista já está associada a uma das suas igrejas.' 
+          return res.status(400).json({
+            error: 'Esta organista já está associada a uma das suas igrejas.'
           });
         }
       }
-      
+
       // Outros erros de associação
       throw assocError;
     }
-    
+
     const totalTime = Date.now() - startTime;
     console.log(`[DEBUG] Organista criada com sucesso em ${totalTime}ms - ID: ${organistaId}`);
-    
-    res.json({ 
-      id: organistaId, 
+
+    res.json({
+      id: organistaId,
       ordem: ordem !== undefined && ordem !== '' ? Number(ordem) : null,
-      nome: nome.trim(), 
-      telefone, 
-      email, 
-      oficializada, 
-      ativa 
+      nome: nome.trim(),
+      telefone,
+      email,
+      oficializada,
+      ativa
     });
   } catch (error) {
     const totalTime = Date.now() - startTime;
@@ -298,10 +322,10 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
       sqlMessage: error.sqlMessage,
       stack: error.stack
     });
-    
+
     // Se o MySQL travar/demorar demais, evitar 504 do proxy e responder com erro claro
     if (error.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') {
-      return res.status(503).json({ 
+      return res.status(503).json({
         error: 'Banco de dados demorou para responder. Tente novamente em instantes.',
         details: `Timeout após ${totalTime}ms`
       });
@@ -309,26 +333,26 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
 
     // Tratar erro de ordem duplicada
     if (error.code === 'ER_DUP_ENTRY' && error.message.includes('unique_organistas_ordem')) {
-      return res.status(400).json({ 
-        error: `Já existe uma organista com a ordem ${ordemValue}. Escolha outra ordem ou deixe em branco.` 
+      return res.status(400).json({
+        error: `Já existe uma organista com a ordem ${ordemValue}. Escolha outra ordem ou deixe em branco.`
       });
     }
-    
+
     // Tratar outros erros de constraint
     if (error.code === 'ER_DUP_ENTRY') {
-      return res.status(400).json({ 
-        error: 'Já existe uma organista com esses dados. Verifique os campos únicos.' 
+      return res.status(400).json({
+        error: 'Já existe uma organista com esses dados. Verifique os campos únicos.'
       });
     }
-    
+
     // Tratar erro de conexão
     if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-      return res.status(503).json({ 
-        error: 'Não foi possível conectar ao banco de dados. Tente novamente em instantes.' 
+      return res.status(503).json({
+        error: 'Não foi possível conectar ao banco de dados. Tente novamente em instantes.'
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: 'Erro ao criar organista',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -342,16 +366,16 @@ router.put('/:id', authenticate, tenantResolver, async (req, res) => {
     const pool = db.getDb();
     const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000);
     const tenantId = getTenantId(req);
-    
+
     // Obter igrejas do usuário (já filtradas por tenant)
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
-    
+
     // Verificar se a organista está associada a alguma igreja do usuário
     if (igrejaIds.length === 0) {
       return res.status(403).json({ error: 'Você não tem acesso a nenhuma igreja' });
     }
-    
+
     const [check] = await pool.execute({
       sql: `SELECT o.id 
             FROM organistas o
@@ -361,33 +385,52 @@ router.put('/:id', authenticate, tenantResolver, async (req, res) => {
       values: [req.params.id, ...igrejaIds],
       timeout: dbTimeout
     });
-    
+
     if (check.length === 0) {
       return res.status(403).json({ error: 'Acesso negado a esta organista' });
     }
-    
+
+    // Lógica robusta para Update: Derivar oficializada da categoria
+    let categoriaFinal = req.body.categoria;
+    let oficializadaFinal = oficializada;
+
+    if (categoriaFinal) {
+      if (categoriaFinal === 'oficial' || categoriaFinal === 'rjm') {
+        oficializadaFinal = true;
+      } else if (categoriaFinal === 'aluna') {
+        oficializadaFinal = false;
+      }
+    } else {
+      // Manter o que veio ou fallback
+      // Se categoria não veio no update, talvez devêssemos checar o que está no banco...
+      // Mas por simplificação assumimos que o frontend envia ambos ou o backend confia no oficializada
+      // Melhor: se categoria não veio, não alteramos categoria, mas oficializada sim? 
+      // Vamos assumir que ambos vêm juntos normalmente.
+    }
+
     // Atualizar dados da organista (sem ordem - ordem fica em organistas_igreja)
     const [result] = await pool.execute({
-      sql: 'UPDATE organistas SET nome = ?, telefone = ?, email = ?, oficializada = ?, ativa = ? WHERE id = ?',
+      sql: 'UPDATE organistas SET nome = ?, telefone = ?, email = ?, oficializada = ?, ativa = ?, categoria = COALESCE(?, categoria) WHERE id = ?',
       values: [
         nome,
         telefone || null,
         email || null,
-        oficializada ? 1 : 0,
+        oficializadaFinal ? 1 : 0,
         ativa ? 1 : 0,
+        categoriaFinal || null,
         req.params.id
       ],
       timeout: dbTimeout
     });
-    
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Organista não encontrada' });
     }
-    
+
     // Atualizar ordem em organistas_igreja para todas as igrejas do usuário
     if (ordem !== undefined) {
       const ordemValue = ordem !== undefined && ordem !== '' ? Number(ordem) : null;
-      
+
       // Validar ordem duplicada por igreja (query única otimizada)
       if (ordemValue !== null && ordemValue > 0 && igrejaIds.length > 0) {
         const [existing] = await pool.execute({
@@ -399,14 +442,14 @@ router.put('/:id', authenticate, tenantResolver, async (req, res) => {
           values: [...igrejaIds, ordemValue, req.params.id],
           timeout: dbTimeout
         });
-        
+
         if (existing.length > 0) {
-          return res.status(400).json({ 
-            error: `Já existe outra organista com a ordem ${ordem} em uma das suas igrejas. Escolha outra ordem ou deixe em branco.` 
+          return res.status(400).json({
+            error: `Já existe outra organista com a ordem ${ordem} em uma das suas igrejas. Escolha outra ordem ou deixe em branco.`
           });
         }
       }
-      
+
       // Atualizar ordem para todas as associações da organista nas igrejas do usuário
       await pool.execute({
         sql: `UPDATE organistas_igreja 
@@ -416,32 +459,32 @@ router.put('/:id', authenticate, tenantResolver, async (req, res) => {
         timeout: dbTimeout
       });
     }
-    
+
     // Buscar ordem atualizada (pegar primeira igreja)
     const [ordemAtual] = await pool.execute({
       sql: 'SELECT ordem FROM organistas_igreja WHERE organista_id = ? AND igreja_id IN (?) LIMIT 1',
       values: [req.params.id, igrejaIds[0]],
       timeout: dbTimeout
     });
-    
-    res.json({ 
-      id: req.params.id, 
+
+    res.json({
+      id: req.params.id,
       ordem: ordemAtual.length > 0 ? ordemAtual[0].ordem : null,
-      nome, 
-      telefone, 
-      email, 
-      oficializada, 
-      ativa 
+      nome,
+      telefone,
+      email,
+      oficializada,
+      ativa
     });
   } catch (error) {
     console.error('[DEBUG] Erro ao atualizar organista:', error);
-    
+
     if (error.code === 'ER_DUP_ENTRY' && error.message.includes('unique_organistas_igreja_ordem')) {
-      return res.status(400).json({ 
-        error: `Já existe uma organista com a ordem ${req.body.ordem} em uma das suas igrejas. Escolha outra ordem.` 
+      return res.status(400).json({
+        error: `Já existe uma organista com a ordem ${req.body.ordem} em uma das suas igrejas. Escolha outra ordem.`
       });
     }
-    
+
     res.status(500).json({ error: error.message });
   }
 });

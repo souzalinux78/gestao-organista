@@ -1,0 +1,92 @@
+﻿Banco de dados 'gestao_organista' verificado/criado
+Conectado ao banco de dados MySQL
+Tabelas criadas com sucesso
+Ô£à Coluna funcao j├í existe na tabela rodizios.
+Ô£à Coluna ciclo_origem j├í existe na tabela rodizios.
+Ôä╣´©Å  Campo tipo_usuario j├í possui o valor "instrutoras" no ENUM.
+Ôä╣´©Å  Campo telefone j├í existe na tabela usuarios.
+­ƒöä Iniciando migra├º├úo multi-tenant (FASE 1)...
+­ƒôª Criando tabela tenants...
+Ô£à Tabela tenants criada!
+­ƒôª Criando tenant padr├úo...
+Ô£à Tenant padr├úo criado (ID: 1)
+­ƒôª Adicionando coluna tenant_id em usuarios...
+Ôä╣´©Å  Coluna tenant_id j├í existe.
+­ƒôª Migrando usu├írios existentes para tenant padr├úo...
+Ô£à 0 usu├írio(s) migrado(s) para tenant padr├úo!
+­ƒôè Estat├¡sticas da migra├º├úo:
+   - Total de usu├írios: 3
+   - Usu├írios com tenant: 3
+   - Usu├írios sem tenant: 0
+Ô£à Migra├º├úo multi-tenant (FASE 1) conclu├¡da com sucesso!
+­ƒöä Iniciando migra├º├úo multi-tenant FASE 2...
+Ô£à Tenant padr├úo encontrado (ID: 1)
+­ƒôª Adicionando tenant_id em igrejas...
+Ôä╣´©Å  Coluna tenant_id j├í existe em igrejas.
+Ô£à 0 igreja(s) migrada(s)!
+­ƒôª Adicionando tenant_id em organistas...
+Ôä╣´©Å  Coluna tenant_id j├í existe em organistas.
+Ô£à 0 organista(s) migrada(s)!
+­ƒôè Estat├¡sticas da migra├º├úo FASE 2:
+   Igrejas:
+     - Total: 9
+     - Com tenant: 9
+     - Sem tenant: 0
+   Organistas:
+     - Total: 31
+     - Com tenant: 31
+     - Sem tenant: 0
+Ô£à Migra├º├úo multi-tenant FASE 2 conclu├¡da com sucesso!
+­ƒöä Iniciando migra├º├úo multi-tenant FASE 5...
+Ô£à Tenant padr├úo encontrado (ID: 1)
+­ƒôª Verificando usu├írios sem tenant_id...
+Ôä╣´©Å  Todos os usu├írios j├í t├¬m tenant_id
+­ƒôª Verificando igrejas sem tenant_id...
+Ôä╣´©Å  Todas as igrejas j├í t├¬m tenant_id
+­ƒôª Verificando organistas sem tenant_id...
+Ôä╣´©Å  Todos os organistas j├í t├¬m tenant_id
+­ƒöÆ Tornando tenant_id NOT NULL em usuarios...
+Ôä╣´©Å  tenant_id j├í ├® NOT NULL em usuarios
+­ƒöÆ Tornando tenant_id NOT NULL em igrejas...
+Ôä╣´©Å  tenant_id j├í ├® NOT NULL em igrejas
+­ƒöÆ Tornando tenant_id NOT NULL em organistas...
+Ôä╣´©Å  tenant_id j├í ├® NOT NULL em organistas
+­ƒôè Estat├¡sticas finais:
+   Usu├írios: 3 total, 3 com tenant
+   Igrejas: 9 total, 9 com tenant
+   Organistas: 31 total, 31 com tenant
+Ô£à Migra├º├úo multi-tenant FASE 5 conclu├¡da com sucesso!
+­ƒº¬ Iniciando teste CONTROLADO de Sequenciamento de Ciclos...
+Generating rotation...
+[RODIZIO] Iniciando gera├º├úo para Bairro do Cruzeiro. Dobradinha permitida: true
+
+--- Auditoria do Rod├¡zio Gerado ---
+[Sun Jan 03 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] rjm - CicloID: 37 - Org: TESTE5
+[Mon Jan 04 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 35 - Org: TESTE1
+[Mon Jan 04 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 35 - Org: TESTE1
+[Wed Jan 06 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 35 - Org: TESTE2
+[Wed Jan 06 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 35 - Org: TESTE2
+[Sun Jan 10 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] rjm - CicloID: 37 - Org: TESTE6
+[Mon Jan 11 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 36 - Org: TESTE3
+[Mon Jan 11 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 36 - Org: TESTE3
+[Wed Jan 13 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 36 - Org: TESTE4
+[Wed Jan 13 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 36 - Org: TESTE4
+[Sun Jan 17 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] rjm - CicloID: 37 - Org: TESTE5
+[Mon Jan 18 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 35 - Org: TESTE1
+[Mon Jan 18 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 35 - Org: TESTE1
+[Wed Jan 20 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 35 - Org: TESTE2
+[Wed Jan 20 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 35 - Org: TESTE2
+[Sun Jan 24 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] rjm - CicloID: 37 - Org: TESTE6
+[Mon Jan 25 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 36 - Org: TESTE3
+[Mon Jan 25 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 36 - Org: TESTE3
+[Wed Jan 27 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 36 - Org: TESTE4
+[Wed Jan 27 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 36 - Org: TESTE4
+[Sun Jan 31 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] rjm - CicloID: 37 - Org: TESTE5
+[Mon Feb 01 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 35 - Org: TESTE1
+[Mon Feb 01 2027 00:00:00 GMT-0300 (Hor├írio Padr├úo de Bras├¡lia)] culto_oficial - CicloID: 35 - Org: TESTE1
+ÔØî FAIL: Sequential Official services used the same cycle: 35. Expected traversal.
+ÔØî FAIL: Sequential Official services used the same cycle: 36. Expected traversal.
+ÔØî FAIL: Sequential Official services used the same cycle: 35. Expected traversal.
+ÔØî FAIL: Sequential Official services used the same cycle: 36. Expected traversal.
+Ô£à RJM isolation verified.
+Conex├úo com banco de dados fechada

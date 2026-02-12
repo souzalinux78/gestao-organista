@@ -22,7 +22,8 @@ function Organistas({ user }) {
     telefone: '',
     email: '',
     oficializada: false,
-    ativa: true
+    ativa: true,
+    categoria: 'oficial'
   });
   const { toast, showSuccess, showError, hideToast } = useToast();
 
@@ -87,7 +88,7 @@ function Organistas({ user }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (saving) return;
-    
+
     // Validação no frontend
     const validation = validateForm(formData, {
       nome: [
@@ -101,13 +102,13 @@ function Organistas({ user }) {
         (v) => validatePhone(v)
       ]
     });
-    
+
     if (!validation.valid) {
       const firstError = Object.values(validation.errors)[0];
       showError(firstError);
       return;
     }
-    
+
     try {
       setSaving(true);
       if (editing) {
@@ -139,7 +140,8 @@ function Organistas({ user }) {
       telefone: organista.telefone || '',
       email: organista.email || '',
       oficializada: organista.oficializada === 1,
-      ativa: organista.ativa === 1
+      ativa: organista.ativa === 1,
+      categoria: organista.categoria || (organista.oficializada === 1 ? 'oficial' : 'aluna')
     });
     setShowForm(true);
   };
@@ -167,7 +169,8 @@ function Organistas({ user }) {
       telefone: '',
       email: '',
       oficializada: false,
-      ativa: true
+      ativa: true,
+      categoria: 'oficial'
     });
     setEditing(null);
     setShowForm(false);
@@ -191,9 +194,9 @@ function Organistas({ user }) {
           </button>
         </div>
 
-        <Toast 
-          message={toast?.message} 
-          type={toast?.type} 
+        <Toast
+          message={toast?.message}
+          type={toast?.type}
           onClose={hideToast}
           duration={toast?.duration}
         />
@@ -240,17 +243,24 @@ function Organistas({ user }) {
               />
             </div>
             <div className="form-group">
-              <label className="checkbox-field">
-                <input
-                  type="checkbox"
-                  id="oficializada"
-                  checked={formData.oficializada}
-                  onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
-                  className="checkbox-input"
-                />
-                <span className="checkbox-label-text">Oficializada</span>
-              </label>
+              <label>Categoria</label>
+              <select
+                value={formData.categoria}
+                onChange={(e) => {
+                  const cat = e.target.value;
+                  setFormData({
+                    ...formData,
+                    categoria: cat,
+                    oficializada: cat === 'oficial' || cat === 'rjm'
+                  });
+                }}
+              >
+                <option value="oficial">Oficial</option>
+                <option value="rjm">RJM</option>
+                <option value="aluna">Aluna</option>
+              </select>
             </div>
+            {/* Oficializada checkbox removed - auto-derived from category */}
             <div className="form-group">
               <label className="checkbox-field">
                 <input
@@ -311,17 +321,24 @@ function Organistas({ user }) {
               />
             </div>
             <div className="form-group">
-              <label className="checkbox-field">
-                <input
-                  type="checkbox"
-                  id="oficializada"
-                  checked={formData.oficializada}
-                  onChange={(e) => setFormData({ ...formData, oficializada: e.target.checked })}
-                  className="checkbox-input"
-                />
-                <span className="checkbox-label-text">Oficializada</span>
-              </label>
+              <label>Categoria</label>
+              <select
+                value={formData.categoria}
+                onChange={(e) => {
+                  const cat = e.target.value;
+                  setFormData({
+                    ...formData,
+                    categoria: cat,
+                    oficializada: cat === 'oficial' || cat === 'rjm'
+                  });
+                }}
+              >
+                <option value="oficial">Oficial</option>
+                <option value="rjm">RJM</option>
+                <option value="aluna">Aluna</option>
+              </select>
             </div>
+            {/* Oficializada checkbox removed - auto-derived from category */}
             <div className="form-group">
               <label className="checkbox-field">
                 <input
@@ -369,7 +386,7 @@ function Organistas({ user }) {
                   <th>Nome</th>
                   <th>Telefone</th>
                   <th>Email</th>
-                  <th>Oficializada</th>
+                  <th>Categoria</th>
                   <th>Ativa</th>
                   <th>Ações</th>
                 </tr>
@@ -381,7 +398,9 @@ function Organistas({ user }) {
                     <td data-label="Nome" className="table__cell--break">{organista.nome}</td>
                     <td data-label="Telefone">{organista.telefone || '-'}</td>
                     <td data-label="Email" className="table__cell--break">{organista.email || '-'}</td>
-                    <td data-label="Oficializada">{organista.oficializada === 1 ? 'Sim' : 'Não'}</td>
+                    <td data-label="Categoria">
+                      {organista.categoria === 'rjm' ? 'RJM' : (organista.categoria === 'aluna' ? 'Aluna' : 'Oficial')}
+                    </td>
                     <td data-label="Ativa">{organista.ativa === 1 ? 'Sim' : 'Não'}</td>
                     <td data-label="Ações">
                       <div className="actions">

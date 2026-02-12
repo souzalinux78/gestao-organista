@@ -20,11 +20,15 @@ const RODIZIO_BASE_QUERY = `
          i.encarregado_regional_telefone,
          c.dia_semana, 
          c.hora as hora_culto,
+         c.tipo as culto_tipo,
+         o.categoria as organista_categoria,
+         cic.nome as ciclo_nome,
          COALESCE(r.ciclo_origem, (SELECT ci.numero_ciclo FROM ciclo_itens ci WHERE ci.igreja_id = r.igreja_id AND ci.organista_id = r.organista_id ORDER BY ci.numero_ciclo ASC LIMIT 1)) AS ciclo_origem
   FROM rodizios r
   INNER JOIN organistas o ON r.organista_id = o.id
   INNER JOIN igrejas i ON r.igreja_id = i.id
   INNER JOIN cultos c ON r.culto_id = c.id
+  LEFT JOIN ciclos cic ON r.ciclo_origem = cic.id
 `;
 
 /**
@@ -37,43 +41,43 @@ const RODIZIO_BASE_QUERY = `
  */
 async function buscarRodiziosCompletos(igrejaIds, periodoInicio = null, periodoFim = null, options = {}) {
   const pool = db.getDb();
-  
+
   // Normalizar igrejaIds para array
   const igrejaIdsArray = Array.isArray(igrejaIds) ? igrejaIds : [igrejaIds];
-  
+
   if (igrejaIdsArray.length === 0) {
     return [];
   }
-  
+
   let query = RODIZIO_BASE_QUERY;
   const params = [];
-  
+
   // Condição de igreja(s)
   const placeholders = igrejaIdsArray.map(() => '?').join(',');
   query += ` WHERE r.igreja_id IN (${placeholders})`;
   params.push(...igrejaIdsArray);
-  
+
   // Condições de período
   if (periodoInicio) {
     query += ' AND r.data_culto >= ?';
     params.push(periodoInicio);
   }
-  
+
   if (periodoFim) {
     query += ' AND r.data_culto <= ?';
     params.push(periodoFim);
   }
-  
+
   // Ordenação
   const orderBy = options.orderBy || 'r.data_culto, r.hora_culto, r.funcao';
   query += ` ORDER BY ${orderBy}`;
-  
+
   // Limite (se especificado)
   if (options.limit) {
     query += ' LIMIT ?';
     params.push(options.limit);
   }
-  
+
   const [rows] = await pool.execute(query, params);
   return rows;
 }
@@ -105,19 +109,19 @@ async function existeRodizio(cultoId, dataCulto, funcao = null, organistaId = nu
   const pool = db.getDb();
   let query = 'SELECT id FROM rodizios WHERE culto_id = ? AND data_culto = ?';
   const params = [cultoId, dataCulto];
-  
+
   if (funcao) {
     query += ' AND funcao = ?';
     params.push(funcao);
   }
-  
+
   if (organistaId) {
     query += ' AND organista_id = ?';
     params.push(organistaId);
   }
-  
+
   query += ' LIMIT 1';
-  
+
   const [rows] = await pool.execute(query, params);
   return rows.length > 0;
 }
@@ -129,15 +133,15 @@ async function existeRodizio(cultoId, dataCulto, funcao = null, organistaId = nu
  */
 async function inserirRodizios(rodizios) {
   const pool = db.getDb();
-  
+
   if (!Array.isArray(rodizios) || rodizios.length === 0) {
     return;
   }
-  
-  const query = `INSERT INTO rodizios 
+
+  const query = `REPLACE INTO rodizios 
     (igreja_id, culto_id, organista_id, data_culto, hora_culto, dia_semana, funcao, periodo_inicio, periodo_fim, ciclo_origem)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-  
+
   for (const rodizio of rodizios) {
     const cicloOrigem = rodizio.ciclo_origem ?? rodizio.ciclo ?? null;
     await pool.execute(query, [
@@ -163,35 +167,35 @@ async function inserirRodizios(rodizios) {
  */
 async function atualizarRodizio(rodizioId, dados) {
   const pool = db.getDb();
-  
+
   const updates = [];
   const params = [];
-  
+
   if (dados.organista_id !== undefined) {
     updates.push('organista_id = ?');
     params.push(dados.organista_id);
   }
-  
+
   if (dados.data_culto !== undefined) {
     updates.push('data_culto = ?');
     params.push(dados.data_culto);
   }
-  
+
   if (dados.hora_culto !== undefined) {
     updates.push('hora_culto = ?');
     params.push(dados.hora_culto);
   }
-  
+
   if (updates.length === 0) {
     return false;
   }
-  
+
   params.push(rodizioId);
   const [result] = await pool.execute(
     `UPDATE rodizios SET ${updates.join(', ')} WHERE id = ?`,
     params
   );
-  
+
   return result.affectedRows > 0;
 }
 
@@ -204,20 +208,20 @@ async function atualizarRodizio(rodizioId, dados) {
  */
 async function deletarRodizios(igrejaId, periodoInicio = null, periodoFim = null) {
   const pool = db.getDb();
-  
+
   let query = 'DELETE FROM rodizios WHERE igreja_id = ?';
   const params = [igrejaId];
-  
+
   if (periodoInicio) {
     query += ' AND data_culto >= ?';
     params.push(periodoInicio);
   }
-  
+
   if (periodoFim) {
     query += ' AND data_culto <= ?';
     params.push(periodoFim);
   }
-  
+
   const [result] = await pool.execute(query, params);
   return result.affectedRows;
 }
