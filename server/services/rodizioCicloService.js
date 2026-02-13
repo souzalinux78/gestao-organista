@@ -82,6 +82,8 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
     rjm: 0
   };
 
+  const consumedIndices = new Set();
+
   if (cicloInicialId || organistaInicialId) {
     let searchIdx = -1;
 
@@ -151,23 +153,23 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
       const consumeCandidate = (ptrKey, serviceType) => {
         let p = pointers[ptrKey];
         while (p < masterPool.length) {
+          // Rule 0: STRICT ORDER - If this index was already consumed (by a lookahead), SKIP IT.
+          if (consumedIndices.has(p)) {
+            p++;
+            continue;
+          }
+
           const item = masterPool[p];
           const cType = cycleTypeMap.get(item.ciclo_id);
 
           // COMPATIBILITY LOGIC (Cycle Type):
-          // Official Service uses 'official' or 'both' cycles.
-          // RJM Service uses 'rjm' or 'both' cycles.
           const isCycleCompatible = (serviceType === 'rjm')
             ? (cType === 'rjm' || cType === 'both')
             : (cType === 'official' || cType === 'both');
 
           // COMPATIBILITY LOGIC (Organist Category):
-          // SAAS Rule: 'Official' organists CANNOT play RJM services.
-          // EXCEPTION: Unless 'permite_rjm' is explicitly set to true.
-          // RJM Services can ONLY be played by 'RJM' or 'Aluna' categories OR 'Oficial' with permission.
           let isCategoryCompatible = true;
           if (serviceType === 'rjm' && item.categoria === 'oficial') {
-            // Check permission (convert 1/0 to boolean just in case)
             const hasPermission = (item.permite_rjm === 1 || item.permite_rjm === true);
             if (!hasPermission) {
               isCategoryCompatible = false;
@@ -175,7 +177,8 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
           }
 
           if (isCycleCompatible && isCategoryCompatible) {
-            pointers[ptrKey] = p + 1; // Consume
+            pointers[ptrKey] = p + 1; // Advance pointer past this one
+            consumedIndices.add(p);   // MARK AS CONSUMED
             return { candidate: item, ptrUsed: p };
           }
           p++; // Skip incompatible
@@ -191,35 +194,36 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
       let ptr = ptrUsed;
 
       if (isRJMService) {
-        // RJM Service: Only "Tocar Culto" exists ("não existe meia hora" per user)
+        // RJM Service: Only "Tocar Culto" exists
         orgMeia = null;
         orgCulto = candidate;
       }
       else if (isOfficialService) {
-        // CATEGORY RULES for CULTO OFICIAL:
-        // Rule: Pupils (Aluna) and RJM category only play Meia Hora. 
-        // Rule: The Culto role MUST ALWAYS be an Official.
-
-        // Respect Church Setting: "Permitir que a mesma organista faça meia hora e tocar no culto"
+        // ... (Rule comments) ...
         const permiteMesma = !!igrejas[0].mesma_organista_ambas_funcoes;
 
         if (ptr === 0) {
-          console.log(`[RODIZIO] Iniciando geração para ${igrejas[0].nome}. Dobradinha permitida: ${permiteMesma}`);
+          console.log(`[RODIZIO] Iniciando para ${igrejas[0].nome}. Dobradinha: ${permiteMesma}`);
         }
 
         if (permiteMesma || isThursday) {
-          // One person does both. MUST BE OFFICIAL.
           if (candidate.categoria === 'oficial') {
             orgMeia = candidate;
             orgCulto = candidate;
           } else {
-            // Candidate is Pupil/RJM. They can only do Meia Hora.
-            // Split is mandatory here because Pupils can't play the Culto.
+            // Split mandatory: Aluna/RJM does Meia, Find next Official for Culto
             let offset = 1;
             let foundIdx = -1;
             while (ptr + offset < masterPool.length) {
-              if (masterPool[ptr + offset].categoria === 'oficial') {
-                foundIdx = ptr + offset;
+              const idx = ptr + offset;
+              // Rule 0 Check for Lookahead
+              if (consumedIndices.has(idx)) {
+                offset++;
+                continue;
+              }
+
+              if (masterPool[idx].categoria === 'oficial') {
+                foundIdx = idx;
                 break;
               }
               offset++;
@@ -228,38 +232,32 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
             if (foundIdx !== -1) {
               orgMeia = candidate;
               orgCulto = masterPool[foundIdx];
-
-              // NOTE: In this unified multi-pointer model, the "found officer" used for split
-              // should probably NOT be "consumed" from the pointer sequence for its next turn?
-              // Or should it? 
-              // Usually, if they accompany, they've worked.
-              // For now, let's keep it simple: split roles use a helper search but don't 
-              // necessarily advance the GLOBAL pointer of other types.
-
-              // We advance current pool pointer to bypass the official we just used if it was close?
-              // To avoid double-scaling the same official too soon.
-              if (foundIdx === pointers[typeKey]) {
-                pointers[typeKey]++;
-              }
+              consumedIndices.add(foundIdx); // MARK AS CONSUMED
             } else {
-              // No officials left? Extremely rare.
               orgMeia = candidate;
               orgCulto = null;
             }
           }
         } else {
-          // Weekend/Standard Split (permiteMesma is OFF):
-          // Meia Hora: current candidate (Official, Aluna or RJM)
+          // Standard Split (Weekend)
           orgMeia = candidate;
 
-          // Culto Role: MUST BE OFFICIAL
+          // Find next Official for Culto
           let offset = 1;
           let foundIdx = -1;
           while (ptr + offset < masterPool.length) {
-            const item = masterPool[ptr + offset];
+            const idx = ptr + offset;
+
+            // Rule 0 Check for Lookahead
+            if (consumedIndices.has(idx)) {
+              offset++;
+              continue;
+            }
+
+            const item = masterPool[idx];
             const cType = cycleTypeMap.get(item.ciclo_id);
             if ((cType === 'official' || cType === 'both') && item.categoria === 'oficial') {
-              foundIdx = ptr + offset;
+              foundIdx = idx;
               break;
             }
             offset++;
@@ -267,11 +265,8 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
 
           if (foundIdx !== -1) {
             orgCulto = masterPool[foundIdx];
-            if (foundIdx === pointers[typeKey]) {
-              pointers[typeKey]++;
-            }
+            consumedIndices.add(foundIdx); // MARK AS CONSUMED
           } else {
-            // No officials for Culto role
             orgCulto = null;
           }
         }
