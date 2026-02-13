@@ -1,0 +1,19 @@
+{
+  "cycles": [
+    {
+      "id": 7,
+      "nome": "Ciclo Normal",
+      "ordem": 1,
+      "official_links": 0,
+      "rjm_links": 0
+    },
+    {
+      "id": 8,
+      "nome": "RJM",
+      "ordem": 2,
+      "official_links": 0,
+      "rjm_links": 2
+    }
+  ],
+  "rodizios": []
+}

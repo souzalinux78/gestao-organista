@@ -1,0 +1,24 @@
+{
+  "7": [
+    {
+      "posicao": 1,
+      "organista_id": 26,
+      "nome": "Org Oficial",
+      "categoria": "oficial"
+    },
+    {
+      "posicao": 2,
+      "organista_id": 28,
+      "nome": "Org Aluna",
+      "categoria": "aluna"
+    }
+  ],
+  "8": [
+    {
+      "posicao": 1,
+      "organista_id": 27,
+      "nome": "Org RJM",
+      "categoria": "rjm"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+[
+  "Church ID: 5",
+  "\n--- CULTOS ---",
+  "[\n  {\n    \"id\": 12,\n    \"dia_semana\": \"quinta\",\n    \"hora\": \"19:30:00\",\n    \"tipo\": \"culto_oficial\",\n    \"eh_rjm\": 0,\n    \"ciclo_id\": null\n  },\n  {\n    \"id\": 13,\n    \"dia_semana\": \"domingo\",\n    \"hora\": \"14:00:00\",\n    \"tipo\": \"rjm\",\n    \"eh_rjm\": 0,\n    \"ciclo_id\": 8\n  }\n]",
+  "\n--- CICLOS & CLASSIFICATION ---",
+  "{\n  \"id\": 7,\n  \"nome\": \"Ciclo Normal\",\n  \"linkedOfficial\": false,\n  \"linkedRJM\": false,\n  \"DETECTED_TYPE\": \"both (default)\",\n  \"NameSaysRJM\": false\n}",
+  "{\n  \"id\": 8,\n  \"nome\": \"RJM\",\n  \"linkedOfficial\": false,\n  \"linkedRJM\": true,\n  \"DETECTED_TYPE\": \"rjm\",\n  \"NameSaysRJM\": true\n}"
+]

@@ -1,0 +1,39 @@
+Church ID: 5
+
+--- CULTOS ---
+[
+  {
+    "id": 12,
+    "dia_semana": "quinta",
+    "hora": "19:30:00",
+    "tipo": "culto_oficial",
+    "eh_rjm": 0,
+    "ciclo_id": null
+  },
+  {
+    "id": 13,
+    "dia_semana": "domingo",
+    "hora": "14:00:00",
+    "tipo": "rjm",
+    "eh_rjm": 0,
+    "ciclo_id": 8
+  }
+]
+
+--- CICLOS & CLASSIFICATION ---
+{
+  "id": 7,
+  "nome": "Ciclo Normal",
+  "linkedOfficial": false,
+  "linkedRJM": false,
+  "DETECTED_TYPE": "both (default)",
+  "NameSaysRJM": false
+}
+{
+  "id": 8,
+  "nome": "RJM",
+  "linkedOfficial": false,
+  "linkedRJM": true,
+  "DETECTED_TYPE": "rjm",
+  "NameSaysRJM": true
+}

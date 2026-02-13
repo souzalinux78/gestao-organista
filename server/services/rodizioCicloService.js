@@ -65,6 +65,12 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
     masterItems.push(...cycleItems);
   }
 
+  // CHECK FOR STRICT RJM CYCLES
+  const hasStrictRJMCycle = masterItems.some(i => i.cycle_type === 'rjm');
+  if (hasStrictRJMCycle) {
+    console.log('[RODIZIO] MODO ESTRITO RJM ATIVADO: Existem ciclos RJM dedicados. Ciclos "both" (unlinked) serão ignorados em serviços RJM.');
+  }
+
   if (masterItems.length === 0) throw new Error('Nenhum item de ciclo encontrado. Verifique se há organistas no ciclo.');
 
   // LOG FINAL MASTER POOL ORDER
@@ -163,9 +169,19 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
           const cType = cycleTypeMap.get(item.ciclo_id);
 
           // COMPATIBILITY LOGIC (Cycle Type):
-          const isCycleCompatible = (serviceType === 'rjm')
-            ? (cType === 'rjm' || cType === 'both')
-            : (cType === 'official' || cType === 'both');
+          let isCycleCompatible = false;
+          if (serviceType === 'rjm') {
+            if (hasStrictRJMCycle) {
+              // STRICT MODE: Only explicit RJM cycles allowed (Ignores "both" from unlinked cycles)
+              isCycleCompatible = (cType === 'rjm');
+            } else {
+              // FALLBACK: Allow rjm or both
+              isCycleCompatible = (cType === 'rjm' || cType === 'both');
+            }
+          } else {
+            // Official Service
+            isCycleCompatible = (cType === 'official' || cType === 'both');
+          }
 
           // COMPATIBILITY LOGIC (Organist Category):
           let isCategoryCompatible = true;
