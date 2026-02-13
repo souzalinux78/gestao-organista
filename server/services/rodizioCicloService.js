@@ -180,18 +180,13 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
           const cType = cycleTypeMap.get(item.ciclo_id);
 
           // COMPATIBILITY LOGIC (Cycle Type):
+          // Now simple: RJM services use only 'rjm' cycles, Official use only 'oficial' cycles
           let isCycleCompatible = false;
           if (serviceType === 'rjm') {
-            if (hasStrictRJMCycle) {
-              // STRICT MODE: Only explicit RJM cycles allowed (Ignores "both" from unlinked cycles)
-              isCycleCompatible = (cType === 'rjm');
-            } else {
-              // FALLBACK: Allow rjm or both
-              isCycleCompatible = (cType === 'rjm' || cType === 'both');
-            }
+            isCycleCompatible = (cType === 'rjm');
           } else {
             // Official Service
-            isCycleCompatible = (cType === 'official' || cType === 'both');
+            isCycleCompatible = (cType === 'oficial');
           }
 
           // COMPATIBILITY LOGIC (Organist Category):
