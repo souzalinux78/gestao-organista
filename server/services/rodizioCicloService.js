@@ -278,7 +278,7 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
 
             const item = masterPool[idx];
             const cType = cycleTypeMap.get(item.ciclo_id);
-            if ((cType === 'official' || cType === 'both') && item.categoria === 'oficial') {
+            if (cType === 'oficial' && item.categoria === 'oficial') {
               foundIdx = idx;
               break;
             }
