@@ -1,0 +1,17 @@
+{
+  "sunday_10am_rjm": [],
+  "jessica_all_services": [],
+  "cycles": [
+    {
+      "id": 7,
+      "nome": "Ciclo Normal",
+      "ordem": 1
+    },
+    {
+      "id": 8,
+      "nome": "RJM",
+      "ordem": 2
+    }
+  ],
+  "jessica_cycles": []
+}
