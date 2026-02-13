@@ -321,7 +321,7 @@ function Rodizios({ user }) {
     <div>
       <div className="card">
         <h2>Gerar Rodízio</h2>
-        {alert && <div className={`alert alert-${alert.type}`}>{alert.message}</div>}
+        {alert && <div className={`alert alert-${alert.type}`} style={{ whiteSpace: 'pre-wrap', textAlign: 'left' }}>{alert.message}</div>}
 
         <form onSubmit={handleGerarRodizio} className="form--spaced">
           <div className="form-group">

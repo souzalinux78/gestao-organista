@@ -26,8 +26,9 @@ const DIAS_SEMANA_MAP = {
  * @returns {Array} Array de objetos com os dados
  */
 function parseCSV(csvContent) {
-  // Remover caracteres de retorno de carro (\r) e filtrar linhas vazias
-  const linhas = csvContent.replace(/\r/g, '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  // Remover BOM de UTF-8 se existir e caracteres de retorno de carro (\r)
+  const limpo = csvContent.replace(/^\uFEFF/, '').replace(/\r/g, '');
+  const linhas = limpo.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
   if (linhas.length < 2) {
     throw new Error('CSV deve ter pelo menos uma linha de cabeçalho e uma linha de dados');
@@ -42,7 +43,7 @@ function parseCSV(csvContent) {
   logger.info(`[IMPORT] Delimitador detectado: "${delimitador}" (vírgulas: ${countComma}, ponto-e-vírgulas: ${countSemicolon})`);
 
   // Primeira linha é o cabeçalho
-  const cabecalho = cabecalhoLinha.split(delimitador).map(c => c.trim().toLowerCase());
+  const cabecalho = cabecalhoLinha.split(delimitador).map(c => c.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
 
   // Formatos aceitos
   const formatoNovo = ['igreja', 'data', 'horario', 'tipo', 'organista'];
