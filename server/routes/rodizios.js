@@ -366,12 +366,15 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
     });
 
     if (!resultado.sucesso) {
+      logger.warn('[ROUTE] Importação falhou com erros de validação', {
+        igrejaId: igreja_id,
+        totalErros: resultado.erros?.length,
+        primeirosErros: resultado.erros?.slice(0, 5)
+      });
       return res.status(400).json({
         error: 'Erros na importação',
-        detalhes: resultado.erros,
-        duplicados: resultado.duplicados,
-        rodiziosInseridos: resultado.rodiziosInseridos,
-        totalLinhas: resultado.totalLinhas
+        erros: resultado.erros,
+        details: resultado.erros // Adicionado para compatibilidade
       });
     }
 
