@@ -85,23 +85,25 @@ function parseCSV(csvContent) {
   // Processar linhas de dados
   const dados = [];
   for (let i = 1; i < linhas.length; i++) {
-    const valores = linhas[i].split(',').map(v => v.trim());
+    // CORREÇÃO CRÍTICA: Usar o delimitador detectado para separar as colunas nos dados também!
+    const valores = linhas[i].split(delimitador).map(v => v.trim());
 
     if (valores.length < cabecalho.length) {
-      throw new Error(`Linha ${i + 1}: número insuficiente de colunas`);
+      logger.warn(`[IMPORT] Linha ${i + 1} ignorada: colunas insuficientes. Esperado ${cabecalho.length}, encontrado ${valores.length}`, { valores, delimitador });
+      continue; // Pular linhas mal formadas em vez de quebrar tudo
     }
 
-    if (ehFormatoNovo) {
-      // Formato novo: converter para formato interno
+    // Mapear campos baseado nos índices detectados (Formato Novo)
+    if (indices.data !== -1) {
       dados.push({
-        igreja_nome: valores[indices.igreja],
+        igreja_nome: indices.igreja !== -1 ? valores[indices.igreja] : null,
         data_culto: valores[indices.data],
-        hora_culto: valores[indices.horario],
-        funcao: valores[indices.tipo].toLowerCase().replace('_', '_'), // Normalizar MEIA_HORA -> meia_hora
-        organista_nome: valores[indices.organista]
+        hora_culto: indices.horario !== -1 ? valores[indices.horario] : '00:00',
+        funcao: indices.tipo !== -1 ? valores[indices.tipo] : 'tocar_culto',
+        organista_nome: indices.organista !== -1 ? valores[indices.organista] : null
       });
-    } else {
-      // Formato antigo: usar diretamente
+    } else if (indices.data_culto !== -1) {
+      // Formato antigo: mapear para estrutura interna
       dados.push({
         igreja_id: valores[indices.igreja_id],
         data_culto: valores[indices.data_culto],
@@ -113,7 +115,7 @@ function parseCSV(csvContent) {
     }
   }
 
-  return { dados, formatoNovo: ehFormatoNovo };
+  return { dados, formatoNovo: indices.data !== -1 };
 }
 
 /**

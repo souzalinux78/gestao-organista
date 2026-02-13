@@ -281,17 +281,29 @@ function Rodizios({ user }) {
         loadRodizios();
         setArquivoCSV(null); // Limpar arquivo após sucesso
       } else {
-        // Tratar erros de validação retornados pelo backend
+        // Tratar erros de validação retornados pelo backend (sucesso: false)
         const erros = response.data.erros || [];
         const msgErro = erros.length > 0
-          ? `Falha na importação:\n${erros.slice(0, 3).join('\n')}${erros.length > 3 ? '\n...' : ''}`
+          ? `Falha na importação:\n${erros.slice(0, 5).join('\n')}${erros.length > 5 ? '\n...' : ''}`
           : 'Erro desconhecido na importação';
         showAlert(msgErro, 'error');
       }
     } catch (error) {
-      console.error('[CLIENT] Erro ao importar:', error);
-      const backendError = error.response?.data?.error || error.response?.data?.details;
-      const msg = backendError || 'Erro de conexão ou formato de arquivo inválido';
+      console.error('[CLIENT] Erro detalhado ao importar:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+
+      const backendError = error.response?.data?.error;
+      const backendDetails = error.response?.data?.details || error.response?.data?.erros;
+
+      let msg = backendError || 'Erro de conexão ou formato de arquivo inválido';
+
+      if (Array.isArray(backendDetails) && backendDetails.length > 0) {
+        msg = `${msg}:\n${backendDetails.slice(0, 5).join('\n')}${backendDetails.length > 5 ? '\n...' : ''}`;
+      }
+
       showAlert(msg, 'error');
     } finally {
       setLoadingImportar(false);
