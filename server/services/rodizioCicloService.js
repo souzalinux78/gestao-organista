@@ -190,15 +190,11 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
           }
 
           // COMPATIBILITY LOGIC (Organist Category):
-          let isCategoryCompatible = true;
-          if (serviceType === 'rjm' && item.categoria === 'oficial') {
-            const hasPermission = (item.permite_rjm === 1 || item.permite_rjm === true);
-            if (!hasPermission) {
-              isCategoryCompatible = false;
-            }
-          }
+          // REMOVED: Category check for RJM services
+          // If user explicitly added organist to RJM cycle, they can play (regardless of category)
+          // This allows exceptions like official organists who can also play RJM
 
-          if (isCycleCompatible && isCategoryCompatible) {
+          if (isCycleCompatible) {
             pointers[ptrKey] = p + 1; // Advance pointer past this one
             consumedIndices.add(p);   // MARK AS CONSUMED
             return { candidate: item, ptrUsed: p };
