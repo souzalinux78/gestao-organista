@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRodizios, gerarRodizio, getRodizioPDF, limparRodiziosIgreja, testarWebhook, updateRodizio, importarRodizio } from '../services/api';
+import { getRodizios, gerarRodizio, refazerRodizio, getRodizioPDF, limparRodiziosIgreja, testarWebhook, updateRodizio, importarRodizio } from '../services/api';
 import { getIgrejas, getCiclosIgreja, getOrganistasIgreja } from '../services/api';
 import { formatarDataBrasileira, parseDataBrasileira, aplicarMascaraData } from '../utils/dateHelpers';
 import { useAuth } from '../contexts/AuthContext';
@@ -204,29 +204,29 @@ function Rodizios({ user }) {
   const handleLimparERefazer = async () => {
     if (!gerarForm.igreja_id) { showAlert('Selecione uma igreja', 'error'); return; }
 
-    let dataInicial = gerarForm.data_inicial;
-    if (dataInicial && dataInicial.includes('/')) dataInicial = parseDataBrasileira(dataInicial);
 
-    const msgConfirm = dataInicial
-      ? `Serão apagados apenas os rodízios a partir de ${formatarDataBrasileira(dataInicial)}. Os anteriores serão mantidos. Depois será gerada uma nova escala. Continuar?`
-      : 'Isso apagará toda a escala atual e gerará uma nova. Continuar?';
-    if (!window.confirm(msgConfirm)) return;
+    let dataMsg = gerarForm.data_inicial ? `a partir de ${gerarForm.data_inicial}` : 'COMPLETO';
+    if (!window.confirm(`Isso apagará a escala ${dataMsg} e gerará uma nova. Continuar?`)) return;
 
     try {
       setLoadingGerar(true);
-      await limparRodiziosIgreja(gerarForm.igreja_id, dataInicial || undefined, undefined);
+      let dataInicial = gerarForm.data_inicial;
+      if (dataInicial && dataInicial.includes('/')) dataInicial = parseDataBrasileira(dataInicial);
 
-      const response = await gerarRodizio(
-        parseInt(gerarForm.igreja_id),
-        gerarForm.periodo_meses,
-        parseInt(gerarForm.ciclo_inicial || 1),
-        dataInicial || null,
-        gerarForm.organista_inicial ? parseInt(gerarForm.organista_inicial) : null
-      );
+      // Usar endpoint inteligente que limpa do futuro e regera
+      const response = await refazerRodizio({
+        igreja_id: parseInt(gerarForm.igreja_id),
+        periodo_meses: gerarForm.periodo_meses,
+        ciclo_inicial: parseInt(gerarForm.ciclo_inicial || 1),
+        data_inicial: dataInicial || null,
+        organista_inicial: gerarForm.organista_inicial ? parseInt(gerarForm.organista_inicial) : null
+      });
+
       showAlert(`Refeito com sucesso! ${response.data.rodizios} registros.`);
       loadRodizios();
     } catch (error) {
-      showAlert('Erro ao refazer', 'error');
+      console.error(error);
+      showAlert('Erro ao refazer: ' + (error.response?.data?.error || error.message), 'error');
     } finally {
       setLoadingGerar(false);
     }

@@ -206,7 +206,7 @@ async function atualizarRodizio(rodizioId, dados) {
  * @param {string} periodoFim - Data final (opcional)
  * @returns {Promise<number>} Número de rodízios deletados
  */
-async function deletarRodizios(igrejaId, periodoInicio = null, periodoFim = null) {
+async function deletarRodizios(igrejaId, periodoInicio = null, periodoFim = null, aPartirDe = null) {
   const pool = db.getDb();
 
   let query = 'DELETE FROM rodizios WHERE igreja_id = ?';
@@ -220,6 +220,12 @@ async function deletarRodizios(igrejaId, periodoInicio = null, periodoFim = null
   if (periodoFim) {
     query += ' AND data_culto <= ?';
     params.push(periodoFim);
+  }
+
+  // Novo parâmetro para "Refazer" (Deletar do futuro em diante)
+  if (aPartirDe) {
+    query += ' AND data_culto >= ?';
+    params.push(aPartirDe);
   }
 
   const [result] = await pool.execute(query, params);

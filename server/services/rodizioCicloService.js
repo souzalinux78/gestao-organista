@@ -35,10 +35,17 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
     const isLinkedToOfficial = cultos.some(c => c.ciclo_id === ciclo.id && c.tipo === 'culto_oficial');
     const isLinkedToRJM = cultos.some(c => c.ciclo_id === ciclo.id && (c.tipo === 'rjm' || c.eh_rjm === 1));
 
-    let type = 'none';
+    let type = 'both'; // SAAS Default: Use 'both' to allow RJM services to ALSO use this cycle if no specific cycle is set
+
     if (isLinkedToOfficial && isLinkedToRJM) type = 'both';
-    else if (isLinkedToOfficial) type = 'official';
     else if (isLinkedToRJM) type = 'rjm';
+    else if (isLinkedToOfficial) type = 'official';
+
+    // Explicitly confirm unlinked cycles as 'both' (Official + RJM)
+    // This allows a church with 1 Official + 1 RJM to use the SAME cycle if they haven't split them.
+    if (!isLinkedToOfficial && !isLinkedToRJM) {
+      type = 'both';
+    }
 
     cycleTypeMap.set(ciclo.id, type);
 
@@ -139,14 +146,22 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
           const item = masterPool[p];
           const cType = cycleTypeMap.get(item.ciclo_id);
 
-          // COMPATIBILITY LOGIC:
+          // COMPATIBILITY LOGIC (Cycle Type):
           // Official Service uses 'official' or 'both' cycles.
           // RJM Service uses 'rjm' or 'both' cycles.
-          const isCompatible = (serviceType === 'rjm')
+          const isCycleCompatible = (serviceType === 'rjm')
             ? (cType === 'rjm' || cType === 'both')
             : (cType === 'official' || cType === 'both');
 
-          if (isCompatible) {
+          // COMPATIBILITY LOGIC (Organist Category):
+          // SAAS Rule: 'Official' organists CANNOT play RJM services.
+          // RJM Services can ONLY be played by 'RJM' or 'Aluna' categories.
+          let isCategoryCompatible = true;
+          if (serviceType === 'rjm' && item.categoria === 'oficial') {
+            isCategoryCompatible = false;
+          }
+
+          if (isCycleCompatible && isCategoryCompatible) {
             pointers[ptrKey] = p + 1; // Consume
             return { candidate: item, ptrUsed: p };
           }

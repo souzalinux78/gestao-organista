@@ -17,22 +17,22 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
   try {
     const { igreja_id, periodo_inicio, periodo_fim } = req.query;
     const tenantId = getTenantId(req);
-    
+
     // Obter igrejas do usuário (já filtradas por tenant)
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
-    
+
     if (igrejaIds.length === 0) {
       return res.json([]);
     }
-    
+
     // Se usuário comum especificou igreja_id, verificar acesso
     if (igreja_id && req.user.role !== 'admin') {
       if (!igrejaIds.includes(parseInt(igreja_id))) {
         return res.status(403).json({ error: 'Acesso negado a esta igreja' });
       }
     }
-    
+
     // Usar repository para buscar rodízios
     const igrejasParaBuscar = igreja_id ? [parseInt(igreja_id)] : igrejaIds;
     const rodizios = await rodizioRepository.buscarRodiziosCompletos(
@@ -40,7 +40,7 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
       periodo_inicio || null,
       periodo_fim || null
     );
-    
+
     res.json(rodizios);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -53,28 +53,28 @@ router.post('/gerar', authenticate, tenantResolver, checkIgrejaAccess, async (re
   try {
     const { periodo_meses, ciclo_inicial, data_inicial, organista_inicial } = req.body;
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
-    
+
     if (!periodo_meses) {
       return res.status(400).json({ error: 'periodo_meses é obrigatório' });
     }
-    
+
     // Aceitar 3, 6 ou 12 meses
     if (![3, 6, 12].includes(periodo_meses)) {
       return res.status(400).json({ error: 'periodo_meses deve ser 3, 6 ou 12' });
     }
-    
+
     // ciclo_inicial é opcional, mas se fornecido deve ser válido
-    const cicloInicial = ciclo_inicial !== undefined && ciclo_inicial !== null && ciclo_inicial !== '' 
-      ? parseInt(ciclo_inicial) 
+    const cicloInicial = ciclo_inicial !== undefined && ciclo_inicial !== null && ciclo_inicial !== ''
+      ? parseInt(ciclo_inicial)
       : null;
-    
+
     const dataInicial = data_inicial && data_inicial !== '' ? data_inicial : null;
-    const organistaInicial = organista_inicial !== undefined && organista_inicial !== null && organista_inicial !== '' 
-      ? parseInt(organista_inicial) 
+    const organistaInicial = organista_inicial !== undefined && organista_inicial !== null && organista_inicial !== ''
+      ? parseInt(organista_inicial)
       : null;
-    
+
     const rodizios = await rodizioService.gerarRodizio(igreja_id, periodo_meses, cicloInicial, dataInicial, organistaInicial);
-    
+
     // Enviar para webhook
     try {
       await webhookService.enviarRodizio(rodizios);
@@ -82,8 +82,8 @@ router.post('/gerar', authenticate, tenantResolver, checkIgrejaAccess, async (re
       console.error('Erro ao enviar webhook:', webhookError);
       // Não falha a requisição se o webhook falhar
     }
-    
-    res.json({ 
+
+    res.json({
       message: `Rodízio gerado com sucesso para ${periodo_meses} meses`,
       rodizios: rodizios.length,
       dados: rodizios
@@ -100,7 +100,7 @@ router.get('/pdf/:igreja_id', authenticate, tenantResolver, checkIgrejaAccess, a
   try {
     const { periodo_inicio, periodo_fim } = req.query;
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
-    
+
     // Usar repository para buscar rodízios
     const rows = await rodizioRepository.buscarRodiziosCompletos(
       igreja_id,
@@ -108,11 +108,11 @@ router.get('/pdf/:igreja_id', authenticate, tenantResolver, checkIgrejaAccess, a
       periodo_fim || null,
       { orderBy: 'r.data_culto, c.hora' }
     );
-    
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Nenhum rodízio encontrado para o período selecionado' });
     }
-    
+
     try {
       const pdfBuffer = await pdfService.gerarPDFRodizio(rows);
       res.contentType('application/pdf');
@@ -134,11 +134,11 @@ router.put('/:id', authenticate, checkRodizioAccess, async (req, res) => {
   try {
     const { organista_id } = req.body;
     const pool = db.getDb();
-    
+
     if (!organista_id) {
       return res.status(400).json({ error: 'organista_id é obrigatório' });
     }
-    
+
     // Verificar se a organista existe e está ativa
     const [organistas] = await pool.execute('SELECT id, ativa FROM organistas WHERE id = ?', [organista_id]);
     if (organistas.length === 0) {
@@ -147,14 +147,14 @@ router.put('/:id', authenticate, checkRodizioAccess, async (req, res) => {
     if (!organistas[0].ativa) {
       return res.status(400).json({ error: 'Organista não está ativa' });
     }
-    
+
     // Atualizar rodízio usando repository
     const atualizado = await rodizioRepository.atualizarRodizio(req.rodizioId, { organista_id });
-    
+
     if (!atualizado) {
       return res.status(404).json({ error: 'Rodízio não encontrado' });
     }
-    
+
     res.json({ message: 'Rodízio atualizado com sucesso' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -166,11 +166,11 @@ router.delete('/:id', authenticate, checkRodizioAccess, async (req, res) => {
   try {
     // Usar repository para deletar
     const deletado = await rodizioRepository.deletarRodizio(req.rodizioId);
-    
+
     if (!deletado) {
       return res.status(404).json({ error: 'Rodízio não encontrado' });
     }
-    
+
     res.json({ message: 'Rodízio deletado com sucesso' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -181,18 +181,53 @@ router.delete('/:id', authenticate, checkRodizioAccess, async (req, res) => {
 // CORREÇÃO: Adicionar tenantResolver antes de checkIgrejaAccess
 router.delete('/igreja/:igreja_id', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
   try {
-    const { periodo_inicio, periodo_fim } = req.query;
+    const { periodo_inicio, periodo_fim, a_partir_de } = req.query;
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
-    
+
     // Usar repository para deletar
     const deletados = await rodizioRepository.deletarRodizios(
       igreja_id,
       periodo_inicio || null,
-      periodo_fim || null
+      periodo_fim || null,
+      a_partir_de || null // Novo parâmetro para deletar do futuro
     );
-    
+
     res.json({ message: `${deletados} rodízio(s) deletado(s) com sucesso` });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Refazer rodízio (Smart Regenerate)
+router.post('/refazer', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
+  try {
+    const { igreja_id, periodo_meses, ciclo_inicial, data_inicial, organista_inicial } = req.body;
+
+    // 1. Limpar rodízios FUTUROS (da data inicial em diante)
+    if (data_inicial) {
+      await rodizioRepository.deletarRodizios(igreja_id, null, null, data_inicial);
+    } else {
+      // Se não tem data, limpa tudo (comportamento padrão)
+      await rodizioRepository.deletarRodizios(igreja_id);
+    }
+
+    // 2. Gerar novos
+    const rodizios = await rodizioService.gerarRodizio(
+      igreja_id,
+      periodo_meses,
+      ciclo_inicial ? parseInt(ciclo_inicial) : null,
+      data_inicial || null,
+      organista_inicial ? parseInt(organista_inicial) : null
+    );
+
+    res.json({
+      message: `Rodízio refeito com sucesso a partir de ${data_inicial || 'hoje'}`,
+      rodizios: rodizios.length,
+      dados: rodizios
+    });
+
+  } catch (error) {
+    console.error('Erro ao refazer rodízio:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -201,16 +236,16 @@ router.delete('/igreja/:igreja_id', authenticate, tenantResolver, checkIgrejaAcc
 router.post('/testar-webhook', authenticate, async (req, res) => {
   try {
     const hoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    
+
     // Obter todas as igrejas do usuário
     const tenantId = getTenantId(req);
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
-    
+
     if (igrejaIds.length === 0) {
       return res.status(404).json({ error: 'Nenhuma igreja associada ao usuário' });
     }
-    
+
     // Buscar a próxima data de culto com rodízio (hoje ou futura)
     const proximos = await rodizioRepository.buscarRodiziosCompletos(
       igrejaIds,
@@ -218,11 +253,11 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
       null,
       { orderBy: 'r.data_culto ASC', limit: 1 }
     );
-    
+
     if (proximos.length === 0) {
       return res.status(404).json({ error: 'Nenhum rodízio encontrado para teste. Gere um rodízio primeiro.' });
     }
-    
+
     const rodizioBase = proximos[0];
 
     // Buscar TODOS os rodízios da mesma igreja e mesma data (meia_hora + tocar_culto)
@@ -234,7 +269,7 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
     if (rodiziosDoDia.length === 0) {
       return res.status(404).json({ error: 'Nenhum rodízio encontrado para a data/igreja do teste.' });
     }
-    
+
     // Simular envio de notificação (que chama o webhook)
     try {
       // 1) Enviar webhook para cada organista (meia_hora e tocar_culto) - paralelizado
@@ -260,19 +295,19 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
           };
         }
       });
-      
+
       const resultados = await Promise.all(notificacoesPromises);
 
       // 2) Enviar 1 webhook consolidado para encarregados
       await notificacaoService.enviarNotificacaoEncarregados(rodiziosDoDia);
 
-      res.json({ 
+      res.json({
         message: 'Webhook testado com sucesso (organistas + encarregados)!',
         total_rodizios_testados: rodiziosDoDia.length,
         detalhes: resultados
       });
     } catch (webhookError) {
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Erro ao testar webhook: ' + webhookError.message,
         detalhes: {
           data: rodizioBase.data_culto,
@@ -295,33 +330,33 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
       userId: req.user?.id,
       igrejaId: req.igrejaId
     });
-    
+
     const { csv_content } = req.body;
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
-    
+
     if (!csv_content) {
       logger.warn('[ROUTE] Tentativa de importação sem conteúdo CSV');
       return res.status(400).json({ error: 'Conteúdo do CSV é obrigatório' });
     }
-    
+
     if (typeof csv_content !== 'string') {
       logger.warn('[ROUTE] Conteúdo CSV não é string', { type: typeof csv_content });
       return res.status(400).json({ error: 'Conteúdo do CSV deve ser uma string' });
     }
-    
+
     if (csv_content.trim().length === 0) {
       logger.warn('[ROUTE] Conteúdo CSV está vazio');
       return res.status(400).json({ error: 'Conteúdo do CSV está vazio' });
     }
-    
+
     logger.info('[ROUTE] Processando CSV', { tamanho: csv_content.length });
-    
+
     const resultado = await rodizioImportService.importarRodizio(
       req.user.id,
       igreja_id,
       csv_content
     );
-    
+
     logger.info('[ROUTE] Resultado da importação:', {
       sucesso: resultado.sucesso,
       rodiziosInseridos: resultado.rodiziosInseridos,
@@ -329,7 +364,7 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
       erros: resultado.erros?.length || 0,
       duplicados: resultado.duplicados?.length || 0
     });
-    
+
     if (!resultado.sucesso) {
       return res.status(400).json({
         error: 'Erros na importação',
@@ -339,7 +374,7 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
         totalLinhas: resultado.totalLinhas
       });
     }
-    
+
     res.json({
       message: `Importação concluída com sucesso! ${resultado.rodiziosInseridos} rodízio(s) inserido(s).`,
       rodiziosInseridos: resultado.rodiziosInseridos,
@@ -357,7 +392,7 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
       stack: error.stack
     });
     // CORREÇÃO: Retornar erro claro ao frontend (sem falha silenciosa)
-    res.status(400).json({ 
+    res.status(400).json({
       error: errorMessage,
       detalhes: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });

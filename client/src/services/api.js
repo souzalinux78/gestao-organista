@@ -14,7 +14,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    
+
     if (token) {
       // Verificar se token está expirado antes de enviar
       if (isTokenExpired(token)) {
@@ -22,7 +22,7 @@ api.interceptors.request.use(
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('igrejas');
-        
+
         // Rejeitar requisição com erro de autenticação
         return Promise.reject({
           response: {
@@ -32,10 +32,10 @@ api.interceptors.request.use(
           isTokenExpired: true
         });
       }
-      
+
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     return config;
   },
   (error) => {
@@ -53,11 +53,11 @@ api.interceptors.response.use(
       const currentPath = window.location.pathname;
       const rotasPublicas = ['/login', '/register', '/cadastro'];
       const isRotaPublica = rotasPublicas.includes(currentPath);
-      
+
       // Verificar se é uma requisição de autenticação (login/register)
-      const isAuthRequest = error.config?.url?.includes('/auth/login') || 
-                           error.config?.url?.includes('/auth/register');
-      
+      const isAuthRequest = error.config?.url?.includes('/auth/login') ||
+        error.config?.url?.includes('/auth/register');
+
       // Limpar dados de autenticação apenas se não for uma requisição de autenticação
       // (para não limpar durante tentativa de login/cadastro)
       if (!isAuthRequest) {
@@ -65,7 +65,7 @@ api.interceptors.response.use(
         localStorage.removeItem('user');
         localStorage.removeItem('igrejas');
       }
-      
+
       // Só redirecionar se:
       // 1. NÃO estiver em rota pública
       // 2. NÃO for uma requisição de autenticação (login/register)
@@ -83,10 +83,10 @@ api.interceptors.response.use(
           }, 100);
         }
       }
-      
+
       return Promise.reject(error);
     }
-    
+
     // Erro 502/503 - Servidor indisponível
     if (error.response?.status === 502 || error.response?.status === 503) {
       console.error('[API] Servidor indisponível (502/503). Verifique se o backend está rodando.');
@@ -97,7 +97,7 @@ api.interceptors.response.use(
         isServerError: true
       });
     }
-    
+
     // Erro de timeout
     if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
       return Promise.reject({
@@ -106,7 +106,7 @@ api.interceptors.response.use(
         isTimeout: true
       });
     }
-    
+
     // Erro 500 - logar mensagem do backend no console para debug
     if (error.response?.status === 500) {
       const msg = error.response?.data?.error || error.message;
@@ -157,9 +157,9 @@ export const createIgreja = (data) => api.post('/igrejas', data);
 export const updateIgreja = (id, data) => api.put(`/igrejas/${id}`, data);
 export const deleteIgreja = (id) => api.delete(`/igrejas/${id}`);
 export const getOrganistasIgreja = (id) => api.get(`/igrejas/${id}/organistas`);
-export const addOrganistaIgreja = (igrejaId, organistaId) => 
+export const addOrganistaIgreja = (igrejaId, organistaId) =>
   api.post(`/igrejas/${igrejaId}/organistas`, { organista_id: organistaId });
-export const removeOrganistaIgreja = (igrejaId, organistaId) => 
+export const removeOrganistaIgreja = (igrejaId, organistaId) =>
   api.delete(`/igrejas/${igrejaId}/organistas/${organistaId}`);
 
 // Gestão de Ciclos (N cultos = N ciclos)
@@ -179,14 +179,15 @@ export const deleteCulto = (id) => api.delete(`/cultos/${id}`);
 
 // Rodízios
 export const getRodizios = (params) => api.get('/rodizios', { params });
-export const gerarRodizio = (igrejaId, periodoMeses, cicloInicial = null, dataInicial = null, organistaInicial = null) => 
-  api.post('/rodizios/gerar', { 
-    igreja_id: igrejaId, 
+export const gerarRodizio = (igrejaId, periodoMeses, cicloInicial = null, dataInicial = null, organistaInicial = null) =>
+  api.post('/rodizios/gerar', {
+    igreja_id: igrejaId,
     periodo_meses: periodoMeses,
     ciclo_inicial: cicloInicial,
     data_inicial: dataInicial,
     organista_inicial: organistaInicial
   });
+export const refazerRodizio = (payload) => api.post('/rodizios/refazer', payload);
 export const importarRodizio = (igrejaId, csvContent) => {
   console.log('[API] Enviando importação de rodízio:', { igrejaId, csvContentLength: csvContent?.length });
   return api.post('/rodizios/importar', {
