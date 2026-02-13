@@ -4,21 +4,22 @@ const fs = require('fs');
 require('dotenv').config({ path: './.env' });
 
 async function check() {
-    try {
-        await db.init();
-        const pool = db.getDb();
+  try {
+    await db.init();
+    const pool = db.getDb();
 
-        // 1. Get Cycles with Link Counts
-        const [cycles] = await pool.execute(`
+    // 1. Get Cycles with Link Counts
+    const [cycles] = await pool.execute(`
       SELECT c.id, c.nome, c.ordem,
         (SELECT COUNT(*) FROM cultos k WHERE k.ciclo_id = c.id AND k.tipo = 'culto_oficial') as official_links,
-        (SELECT COUNT(*) FROM cultos k WHERE k.ciclo_id = c.id AND k.tipo = 'rjm') as rjm_links
+        (SELECT COUNT(*) FROM cultos k WHERE k.ciclo_id = c.id AND (k.tipo = 'rjm' OR k.eh_rjm=1)) as rjm_links
       FROM ciclos c 
-      WHERE c.igreja_id = 5
+      WHERE c.igreja_id = 5 AND c.ativo = 1
+      ORDER BY c.ordem
     `);
 
-        // 2. Get recent Rodizios to see "Ciclo 2" usage
-        const [rodizios] = await pool.execute(`
+    // 2. Get recent Rodizios to see "Ciclo 2" usage
+    const [rodizios] = await pool.execute(`
       SELECT r.id, r.data_culto, r.ciclo_origem, c.nome as ciclo_nome,
              k.tipo as culto_tipo, k.dia_semana, k.hora
       FROM rodizios r
@@ -29,19 +30,19 @@ async function check() {
       LIMIT 10
     `);
 
-        const output = {
-            cycles,
-            rodizios
-        };
+    const output = {
+      cycles,
+      rodizios
+    };
 
-        fs.writeFileSync('cycles.json', JSON.stringify(output, null, 2));
-        console.log('Data written to cycles.json');
+    fs.writeFileSync('cycles.json', JSON.stringify(output, null, 2));
+    console.log('Data written to cycles.json');
 
-    } catch (e) {
-        console.error(e);
-    } finally {
-        process.exit();
-    }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    process.exit();
+  }
 }
 
 check();

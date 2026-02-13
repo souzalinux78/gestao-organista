@@ -15,5 +15,78 @@
       "rjm_links": 2
     }
   ],
-  "rodizios": []
+  "rodizios": [
+    {
+      "id": 10303,
+      "data_culto": "2026-03-12T03:00:00.000Z",
+      "ciclo_origem": 8,
+      "ciclo_nome": "RJM",
+      "culto_tipo": "rjm",
+      "dia_semana": "quinta",
+      "hora": "19:30:00"
+    },
+    {
+      "id": 10302,
+      "data_culto": "2026-03-08T03:00:00.000Z",
+      "ciclo_origem": 8,
+      "ciclo_nome": "RJM",
+      "culto_tipo": "rjm",
+      "dia_semana": "domingo",
+      "hora": "14:00:00"
+    },
+    {
+      "id": 10301,
+      "data_culto": "2026-03-05T03:00:00.000Z",
+      "ciclo_origem": 8,
+      "ciclo_nome": "RJM",
+      "culto_tipo": "rjm",
+      "dia_semana": "quinta",
+      "hora": "19:30:00"
+    },
+    {
+      "id": 10300,
+      "data_culto": "2026-03-01T03:00:00.000Z",
+      "ciclo_origem": 8,
+      "ciclo_nome": "RJM",
+      "culto_tipo": "rjm",
+      "dia_semana": "domingo",
+      "hora": "14:00:00"
+    },
+    {
+      "id": 10299,
+      "data_culto": "2026-02-26T03:00:00.000Z",
+      "ciclo_origem": 8,
+      "ciclo_nome": "RJM",
+      "culto_tipo": "rjm",
+      "dia_semana": "quinta",
+      "hora": "19:30:00"
+    },
+    {
+      "id": 10298,
+      "data_culto": "2026-02-22T03:00:00.000Z",
+      "ciclo_origem": 8,
+      "ciclo_nome": "RJM",
+      "culto_tipo": "rjm",
+      "dia_semana": "domingo",
+      "hora": "14:00:00"
+    },
+    {
+      "id": 10297,
+      "data_culto": "2026-02-19T03:00:00.000Z",
+      "ciclo_origem": 8,
+      "ciclo_nome": "RJM",
+      "culto_tipo": "rjm",
+      "dia_semana": "quinta",
+      "hora": "19:30:00"
+    },
+    {
+      "id": 10296,
+      "data_culto": "2026-02-15T03:00:00.000Z",
+      "ciclo_origem": 8,
+      "ciclo_nome": "RJM",
+      "culto_tipo": "rjm",
+      "dia_semana": "domingo",
+      "hora": "14:00:00"
+    }
+  ]
 }
