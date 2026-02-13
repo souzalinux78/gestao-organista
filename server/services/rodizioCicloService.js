@@ -54,13 +54,21 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
         FROM ciclo_itens ci
         JOIN organistas o ON ci.organista_id = o.id
         WHERE ci.ciclo_id = ? AND o.ativa = 1
-        ORDER BY ci.posicao ASC
+        ORDER BY ci.posicao ASC, o.nome ASC
     `, [type, ciclo.id]);
+
+    if (cycleItems.length > 0) {
+      console.log(`[RODIZIO] Ciclo ${ciclo.id} - Itens carregados na ordem:`);
+      cycleItems.forEach(i => console.log(`   #${i.posicao} - ${i.nome} (${i.categoria}) [Permite RJM: ${i.permite_rjm}]`));
+    }
 
     masterItems.push(...cycleItems);
   }
 
-  if (masterItems.length === 0) throw new Error('Nenhum item de ciclo encontrado.');
+  if (masterItems.length === 0) throw new Error('Nenhum item de ciclo encontrado. Verifique se há organistas no ciclo.');
+
+  // LOG FINAL MASTER POOL ORDER
+  console.log('[RODIZIO] Fila Mestra Final:', masterItems.map(i => i.nome).join(' -> '));
 
   // Create virtual expansion for cycles (circular buffer)
   const masterPool = [];
