@@ -21,42 +21,55 @@ const DIAS_SEMANA_MAP = {
 };
 
 /**
- * Parse CSV simples (linha por linha)
+ * Parse CSV simples (linha por linha) com detecção automática de delimitador
  * @param {string} csvContent - Conteúdo do CSV
  * @returns {Array} Array de objetos com os dados
  */
 function parseCSV(csvContent) {
-  const linhas = csvContent.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  
+  // Remover caracteres de retorno de carro (\r) e filtrar linhas vazias
+  const linhas = csvContent.replace(/\r/g, '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
   if (linhas.length < 2) {
     throw new Error('CSV deve ter pelo menos uma linha de cabeçalho e uma linha de dados');
   }
-  
+
+  // Detectar delimitador (vírgula ou ponto e vírgula) baseado na primeira linha
+  const cabecalhoLinha = linhas[0];
+  const countComma = (cabecalhoLinha.match(/,/g) || []).length;
+  const countSemicolon = (cabecalhoLinha.match(/;/g) || []).length;
+  const delimitador = countSemicolon > countComma ? ';' : ',';
+
+  logger.info(`[IMPORT] Delimitador detectado: "${delimitador}" (vírgulas: ${countComma}, ponto-e-vírgulas: ${countSemicolon})`);
+
   // Primeira linha é o cabeçalho
-  const cabecalho = linhas[0].split(',').map(c => c.trim().toLowerCase());
-  
-  // CORREÇÃO: Aceitar dois formatos de CSV
-  // Formato 1 (novo): igreja, data, horario, tipo, organista
-  // Formato 2 (antigo): igreja_id, data_culto, dia_semana, hora_culto, organista_id, funcao
+  const cabecalho = cabecalhoLinha.split(delimitador).map(c => c.trim().toLowerCase());
+
+  // Formatos aceitos
   const formatoNovo = ['igreja', 'data', 'horario', 'tipo', 'organista'];
   const formatoAntigo = ['igreja_id', 'data_culto', 'dia_semana', 'hora_culto', 'organista_id', 'funcao'];
-  
+
   const ehFormatoNovo = formatoNovo.every(campo => cabecalho.includes(campo));
   const ehFormatoAntigo = formatoAntigo.every(campo => cabecalho.includes(campo));
-  
+
   if (!ehFormatoNovo && !ehFormatoAntigo) {
-    throw new Error(`Cabeçalho inválido. Formatos aceitos:\n1. ${formatoNovo.join(', ')}\n2. ${formatoAntigo.join(', ')}`);
+    // Se não encontrou cabeçalho exato, tentar ver se pelo menos os campos essenciais existem
+    const camposEssenciais = ['data', 'tipo', 'organista'];
+    const possuiEssenciais = camposEssenciais.every(campo => cabecalho.some(c => c.includes(campo)));
+
+    if (!possuiEssenciais) {
+      throw new Error(`Cabeçalho não reconhecido. Use colunas: ${formatoNovo.join(', ')} (separadas por vírgula ou ponto e vírgula)`);
+    }
   }
-  
-  // Mapear índices das colunas baseado no formato
-  let indices;
-  if (ehFormatoNovo) {
+
+  // Mapear índices das colunas
+  let indices = {};
+  if (ehFormatoNovo || !ehFormatoAntigo) {
     indices = {
-      igreja: cabecalho.indexOf('igreja'),
-      data: cabecalho.indexOf('data'),
-      horario: cabecalho.indexOf('horario'),
-      tipo: cabecalho.indexOf('tipo'),
-      organista: cabecalho.indexOf('organista')
+      igreja: cabecalho.findIndex(c => c.includes('igreja')),
+      data: cabecalho.findIndex(c => c.includes('data')),
+      horario: cabecalho.findIndex(c => c.includes('horar') || c.includes('hora')),
+      tipo: cabecalho.findIndex(c => c.includes('tipo') || c.includes('funcao')),
+      organista: cabecalho.findIndex(c => c.includes('organista'))
     };
   } else {
     indices = {
@@ -68,16 +81,16 @@ function parseCSV(csvContent) {
       funcao: cabecalho.indexOf('funcao')
     };
   }
-  
+
   // Processar linhas de dados
   const dados = [];
   for (let i = 1; i < linhas.length; i++) {
     const valores = linhas[i].split(',').map(v => v.trim());
-    
+
     if (valores.length < cabecalho.length) {
       throw new Error(`Linha ${i + 1}: número insuficiente de colunas`);
     }
-    
+
     if (ehFormatoNovo) {
       // Formato novo: converter para formato interno
       dados.push({
@@ -99,7 +112,7 @@ function parseCSV(csvContent) {
       });
     }
   }
-  
+
   return { dados, formatoNovo: ehFormatoNovo };
 }
 
@@ -110,20 +123,20 @@ function parseCSV(csvContent) {
  */
 function validarDataBrasileira(dataStr) {
   if (!dataStr || typeof dataStr !== 'string') return null;
-  
+
   const partes = dataStr.split('/');
   if (partes.length !== 3) return null;
-  
+
   const [dia, mes, ano] = partes.map(Number);
-  
+
   if (isNaN(dia) || isNaN(mes) || isNaN(ano)) return null;
   if (dia < 1 || dia > 31 || mes < 1 || mes > 12 || ano < 1900 || ano > 2100) return null;
-  
+
   const data = new Date(ano, mes - 1, dia);
   if (data.getDate() !== dia || data.getMonth() !== mes - 1 || data.getFullYear() !== ano) {
     return null;
   }
-  
+
   return data;
 }
 
@@ -134,20 +147,20 @@ function validarDataBrasileira(dataStr) {
  */
 function validarHora(horaStr) {
   if (!horaStr || typeof horaStr !== 'string') return null;
-  
+
   // Aceitar HH:MM ou HH:MM:SS
   const partes = horaStr.split(':');
   if (partes.length < 2 || partes.length > 3) return null;
-  
+
   const horas = parseInt(partes[0], 10);
   const minutos = parseInt(partes[1], 10);
   const segundos = partes[2] ? parseInt(partes[2], 10) : 0;
-  
+
   if (isNaN(horas) || isNaN(minutos) || isNaN(segundos)) return null;
   if (horas < 0 || horas > 23 || minutos < 0 || minutos > 59 || segundos < 0 || segundos > 59) {
     return null;
   }
-  
+
   return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
 }
 
@@ -160,10 +173,10 @@ function validarHora(horaStr) {
  */
 async function importarRodizio(userId, igrejaId, csvContent) {
   const pool = db.getDb();
-  
+
   try {
     logger.info(`[IMPORT] Iniciando importação de rodízio - Usuário: ${userId}, Igreja: ${igrejaId}`);
-    
+
     // 1. Parse do CSV (retorna { dados, formatoNovo })
     let dados, formatoNovo;
     try {
@@ -174,13 +187,13 @@ async function importarRodizio(userId, igrejaId, csvContent) {
       logger.error('[IMPORT] Erro ao fazer parse do CSV:', parseError);
       throw new Error(`Erro ao processar CSV: ${parseError.message}`);
     }
-    
+
     if (!dados || dados.length === 0) {
       throw new Error('CSV não contém dados válidos');
     }
-    
+
     logger.info(`[IMPORT] CSV parseado com sucesso - ${dados.length} linha(s) encontrada(s), formato: ${formatoNovo ? 'novo' : 'antigo'}`);
-    
+
     // 2. Buscar igreja para validar nome (se formato novo)
     let igrejaNome = null;
     if (formatoNovo) {
@@ -190,7 +203,7 @@ async function importarRodizio(userId, igrejaId, csvContent) {
       }
       igrejaNome = igrejas[0].nome;
     }
-    
+
     // 3. Buscar todas as organistas da igreja (para formato novo que usa nome)
     const [organistasIgreja] = await pool.execute(
       `SELECT o.*, oi.oficializada as associacao_oficializada
@@ -200,7 +213,7 @@ async function importarRodizio(userId, igrejaId, csvContent) {
          AND o.ativa = 1`,
       [igrejaId]
     );
-    
+
     const organistasMapPorId = {};
     const organistasMapPorNome = {};
     organistasIgreja.forEach(o => {
@@ -217,13 +230,13 @@ async function importarRodizio(userId, igrejaId, csvContent) {
         oficializada: o.associacao_oficializada === 1 || o.oficializada === 1
       };
     });
-    
+
     // 4. Buscar cultos da igreja
     const [cultos] = await pool.execute(
       'SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1',
       [igrejaId]
     );
-    
+
     const cultosMap = {};
     cultos.forEach(c => {
       const diaLower = c.dia_semana.toLowerCase();
@@ -232,26 +245,26 @@ async function importarRodizio(userId, igrejaId, csvContent) {
       }
       cultosMap[diaLower].push(c);
     });
-    
+
     // 5. Validar e processar cada linha
     const rodiziosParaInserir = [];
     const erros = [];
     const duplicados = [];
-    
+
     for (let i = 0; i < dados.length; i++) {
       const linha = dados[i];
       const numLinha = i + 2; // +2 porque linha 1 é cabeçalho e começamos em 0
-      
+
       try {
         if (formatoNovo) {
           // FORMATO NOVO: igreja, data, horario, tipo, organista
-          
+
           // Validar nome da igreja
           if (linha.igreja_nome && linha.igreja_nome !== igrejaNome) {
             erros.push(`Linha ${numLinha}: igreja "${linha.igreja_nome}" não corresponde à igreja selecionada "${igrejaNome}"`);
             continue;
           }
-          
+
           // Validar data (formato dd/mm/yyyy)
           const dataObj = validarDataBrasileira(linha.data_culto);
           if (!dataObj) {
@@ -259,38 +272,38 @@ async function importarRodizio(userId, igrejaId, csvContent) {
             continue;
           }
           const dataFormatada = formatarData(dataObj); // YYYY-MM-DD
-          
+
           // Determinar dia da semana a partir da data
           const diaSemanaNum = dataObj.getDay();
           const diasSemanaArray = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
           const diaSemanaLower = diasSemanaArray[diaSemanaNum];
-          
+
           // Verificar se existe culto para este dia
           const cultosDoDia = cultosMap[diaSemanaLower];
           if (!cultosDoDia || cultosDoDia.length === 0) {
             erros.push(`Linha ${numLinha}: não existe culto ativo para ${diaSemanaLower} nesta igreja`);
             continue;
           }
-          
+
           // Usar o primeiro culto do dia
           const culto = cultosDoDia[0];
-          
+
           // Validar hora
           const horaFormatada = validarHora(linha.hora_culto);
           if (!horaFormatada) {
             erros.push(`Linha ${numLinha}: horário "${linha.hora_culto}" inválido. Use formato HH:MM ou HH:MM:SS`);
             continue;
           }
-          
+
           // Buscar organista por nome
           const organistaNomeNormalizado = linha.organista_nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           const organista = organistasMapPorNome[organistaNomeNormalizado];
-          
+
           if (!organista) {
             erros.push(`Linha ${numLinha}: organista "${linha.organista_nome}" não encontrada ou não associada à igreja`);
             continue;
           }
-          
+
           // Normalizar função (MEIA_HORA -> meia_hora, CULTO -> tocar_culto)
           let funcao = linha.funcao.toLowerCase().trim();
           if (funcao === 'meia_hora' || funcao === 'meia hora' || funcao === 'meiahora') {
@@ -301,13 +314,13 @@ async function importarRodizio(userId, igrejaId, csvContent) {
             erros.push(`Linha ${numLinha}: tipo "${linha.funcao}" inválido. Use: MEIA_HORA ou CULTO`);
             continue;
           }
-          
+
           // VALIDAÇÃO CRÍTICA: Organista não oficializada não pode tocar no culto
           if (funcao === 'tocar_culto' && !organista.oficializada) {
             erros.push(`Linha ${numLinha}: organista "${organista.nome}" não é oficializada e não pode tocar no culto. Apenas organistas oficializadas podem ter função "CULTO"`);
             continue;
           }
-          
+
           // Verificar se já existe rodízio (não duplicar)
           const existe = await rodizioRepository.existeRodizio(culto.id, dataFormatada, funcao, organista.id);
           if (existe) {
@@ -319,7 +332,7 @@ async function importarRodizio(userId, igrejaId, csvContent) {
             });
             continue;
           }
-          
+
           // Criar objeto de rodízio (nunca com campos undefined)
           const rodizio = {
             igreja_id: igrejaId ?? null,
@@ -343,17 +356,17 @@ async function importarRodizio(userId, igrejaId, csvContent) {
           }
 
           rodiziosParaInserir.push(rodizio);
-          
+
         } else {
           // FORMATO ANTIGO: igreja_id, data_culto, dia_semana, hora_culto, organista_id, funcao
-          
+
           // Validar igreja_id
           const linhaIgrejaId = parseInt(linha.igreja_id);
           if (isNaN(linhaIgrejaId) || linhaIgrejaId !== igrejaId) {
             erros.push(`Linha ${numLinha}: igreja_id inválido ou diferente da igreja selecionada`);
             continue;
           }
-          
+
           // Validar data (formato dd/mm/yyyy)
           const dataObj = validarDataBrasileira(linha.data_culto);
           if (!dataObj) {
@@ -361,7 +374,7 @@ async function importarRodizio(userId, igrejaId, csvContent) {
             continue;
           }
           const dataFormatada = formatarData(dataObj); // YYYY-MM-DD
-          
+
           // Validar dia da semana
           const diaSemanaLower = linha.dia_semana.toLowerCase();
           const diaSemanaNormalizado = DIAS_SEMANA_MAP[diaSemanaLower];
@@ -369,46 +382,46 @@ async function importarRodizio(userId, igrejaId, csvContent) {
             erros.push(`Linha ${numLinha}: dia_semana inválido. Use: domingo, segunda, terça, quarta, quinta, sexta, sábado`);
             continue;
           }
-          
+
           // Verificar se existe culto para este dia
           const cultosDoDia = cultosMap[diaSemanaLower];
           if (!cultosDoDia || cultosDoDia.length === 0) {
             erros.push(`Linha ${numLinha}: não existe culto ativo para ${diaSemanaNormalizado} nesta igreja`);
             continue;
           }
-          
+
           // Usar o primeiro culto do dia
           const culto = cultosDoDia[0];
-          
+
           // Validar hora
           const horaFormatada = validarHora(linha.hora_culto);
           if (!horaFormatada) {
             erros.push(`Linha ${numLinha}: hora_culto inválida. Use formato HH:MM ou HH:MM:SS`);
             continue;
           }
-          
+
           // Validar organista_id
           const organistaId = parseInt(linha.organista_id);
           if (isNaN(organistaId) || !organistasMapPorId[organistaId]) {
             erros.push(`Linha ${numLinha}: organista_id inválido ou não encontrado`);
             continue;
           }
-          
+
           const organista = organistasMapPorId[organistaId];
-          
+
           // Validar função
           const funcao = linha.funcao.toLowerCase();
           if (funcao !== 'meia_hora' && funcao !== 'tocar_culto') {
             erros.push(`Linha ${numLinha}: funcao inválida. Use: meia_hora ou tocar_culto`);
             continue;
           }
-          
+
           // VALIDAÇÃO CRÍTICA: Organista não oficializada não pode tocar no culto
           if (funcao === 'tocar_culto' && !organista.oficializada) {
             erros.push(`Linha ${numLinha}: organista "${organista.nome}" não é oficializada e não pode tocar no culto. Apenas organistas oficializadas podem ter função "tocar_culto"`);
             continue;
           }
-          
+
           // Verificar se já existe rodízio (não duplicar)
           const existe = await rodizioRepository.existeRodizio(culto.id, dataFormatada, funcao, organistaId);
           if (existe) {
@@ -420,37 +433,37 @@ async function importarRodizio(userId, igrejaId, csvContent) {
             });
             continue;
           }
-          
-        // Criar objeto de rodízio (nunca com campos undefined)
-        const rodizio = {
-          igreja_id: igrejaId ?? null,
-          culto_id: culto?.id ?? null,
-          organista_id: organistaId ?? null,
-          data_culto: dataFormatada ?? null,
-          hora_culto: horaFormatada ?? null,
-          dia_semana: culto?.dia_semana ?? null,
-          funcao: funcao ?? null,
-          periodo_inicio: dataFormatada ?? null,
-          periodo_fim: dataFormatada ?? null
-        };
 
-        // Validar campos obrigatórios antes de inserir
-        const camposObrigatorios = ['igreja_id', 'culto_id', 'organista_id', 'data_culto', 'hora_culto', 'dia_semana', 'funcao'];
-        const camposInvalidos = camposObrigatorios.filter(campo => rodizio[campo] === null);
-        if (camposInvalidos.length > 0) {
-          logger.warn(`[IMPORT] Linha ${numLinha}: campos obrigatórios ausentes -> ${camposInvalidos.join(', ')}`);
-          erros.push(`Linha ${numLinha}: campos obrigatórios ausentes (${camposInvalidos.join(', ')})`);
-          continue;
+          // Criar objeto de rodízio (nunca com campos undefined)
+          const rodizio = {
+            igreja_id: igrejaId ?? null,
+            culto_id: culto?.id ?? null,
+            organista_id: organistaId ?? null,
+            data_culto: dataFormatada ?? null,
+            hora_culto: horaFormatada ?? null,
+            dia_semana: culto?.dia_semana ?? null,
+            funcao: funcao ?? null,
+            periodo_inicio: dataFormatada ?? null,
+            periodo_fim: dataFormatada ?? null
+          };
+
+          // Validar campos obrigatórios antes de inserir
+          const camposObrigatorios = ['igreja_id', 'culto_id', 'organista_id', 'data_culto', 'hora_culto', 'dia_semana', 'funcao'];
+          const camposInvalidos = camposObrigatorios.filter(campo => rodizio[campo] === null);
+          if (camposInvalidos.length > 0) {
+            logger.warn(`[IMPORT] Linha ${numLinha}: campos obrigatórios ausentes -> ${camposInvalidos.join(', ')}`);
+            erros.push(`Linha ${numLinha}: campos obrigatórios ausentes (${camposInvalidos.join(', ')})`);
+            continue;
+          }
+
+          rodiziosParaInserir.push(rodizio);
         }
 
-        rodiziosParaInserir.push(rodizio);
-        }
-        
       } catch (error) {
         erros.push(`Linha ${numLinha}: ${error.message}`);
       }
     }
-    
+
     // 6. Se houver erros, retornar sem inserir nada
     if (erros.length > 0) {
       logger.warn(`[IMPORT] Importação falhou - ${erros.length} erro(s) encontrado(s), ${duplicados.length} duplicado(s)`);
@@ -462,12 +475,12 @@ async function importarRodizio(userId, igrejaId, csvContent) {
         totalLinhas: dados.length
       };
     }
-    
+
     // 7. Inserir rodízios válidos
     let rodiziosInseridos = 0;
     if (rodiziosParaInserir.length > 0) {
       logger.info(`[IMPORT] Inserindo ${rodiziosParaInserir.length} rodízio(s) válido(s)...`);
-      
+
       try {
         await rodizioRepository.inserirRodizios(rodiziosParaInserir);
         rodiziosInseridos = rodiziosParaInserir.length;
@@ -479,9 +492,9 @@ async function importarRodizio(userId, igrejaId, csvContent) {
     } else {
       logger.warn('[IMPORT] Nenhum rodízio válido para inserir');
     }
-    
+
     logger.info(`[IMPORT] Importação concluída - ${rodiziosInseridos} inserido(s), ${duplicados.length} duplicado(s), ${dados.length} total`);
-    
+
     return {
       sucesso: true,
       erros: [],
@@ -489,7 +502,7 @@ async function importarRodizio(userId, igrejaId, csvContent) {
       rodiziosInseridos: rodiziosInseridos,
       totalLinhas: dados.length
     };
-    
+
   } catch (error) {
     logger.error('Erro ao importar rodízio:', error);
     // CORREÇÃO: Nunca deixar exception gerar erro 500 sem resposta

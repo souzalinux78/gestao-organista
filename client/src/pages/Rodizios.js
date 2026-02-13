@@ -255,18 +255,47 @@ function Rodizios({ user }) {
   };
 
   const handleImportarRodizio = async () => {
-    if (!gerarForm.igreja_id || !arquivoCSV) { showAlert('Selecione igreja e CSV', 'error'); return; }
+    if (!gerarForm.igreja_id || !arquivoCSV) {
+      showAlert('Selecione uma igreja e escolha um arquivo CSV', 'error');
+      return;
+    }
+
     try {
       setLoadingImportar(true);
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        await importarRodizio(parseInt(gerarForm.igreja_id), e.target.result);
-        showAlert('Importado com sucesso!');
+
+      const lerArquivo = () => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (e) => reject(new Error('Erro ao ler arquivo'));
+        reader.readAsText(arquivoCSV);
+      });
+
+      const csvContent = await lerArquivo();
+      console.log('[CLIENT] Iniciando importação...', { tamanho: csvContent.length });
+
+      const response = await importarRodizio(parseInt(gerarForm.igreja_id), csvContent);
+
+      if (response.data.sucesso) {
+        const msg = `Importado com sucesso! ${response.data.rodiziosInseridos} registros inseridos.`;
+        showAlert(msg, 'success');
         loadRodizios();
-      };
-      reader.readAsText(arquivoCSV);
-    } catch { showAlert('Erro ao importar', 'error'); }
-    finally { setLoadingImportar(false); }
+        setArquivoCSV(null); // Limpar arquivo após sucesso
+      } else {
+        // Tratar erros de validação retornados pelo backend
+        const erros = response.data.erros || [];
+        const msgErro = erros.length > 0
+          ? `Falha na importação:\n${erros.slice(0, 3).join('\n')}${erros.length > 3 ? '\n...' : ''}`
+          : 'Erro desconhecido na importação';
+        showAlert(msgErro, 'error');
+      }
+    } catch (error) {
+      console.error('[CLIENT] Erro ao importar:', error);
+      const backendError = error.response?.data?.error || error.response?.data?.details;
+      const msg = backendError || 'Erro de conexão ou formato de arquivo inválido';
+      showAlert(msg, 'error');
+    } finally {
+      setLoadingImportar(false);
+    }
   };
 
   const formatarData = (d) => formatarDataBrasileira(d);
