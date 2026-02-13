@@ -261,13 +261,12 @@ async function importarRodizio(userId, igrejaId, csvContent) {
         if (formatoNovo) {
           // FORMATO NOVO: igreja, data, horario, tipo, organista
 
-          // Validar nome da igreja (Case-insensitive e sem acentos)
+          // Validar nome da igreja (Case-insensitive e sem acentos) - Opcional se já temos o ID
           const linhaIgrejaNormalizada = linha.igreja_nome?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
           const igrejaNomeNormalizado = igrejaNome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
           if (linha.igreja_nome && linhaIgrejaNormalizada !== igrejaNomeNormalizado) {
-            erros.push(`Linha ${numLinha}: igreja "${linha.igreja_nome}" não corresponde à igreja selecionada "${igrejaNome}"`);
-            continue;
+            logger.warn(`[IMPORT] Linha ${numLinha}: nome da igreja "${linha.igreja_nome}" é diferente de "${igrejaNome}". Prosseguindo pelo ID.`);
           }
 
           // Validar data (formato dd/mm/yyyy)
@@ -286,7 +285,8 @@ async function importarRodizio(userId, igrejaId, csvContent) {
           // Verificar se existe culto para este dia
           const cultosDoDia = cultosMap[diaSemanaLower];
           if (!cultosDoDia || cultosDoDia.length === 0) {
-            erros.push(`Linha ${numLinha}: não existe culto ativo para ${diaSemanaLower} nesta igreja`);
+            const diasDisponiveis = Object.keys(cultosMap).join(', ');
+            erros.push(`Linha ${numLinha}: não existe culto para ${diaSemanaLower} (${linha.data_culto}). Dias ativos nesta igreja: ${diasDisponiveis}`);
             continue;
           }
 
@@ -296,20 +296,32 @@ async function importarRodizio(userId, igrejaId, csvContent) {
           // Validar hora
           const horaFormatada = validarHora(linha.hora_culto);
           if (!horaFormatada) {
-            erros.push(`Linha ${numLinha}: horário "${linha.hora_culto}" inválido. Use formato HH:MM ou HH:MM:SS`);
+            erros.push(`Linha ${numLinha}: horário "${linha.hora_culto}" inválido. Use formato HH:MM`);
             continue;
           }
 
-          // Buscar organista por nome
-          const organistaNomeNormalizado = linha.organista_nome?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-          const organista = organistasMapPorNome[organistaNomeNormalizado];
+          // Buscar organista por nome (Normalização profunda)
+          const organistaNomeCSV = linha.organista_nome?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+          let organista = organistasMapPorNome[organistaNomeCSV];
+
+          // Se não achou por nome exato, tentar por "contém"
+          if (!organista && organistaNomeCSV) {
+            const matchingKey = Object.keys(organistasMapPorNome).find(nome =>
+              nome.includes(organistaNomeCSV) || organistaNomeCSV.includes(nome)
+            );
+            if (matchingKey) {
+              organista = organistasMapPorNome[matchingKey];
+              logger.info(`[IMPORT] Linha ${numLinha}: Organista "${linha.organista_nome}" mapeada para "${organista.nome}"`);
+            }
+          }
 
           if (!organista) {
-            erros.push(`Linha ${numLinha}: organista "${linha.organista_nome}" não encontrada ou não associada à igreja`);
+            const nomesDisponiveis = Object.values(organistasMapPorNome).map(o => o.nome).slice(0, 5).join(', ');
+            erros.push(`Linha ${numLinha}: organista "${linha.organista_nome}" NÃO encontrada. Sugestões cadastradas: ${nomesDisponiveis}...`);
             continue;
           }
 
-          // Normalizar função (MEIA_HORA -> meia_hora, CULTO -> tocar_culto, RJM -> tocar_culto)
+          // Normalizar função
           let funcao = linha.funcao?.toLowerCase().trim();
           if (funcao === 'meia_hora' || funcao === 'meia hora' || funcao === 'meiahora' || funcao === 'meia') {
             funcao = 'meia_hora';
