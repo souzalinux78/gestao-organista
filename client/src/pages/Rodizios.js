@@ -284,7 +284,7 @@ function Rodizios({ user }) {
         // Tratar erros de validação retornados pelo backend (sucesso: false)
         const erros = response.data.erros || [];
         const msgErro = erros.length > 0
-          ? `Falha na importação:\n${erros.slice(0, 5).join('\n')}${erros.length > 5 ? '\n...' : ''}`
+          ? `Falha na importação:\n- ${erros.slice(0, 10).join('\n- ')}${erros.length > 10 ? '\n...' : ''}`
           : 'Erro desconhecido na importação';
         showAlert(msgErro, 'error');
       }
@@ -295,13 +295,16 @@ function Rodizios({ user }) {
         message: error.message
       });
 
-      const backendError = error.response?.data?.error;
-      const backendDetails = error.response?.data?.details || error.response?.data?.erros;
+      const resData = error.response?.data;
+      const backendError = resData?.error;
+      const backendDetails = resData?.detalhes || resData?.erros || resData?.details;
 
       let msg = backendError || 'Erro de conexão ou formato de arquivo inválido';
 
       if (Array.isArray(backendDetails) && backendDetails.length > 0) {
-        msg = `${msg}:\n${backendDetails.slice(0, 5).join('\n')}${backendDetails.length > 5 ? '\n...' : ''}`;
+        msg = `${msg}:\n- ${backendDetails.slice(0, 10).join('\n- ')}${backendDetails.length > 10 ? '\n...' : ''}`;
+      } else if (backendDetails && typeof backendDetails === 'object') {
+        msg = `${msg}: ${JSON.stringify(backendDetails)}`;
       }
 
       showAlert(msg, 'error');

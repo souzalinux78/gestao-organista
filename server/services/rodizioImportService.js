@@ -282,6 +282,23 @@ async function importarRodizio(userId, igrejaId, csvContent) {
           const diasSemanaArray = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
           const diaSemanaLower = diasSemanaArray[diaSemanaNum];
 
+          // Normalizar função
+          let funcaoOriginal = linha.funcao?.toLowerCase().trim();
+          let funcao = 'tocar_culto';
+          let ehRJM = false;
+
+          if (funcaoOriginal === 'meia_hora' || funcaoOriginal === 'meia hora' || funcaoOriginal === 'meiahora' || funcaoOriginal === 'meia') {
+            funcao = 'meia_hora';
+          } else if (funcaoOriginal === 'rjm') {
+            funcao = 'tocar_culto';
+            ehRJM = true;
+          } else if (funcaoOriginal === 'tocar_culto' || funcaoOriginal === 'tocar culto' || funcaoOriginal === 'culto' || funcaoOriginal === 'tocarculto') {
+            funcao = 'tocar_culto';
+          } else {
+            erros.push(`Linha ${numLinha}: tipo "${linha.funcao}" inválido. Use: MEIA_HORA, CULTO ou RJM`);
+            continue;
+          }
+
           // Verificar se existe culto para este dia
           const cultosDoDia = cultosMap[diaSemanaLower];
           if (!cultosDoDia || cultosDoDia.length === 0) {
@@ -290,8 +307,13 @@ async function importarRodizio(userId, igrejaId, csvContent) {
             continue;
           }
 
-          // Usar o primeiro culto do dia
-          const culto = cultosDoDia[0];
+          // Tentar encontrar o culto que melhor corresponde ao tipo (RJM vs Regular)
+          let culto = cultosDoDia.find(c => ehRJM ? c.tipo === 'rjm' : c.tipo !== 'rjm');
+          if (!culto) {
+            // Se não achou correspondência exata de tipo, usa o primeiro disponível mas avisa
+            culto = cultosDoDia[0];
+            logger.info(`[IMPORT] Linha ${numLinha}: Culto do tipo "${ehRJM ? 'RJM' : 'Regular'}" não encontrado na ${diaSemanaLower}. Usando "${culto.tipo}" do dia.`);
+          }
 
           // Validar hora
           const horaFormatada = validarHora(linha.hora_culto);
@@ -317,24 +339,13 @@ async function importarRodizio(userId, igrejaId, csvContent) {
 
           if (!organista) {
             const nomesDisponiveis = Object.values(organistasMapPorNome).map(o => o.nome).slice(0, 5).join(', ');
-            erros.push(`Linha ${numLinha}: organista "${linha.organista_nome}" NÃO encontrada. Sugestões cadastradas: ${nomesDisponiveis}...`);
+            erros.push(`Linha ${numLinha}: organista "${linha.organista_nome}" NÃO encontrada. Sugestões: ${nomesDisponiveis}...`);
             continue;
           }
 
-          // Normalizar função
-          let funcao = linha.funcao?.toLowerCase().trim();
-          if (funcao === 'meia_hora' || funcao === 'meia hora' || funcao === 'meiahora' || funcao === 'meia') {
-            funcao = 'meia_hora';
-          } else if (funcao === 'tocar_culto' || funcao === 'tocar culto' || funcao === 'culto' || funcao === 'tocarculto' || funcao === 'rjm') {
-            funcao = 'tocar_culto';
-          } else {
-            erros.push(`Linha ${numLinha}: tipo "${linha.funcao}" inválido. Use: MEIA_HORA, CULTO ou RJM`);
-            continue;
-          }
-
-          // VALIDAÇÃO CRÍTICA: Organista não oficializada não pode tocar no culto
-          if (funcao === 'tocar_culto' && !organista.oficializada) {
-            erros.push(`Linha ${numLinha}: organista "${organista.nome}" não é oficializada e não pode tocar no culto. Apenas organistas oficializadas podem ter função "CULTO"`);
+          // VALIDAÇÃO CRÍTICA: Organista não oficializada não pode tocar no culto (Exceto RJM)
+          if (funcao === 'tocar_culto' && !ehRJM && !organista.oficializada) {
+            erros.push(`Linha ${numLinha}: organista "${organista.nome}" não é oficializada e não pode tocar no culto comum. Apenas oficializadas podem ter função "CULTO"`);
             continue;
           }
 
