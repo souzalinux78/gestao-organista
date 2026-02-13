@@ -84,59 +84,61 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
 
   console.log(`[RODIZIO] Total: ${ciclosOficiais.length} ciclo(s) oficial(is), ${ciclosRJM.length} ciclo(s) RJM`);
 
-  // LOG FINAL MASTER POOL ORDER
-  console.log('[RODIZIO] Fila Mestra Final:', masterItems.map(i => i.nome).join(' -> '));
-
-  // Create virtual expansion for cycles (circular buffer)
-  const masterPool = [];
-  for (let i = 0; i < 50; i++) { // Enough expansion for long periods
-    masterPool.push(...masterItems.map(x => ({ ...x, uuid: `${x.id}_${i}_${Math.random()}` })));
-  }
-
-  // 4. Initial Pointers (Senior Refactor: Robust forced starting baseline)
-  const pointers = {
-    official: 0,
-    rjm: 0
+  // NEW APPROACH: Keep cycles separate, rotate entire cycles
+  // Structure: { oficial: [{numero, items}], rjm: [{items}] }
+  const cycleStructure = {
+    oficial: ciclosOficiais.map(ciclo => {
+      const items = masterItems.filter(item => item.ciclo_id === ciclo.id);
+      return { numero: ciclo.numero, cicloId: ciclo.id, nome: ciclo.nome, items };
+    }),
+    rjm: ciclosRJM.map(ciclo => {
+      const items = masterItems.filter(item => item.ciclo_id === ciclo.id);
+      return { cicloId: ciclo.id, nome: ciclo.nome, items };
+    })
   };
 
-  const consumedIndices = new Set();
+  // Remove empty cycles
+  cycleStructure.oficial = cycleStructure.oficial.filter(c => c.items.length > 0);
+  cycleStructure.rjm = cycleStructure.rjm.filter(c => c.items.length > 0);
+
+  console.log('[RODIZIO] Estrutura de Ciclos:');
+  cycleStructure.oficial.forEach(c => {
+    console.log(`  📘 Ciclo ${c.numero}: ${c.items.length} organista(s) - ${c.items.map(i => i.nome).join(', ')}`);
+  });
+  cycleStructure.rjm.forEach(c => {
+    console.log(`  🎵 Ciclo RJM: ${c.items.length} organista(s) - ${c.items.map(i => i.nome).join(', ')}`);
+  });
+
+  // 4. Initial Pointers: Determine starting cycle and organist
+  let currentOfficialCycleIdx = 0;
+  let currentOfficialItemIdx = 0;
+  let currentRJMCycleIdx = 0;
+  let currentRJMItemIdx = 0;
 
   if (cicloInicialId || organistaInicialId) {
-    let searchIdx = -1;
+    console.log(`[RODIZIO] Configurando início: Ciclo=${cicloInicialId}, Organista=${organistaInicialId}`);
 
-    console.log(`[RODIZIO] Iniciando busca STRICT: Ciclo=${cicloInicialId}, OrganistaID=${organistaInicialId}`);
-
-    if (cicloInicialId && organistaInicialId) {
-      // 1. Precise Match: Same ID and Same Cycle
-      searchIdx = masterPool.findIndex(i => String(i.id) == String(organistaInicialId) && String(i.ciclo_id) == String(cicloInicialId));
-
-      if (searchIdx === -1) {
-        // 2. Name Fallback: Same Name in the requested Cycle (handles ID mismatches)
-        const targetOrg = masterPool.find(i => String(i.id) == String(organistaInicialId));
-        if (targetOrg) {
-          searchIdx = masterPool.findIndex(i => i.nome === targetOrg.nome && String(i.ciclo_id) == String(cicloInicialId));
-        }
+    // Find cycle by ID or numero
+    if (cicloInicialId) {
+      const cycleIdx = cycleStructure.oficial.findIndex(c =>
+        String(c.cicloId) === String(cicloInicialId) || String(c.numero) === String(cicloInicialId)
+      );
+      if (cycleIdx !== -1) {
+        currentOfficialCycleIdx = cycleIdx;
+        console.log(`[RODIZIO] Ciclo inicial definido: Ciclo ${cycleStructure.oficial[cycleIdx].numero}`);
       }
-
-      if (searchIdx === -1) {
-        // 3. Cycle Fallback: If organist not found in cycle, just start at beginning of cycle
-        searchIdx = masterPool.findIndex(i => String(i.ciclo_id) == String(cicloInicialId));
-        console.warn(`[RODIZIO] Organista não encontrado no ciclo ${cicloInicialId}. Iniciando no topo do ciclo.`);
-      }
-    } else if (cicloInicialId) {
-      // Start at first organist of specific cycle
-      searchIdx = masterPool.findIndex(i => String(i.ciclo_id) == String(cicloInicialId));
-    } else if (organistaInicialId) {
-      // Start at first occurrence of specific organist (any cycle)
-      searchIdx = masterPool.findIndex(i => String(i.id) == String(organistaInicialId));
     }
 
-    if (searchIdx !== -1) {
-      console.log(`[RODIZIO] Ponto de partida definido: Índice ${searchIdx} (Organista: ${masterPool[searchIdx].nome}, Ciclo: ${masterPool[searchIdx].ciclo_id})`);
-      pointers.official = searchIdx;
-      pointers.rjm = searchIdx;
-    } else {
-      console.warn(`[RODIZIO] AVISO: Ponto de partida não encontrado. Usando início padrão (0).`);
+    // Find organist within the selected cycle
+    if (organistaInicialId && cycleStructure.oficial.length > 0) {
+      const cycle = cycleStructure.oficial[currentOfficialCycleIdx];
+      const itemIdx = cycle.items.findIndex(item => String(item.id) === String(organistaInicialId));
+      if (itemIdx !== -1) {
+        currentOfficialItemIdx = itemIdx;
+        console.log(`[RODIZIO] Organista inicial: ${cycle.items[itemIdx].nome} (posição ${itemIdx + 1})`);
+      } else {
+        console.warn(`[RODIZIO] Organista ${organistaInicialId} não encontrado no ciclo. Iniciando do topo.`);
+      }
     }
   }
 
@@ -148,6 +150,49 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
   endDate.setMonth(endDate.getMonth() + parseInt(periodoMeses));
 
   const diaMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+
+  // Helper: Get next organist from sequential cycles
+  const getNextOfficialOrganist = () => {
+    if (cycleStructure.oficial.length === 0) return null;
+
+    const currentCycle = cycleStructure.oficial[currentOfficialCycleIdx];
+    if (!currentCycle || currentCycle.items.length === 0) return null;
+
+    // Get current organist
+    const organist = currentCycle.items[currentOfficialItemIdx];
+
+    // Advance pointer
+    currentOfficialItemIdx++;
+
+    // If reached end of current cycle, move to next cycle
+    if (currentOfficialItemIdx >= currentCycle.items.length) {
+      currentOfficialItemIdx = 0; // Reset to start of next cycle
+      currentOfficialCycleIdx = (currentOfficialCycleIdx + 1) % cycleStructure.oficial.length; // Rotate to next cycle
+
+      const nextCycle = cycleStructure.oficial[currentOfficialCycleIdx];
+      console.log(`[RODIZIO] 🔄 Rotação: Ciclo ${currentCycle.numero} completo → Iniciando Ciclo ${nextCycle.numero}`);
+    }
+
+    return organist;
+  };
+
+  const getNextRJMOrganist = () => {
+    if (cycleStructure.rjm.length === 0) return null;
+
+    const currentCycle = cycleStructure.rjm[currentRJMCycleIdx];
+    if (!currentCycle || currentCycle.items.length === 0) return null;
+
+    const organist = currentCycle.items[currentRJMItemIdx];
+
+    currentRJMItemIdx++;
+
+    if (currentRJMItemIdx >= currentCycle.items.length) {
+      currentRJMItemIdx = 0;
+      currentRJMCycleIdx = (currentRJMCycleIdx + 1) % cycleStructure.rjm.length;
+    }
+
+    return organist;
+  };
 
   while (currDate <= endDate) {
     const diaSemana = currDate.getDay();
@@ -163,66 +208,19 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
       const isOfficialService = (culto.tipo === 'culto_oficial' && !isRJMService);
       const isThursday = (diaSemana === 4);
 
-      // Determine pointer and compatibility filter
-      const typeKey = isRJMService ? 'rjm' : 'official';
-
-      // Helper to find next compatible candidate and move the specific pointer
-      const consumeCandidate = (ptrKey, serviceType) => {
-        let p = pointers[ptrKey];
-        while (p < masterPool.length) {
-          // Rule 0: STRICT ORDER - If this index was already consumed (by a lookahead), SKIP IT.
-          if (consumedIndices.has(p)) {
-            p++;
-            continue;
-          }
-
-          const item = masterPool[p];
-          const cType = cycleTypeMap.get(item.ciclo_id);
-
-          // COMPATIBILITY LOGIC (Cycle Type):
-          // Now simple: RJM services use only 'rjm' cycles, Official use only 'oficial' cycles
-          let isCycleCompatible = false;
-          if (serviceType === 'rjm') {
-            isCycleCompatible = (cType === 'rjm');
-          } else {
-            // Official Service
-            isCycleCompatible = (cType === 'oficial');
-          }
-
-          // COMPATIBILITY LOGIC (Organist Category):
-          // REMOVED: Category check for RJM services
-          // If user explicitly added organist to RJM cycle, they can play (regardless of category)
-          // This allows exceptions like official organists who can also play RJM
-
-          if (isCycleCompatible) {
-            pointers[ptrKey] = p + 1; // Advance pointer past this one
-            consumedIndices.add(p);   // MARK AS CONSUMED
-            return { candidate: item, ptrUsed: p };
-          }
-          p++; // Skip incompatible
-        }
-        return { candidate: null, ptrUsed: p };
-      };
-
-      const { candidate, ptrUsed } = consumeCandidate(typeKey, typeKey);
-      if (!candidate) continue;
-
       let orgMeia = null;
       let orgCulto = null;
-      let ptr = ptrUsed;
 
       if (isRJMService) {
         // RJM Service: Only "Tocar Culto" exists
         orgMeia = null;
-        orgCulto = candidate;
+        orgCulto = getNextRJMOrganist();
       }
       else if (isOfficialService) {
-        // ... (Rule comments) ...
         const permiteMesma = !!igrejas[0].mesma_organista_ambas_funcoes;
 
-        if (ptr === 0) {
-          console.log(`[RODIZIO] Iniciando para ${igrejas[0].nome}. Dobradinha: ${permiteMesma}`);
-        }
+        const candidate = getNextOfficialOrganist();
+        if (!candidate) continue;
 
         if (permiteMesma || isThursday) {
           if (candidate.categoria === 'oficial') {
@@ -230,61 +228,67 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
             orgCulto = candidate;
           } else {
             // Split mandatory: Aluna/RJM does Meia, Find next Official for Culto
-            let offset = 1;
-            let foundIdx = -1;
-            while (ptr + offset < masterPool.length) {
-              const idx = ptr + offset;
-              // Rule 0 Check for Lookahead
-              if (consumedIndices.has(idx)) {
-                offset++;
-                continue;
-              }
+            orgMeia = candidate;
 
-              if (masterPool[idx].categoria === 'oficial') {
-                foundIdx = idx;
+            // Look ahead for next official in the CURRENT cycle structure
+            // Save state before lookahead
+            const savedCycleIdx = currentOfficialCycleIdx;
+            const savedItemIdx = currentOfficialItemIdx;
+
+            // Try to find next official organist
+            let found = false;
+            let lookaheadOrganist = null;
+            const maxLookahead = 20; // Safety limit
+
+            for (let i = 0; i < maxLookahead; i++) {
+              const nextOrg = getNextOfficialOrganist();
+              if (!nextOrg) break;
+
+              if (nextOrg.categoria === 'oficial') {
+                lookaheadOrganist = nextOrg;
+                found = true;
                 break;
               }
-              offset++;
             }
 
-            if (foundIdx !== -1) {
-              orgMeia = candidate;
-              orgCulto = masterPool[foundIdx];
-              consumedIndices.add(foundIdx); // MARK AS CONSUMED
+            if (found) {
+              orgCulto = lookaheadOrganist;
+              // Pointers already advanced by getNextOfficialOrganist
             } else {
-              orgMeia = candidate;
+              // Restore state if not found
+              currentOfficialCycleIdx = savedCycleIdx;
+              currentOfficialItemIdx = savedItemIdx;
               orgCulto = null;
             }
           }
         } else {
-          // Standard Split (Weekend)
+          // Standard Split (Weekend): Aluna meia, próxima oficial culto
           orgMeia = candidate;
 
-          // Find next Official for Culto
-          let offset = 1;
-          let foundIdx = -1;
-          while (ptr + offset < masterPool.length) {
-            const idx = ptr + offset;
+          // Similar lookahead logic
+          const savedCycleIdx = currentOfficialCycleIdx;
+          const savedItemIdx = currentOfficialItemIdx;
 
-            // Rule 0 Check for Lookahead
-            if (consumedIndices.has(idx)) {
-              offset++;
-              continue;
-            }
+          let found = false;
+          let lookaheadOrganist = null;
+          const maxLookahead = 20;
 
-            const item = masterPool[idx];
-            const cType = cycleTypeMap.get(item.ciclo_id);
-            if (cType === 'oficial' && item.categoria === 'oficial') {
-              foundIdx = idx;
+          for (let i = 0; i < maxLookahead; i++) {
+            const nextOrg = getNextOfficialOrganist();
+            if (!nextOrg) break;
+
+            if (nextOrg.categoria === 'oficial') {
+              lookaheadOrganist = nextOrg;
+              found = true;
               break;
             }
-            offset++;
           }
 
-          if (foundIdx !== -1) {
-            orgCulto = masterPool[foundIdx];
-            consumedIndices.add(foundIdx); // MARK AS CONSUMED
+          if (found) {
+            orgCulto = lookaheadOrganist;
           } else {
+            currentOfficialCycleIdx = savedCycleIdx;
+            currentOfficialItemIdx = savedItemIdx;
             orgCulto = null;
           }
         }
