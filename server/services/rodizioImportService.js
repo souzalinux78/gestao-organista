@@ -224,8 +224,8 @@ async function importarRodizio(userId, igrejaId, csvContent) {
         nome: o.nome,
         oficializada: o.associacao_oficializada === 1 || o.oficializada === 1
       };
-      // Normalizar nome para busca (lowercase, sem acentos)
-      const nomeNormalizado = o.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      // Normalizar nome para busca (lowercase, sem acentos, trim)
+      const nomeNormalizado = o.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
       organistasMapPorNome[nomeNormalizado] = {
         id: o.id,
         nome: o.nome,
@@ -261,8 +261,11 @@ async function importarRodizio(userId, igrejaId, csvContent) {
         if (formatoNovo) {
           // FORMATO NOVO: igreja, data, horario, tipo, organista
 
-          // Validar nome da igreja
-          if (linha.igreja_nome && linha.igreja_nome !== igrejaNome) {
+          // Validar nome da igreja (Case-insensitive e sem acentos)
+          const linhaIgrejaNormalizada = linha.igreja_nome?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+          const igrejaNomeNormalizado = igrejaNome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+          if (linha.igreja_nome && linhaIgrejaNormalizada !== igrejaNomeNormalizado) {
             erros.push(`Linha ${numLinha}: igreja "${linha.igreja_nome}" não corresponde à igreja selecionada "${igrejaNome}"`);
             continue;
           }
@@ -298,7 +301,7 @@ async function importarRodizio(userId, igrejaId, csvContent) {
           }
 
           // Buscar organista por nome
-          const organistaNomeNormalizado = linha.organista_nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const organistaNomeNormalizado = linha.organista_nome?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
           const organista = organistasMapPorNome[organistaNomeNormalizado];
 
           if (!organista) {
@@ -306,14 +309,14 @@ async function importarRodizio(userId, igrejaId, csvContent) {
             continue;
           }
 
-          // Normalizar função (MEIA_HORA -> meia_hora, CULTO -> tocar_culto)
-          let funcao = linha.funcao.toLowerCase().trim();
-          if (funcao === 'meia_hora' || funcao === 'meia hora' || funcao === 'meiahora') {
+          // Normalizar função (MEIA_HORA -> meia_hora, CULTO -> tocar_culto, RJM -> tocar_culto)
+          let funcao = linha.funcao?.toLowerCase().trim();
+          if (funcao === 'meia_hora' || funcao === 'meia hora' || funcao === 'meiahora' || funcao === 'meia') {
             funcao = 'meia_hora';
-          } else if (funcao === 'tocar_culto' || funcao === 'tocar culto' || funcao === 'culto' || funcao === 'tocarculto') {
+          } else if (funcao === 'tocar_culto' || funcao === 'tocar culto' || funcao === 'culto' || funcao === 'tocarculto' || funcao === 'rjm') {
             funcao = 'tocar_culto';
           } else {
-            erros.push(`Linha ${numLinha}: tipo "${linha.funcao}" inválido. Use: MEIA_HORA ou CULTO`);
+            erros.push(`Linha ${numLinha}: tipo "${linha.funcao}" inválido. Use: MEIA_HORA, CULTO ou RJM`);
             continue;
           }
 
