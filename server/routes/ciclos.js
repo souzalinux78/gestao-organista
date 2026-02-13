@@ -34,7 +34,7 @@ router.get('/igreja/:igreja_id', authenticate, async (req, res) => {
 // Criar novo ciclo
 router.post('/', authenticate, async (req, res) => {
     try {
-        const { igreja_id, nome, ordem, ativo } = req.body;
+        const { igreja_id, nome, ordem, ativo, tipo, numero } = req.body;
 
         // Verificar acesso à igreja
         if (req.user.role !== 'admin') {
@@ -51,9 +51,20 @@ router.post('/', authenticate, async (req, res) => {
 
         const pool = db.getDb();
 
+        // Validar número único para ciclos oficiais
+        if (tipo === 'oficial' && numero) {
+            const [existing] = await pool.execute(
+                'SELECT id FROM ciclos WHERE igreja_id = ? AND tipo = "oficial" AND numero = ? AND ativo = 1',
+                [igreja_id, numero]
+            );
+            if (existing.length > 0) {
+                return res.status(400).json({ error: `Já existe um Ciclo Oficial ${numero} nesta igreja` });
+            }
+        }
+
         const [result] = await pool.execute(
-            'INSERT INTO ciclos (igreja_id, nome, ordem, ativo) VALUES (?, ?, ?, ?)',
-            [igreja_id, nome, ordem || 1, ativo !== undefined ? (ativo ? 1 : 0) : 1]
+            'INSERT INTO ciclos (igreja_id, nome, ordem, ativo, tipo, numero) VALUES (?, ?, ?, ?, ?, ?)',
+            [igreja_id, nome, ordem || 1, ativo !== undefined ? (ativo ? 1 : 0) : 1, tipo || 'oficial', numero]
         );
 
         res.json({
@@ -61,7 +72,9 @@ router.post('/', authenticate, async (req, res) => {
             igreja_id,
             nome,
             ordem: ordem || 1,
-            ativo: ativo !== undefined ? (ativo ? 1 : 0) : 1
+            ativo: ativo !== undefined ? (ativo ? 1 : 0) : 1,
+            tipo: tipo || 'oficial',
+            numero
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -71,7 +84,7 @@ router.post('/', authenticate, async (req, res) => {
 // Atualizar ciclo
 router.put('/:id', authenticate, async (req, res) => {
     try {
-        const { nome, ordem, ativo } = req.body;
+        const { nome, ordem, ativo, tipo, numero } = req.body;
         const pool = db.getDb();
 
         // Verificar acesso
@@ -88,9 +101,23 @@ router.put('/:id', authenticate, async (req, res) => {
             }
         }
 
+        // Validar número único para ciclos oficiais
+        if (tipo === 'oficial' && numero) {
+            const [cicloAtual] = await pool.execute('SELECT igreja_id FROM ciclos WHERE id = ?', [req.params.id]);
+            if (cicloAtual.length > 0) {
+                const [existing] = await pool.execute(
+                    'SELECT id FROM ciclos WHERE igreja_id = ? AND tipo = "oficial" AND numero = ? AND id != ? AND ativo = 1',
+                    [cicloAtual[0].igreja_id, numero, req.params.id]
+                );
+                if (existing.length > 0) {
+                    return res.status(400).json({ error: `Já existe um Ciclo Oficial ${numero} nesta igreja` });
+                }
+            }
+        }
+
         const [result] = await pool.execute(
-            'UPDATE ciclos SET nome = ?, ordem = ?, ativo = ? WHERE id = ?',
-            [nome, ordem, ativo ? 1 : 0, req.params.id]
+            'UPDATE ciclos SET nome = ?, ordem = ?, ativo = ?, tipo = ?, numero = ? WHERE id = ?',
+            [nome, ordem, ativo ? 1 : 0, tipo, numero, req.params.id]
         );
 
         if (result.affectedRows === 0) {
