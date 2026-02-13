@@ -50,7 +50,7 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
     cycleTypeMap.set(ciclo.id, type);
 
     const [cycleItems] = await pool.execute(`
-        SELECT ci.organista_id as id, o.nome, o.categoria, ci.posicao, ci.ciclo_id, ? as cycle_type
+        SELECT ci.organista_id as id, o.nome, o.categoria, o.permite_rjm, ci.posicao, ci.ciclo_id, ? as cycle_type
         FROM ciclo_itens ci
         JOIN organistas o ON ci.organista_id = o.id
         WHERE ci.ciclo_id = ? AND o.ativa = 1
@@ -155,10 +155,15 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
 
           // COMPATIBILITY LOGIC (Organist Category):
           // SAAS Rule: 'Official' organists CANNOT play RJM services.
-          // RJM Services can ONLY be played by 'RJM' or 'Aluna' categories.
+          // EXCEPTION: Unless 'permite_rjm' is explicitly set to true.
+          // RJM Services can ONLY be played by 'RJM' or 'Aluna' categories OR 'Oficial' with permission.
           let isCategoryCompatible = true;
           if (serviceType === 'rjm' && item.categoria === 'oficial') {
-            isCategoryCompatible = false;
+            // Check permission (convert 1/0 to boolean just in case)
+            const hasPermission = (item.permite_rjm === 1 || item.permite_rjm === true);
+            if (!hasPermission) {
+              isCategoryCompatible = false;
+            }
           }
 
           if (isCycleCompatible && isCategoryCompatible) {

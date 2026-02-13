@@ -23,7 +23,8 @@ function Organistas({ user }) {
     email: '',
     oficializada: false,
     ativa: true,
-    categoria: 'oficial'
+    categoria: 'oficial',
+    permite_rjm: false
   });
   const { toast, showSuccess, showError, hideToast } = useToast();
 
@@ -141,6 +142,7 @@ function Organistas({ user }) {
       email: organista.email || '',
       oficializada: organista.oficializada === 1,
       ativa: organista.ativa === 1,
+      permite_rjm: organista.permite_rjm === 1,
       categoria: organista.categoria || (organista.oficializada === 1 ? 'oficial' : 'aluna')
     });
     setShowForm(true);
@@ -170,7 +172,8 @@ function Organistas({ user }) {
       email: '',
       oficializada: false,
       ativa: true,
-      categoria: 'oficial'
+      categoria: 'oficial',
+      permite_rjm: false
     });
     setEditing(null);
     setShowForm(false);
@@ -251,7 +254,8 @@ function Organistas({ user }) {
                   setFormData({
                     ...formData,
                     categoria: cat,
-                    oficializada: cat === 'oficial' || cat === 'rjm'
+                    oficializada: cat === 'oficial' || cat === 'rjm',
+                    permite_rjm: cat !== 'oficial' ? true : formData.permite_rjm
                   });
                 }}
               >
@@ -260,6 +264,21 @@ function Organistas({ user }) {
                 <option value="aluna">Aluna</option>
               </select>
             </div>
+
+            {formData.categoria === 'oficial' && (
+              <div className="form-group">
+                <label className="checkbox-field">
+                  <input
+                    type="checkbox"
+                    checked={formData.permite_rjm}
+                    onChange={(e) => setFormData({ ...formData, permite_rjm: e.target.checked })}
+                    className="checkbox-input"
+                  />
+                  <span className="checkbox-label-text">Pode tocar no RJM? (Exceção)</span>
+                </label>
+                <small className="form-hint">Marque apenas se esta oficializada também toca na Reunião de Jovens e Menores.</small>
+              </div>
+            )}
             {/* Oficializada checkbox removed - auto-derived from category */}
             <div className="form-group">
               <label className="checkbox-field">
@@ -329,7 +348,9 @@ function Organistas({ user }) {
                   setFormData({
                     ...formData,
                     categoria: cat,
-                    oficializada: cat === 'oficial' || cat === 'rjm'
+                    oficializada: cat === 'oficial' || cat === 'rjm',
+                    // Se mudar para RJM/Aluna, auto-permite (redundante mas seguro)
+                    permite_rjm: cat !== 'oficial' ? true : formData.permite_rjm
                   });
                 }}
               >
@@ -338,6 +359,21 @@ function Organistas({ user }) {
                 <option value="aluna">Aluna</option>
               </select>
             </div>
+
+            {formData.categoria === 'oficial' && (
+              <div className="form-group">
+                <label className="checkbox-field">
+                  <input
+                    type="checkbox"
+                    checked={formData.permite_rjm}
+                    onChange={(e) => setFormData({ ...formData, permite_rjm: e.target.checked })}
+                    className="checkbox-input"
+                  />
+                  <span className="checkbox-label-text">Pode tocar no RJM? (Exceção)</span>
+                </label>
+                <small className="form-hint">Marque apenas se esta oficializada também toca na Reunião de Jovens e Menores.</small>
+              </div>
+            )}
             {/* Oficializada checkbox removed - auto-derived from category */}
             <div className="form-group">
               <label className="checkbox-field">

@@ -100,7 +100,7 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
   try {
     console.log(`[DEBUG] Iniciando criação de organista - Usuário: ${req.user.id} (${req.user.role})`);
 
-    const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
+    const { nome, telefone, email, oficializada, ativa, ordem, permite_rjm } = req.body;
     ordemValue = ordem;
     const pool = db.getDb();
     const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000); // Reduzido para 8s
@@ -205,7 +205,7 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
     let sqlOrganista, valuesOrganista;
 
     if (temTenantIdOrganistas) {
-      sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa, tenant_id, categoria) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa, tenant_id, categoria, permite_rjm) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
       valuesOrganista = [
         nome.trim(),
         telefone || null,
@@ -213,18 +213,20 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
         oficializadaFinal ? 1 : 0,
         ativa !== undefined ? (ativa ? 1 : 0) : 1,
         tenantIdParaOrganista,
-        categoriaFinal
+        categoriaFinal,
+        permite_rjm ? 1 : 0
       ];
     } else {
       // Compatibilidade: coluna não existe
-      sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa, categoria) VALUES (?, ?, ?, ?, ?, ?)';
+      sqlOrganista = 'INSERT INTO organistas (nome, telefone, email, oficializada, ativa, categoria, permite_rjm) VALUES (?, ?, ?, ?, ?, ?, ?)';
       valuesOrganista = [
         nome.trim(),
         telefone || null,
         email || null,
         oficializadaFinal ? 1 : 0,
         ativa !== undefined ? (ativa ? 1 : 0) : 1,
-        categoriaFinal
+        categoriaFinal,
+        permite_rjm ? 1 : 0
       ];
     }
 
@@ -362,7 +364,7 @@ router.post('/', authenticate, tenantResolver, async (req, res) => {
 // Atualizar organista (com verificação de acesso)
 router.put('/:id', authenticate, tenantResolver, async (req, res) => {
   try {
-    const { nome, telefone, email, oficializada, ativa, ordem } = req.body;
+    const { nome, telefone, email, oficializada, ativa, ordem, permite_rjm } = req.body;
     const pool = db.getDb();
     const dbTimeout = Number(process.env.DB_QUERY_TIMEOUT_MS || 8000);
     const tenantId = getTenantId(req);
@@ -410,7 +412,7 @@ router.put('/:id', authenticate, tenantResolver, async (req, res) => {
 
     // Atualizar dados da organista (sem ordem - ordem fica em organistas_igreja)
     const [result] = await pool.execute({
-      sql: 'UPDATE organistas SET nome = ?, telefone = ?, email = ?, oficializada = ?, ativa = ?, categoria = COALESCE(?, categoria) WHERE id = ?',
+      sql: 'UPDATE organistas SET nome = ?, telefone = ?, email = ?, oficializada = ?, ativa = ?, categoria = COALESCE(?, categoria), permite_rjm = ? WHERE id = ?',
       values: [
         nome,
         telefone || null,
@@ -418,6 +420,7 @@ router.put('/:id', authenticate, tenantResolver, async (req, res) => {
         oficializadaFinal ? 1 : 0,
         ativa ? 1 : 0,
         categoriaFinal || null,
+        permite_rjm ? 1 : 0,
         req.params.id
       ],
       timeout: dbTimeout
