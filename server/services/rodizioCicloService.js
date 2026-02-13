@@ -21,57 +21,68 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
   // Fetch Cultos
   const [cultos] = await pool.execute('SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1', [igrejaId]);
 
-  // 2. Fetch Active Cycles sorted by Order
-  const [ciclos] = await pool.execute('SELECT * FROM ciclos WHERE igreja_id = ? AND ativo = 1 ORDER BY ordem ASC', [igrejaId]);
-  if (ciclos.length === 0) throw new Error('Nenhum ciclo ativo encontrado.');
+  // 2. LOAD CYCLES BY EXPLICIT TYPE (Using tipo column from DB)
+  const [ciclosOficiais] = await pool.execute(
+    'SELECT * FROM ciclos WHERE igreja_id = ? AND tipo = "oficial" AND ativo = 1 ORDER BY numero ASC',
+    [igrejaId]
+  );
 
-  // 3. BUILD UNIFIED MASTER POOL
-  // Load ALL active cycles and their items in order
+  const [ciclosRJM] = await pool.execute(
+    'SELECT * FROM ciclos WHERE igreja_id = ? AND tipo = "rjm" AND ativo = 1 ORDER BY ordem ASC',
+    [igrejaId]
+  );
+
+  if (ciclosOficiais.length === 0 && ciclosRJM.length === 0) {
+    throw new Error('Nenhum ciclo ativo encontrado.');
+  }
+
+  // 3. BUILD MASTER POOL - SEPARATED BY TYPE
   const masterItems = [];
-  const cycleTypeMap = new Map(); // cycleId -> 'rjm' | 'official' | 'both'
+  const cycleTypeMap = new Map(); // cycleId -> tipo from DB
 
-  for (const ciclo of ciclos) {
-    // Robust detection: look at both 'tipo' and 'eh_rjm' columns
-    const isLinkedToOfficial = cultos.some(c => c.ciclo_id === ciclo.id && c.tipo === 'culto_oficial');
-    const isLinkedToRJM = cultos.some(c => c.ciclo_id === ciclo.id && (c.tipo === 'rjm' || c.eh_rjm === 1));
-
-    let type = 'both'; // SAAS Default: Use 'both' to allow RJM services to ALSO use this cycle if no specific cycle is set
-
-    if (isLinkedToOfficial && isLinkedToRJM) type = 'both';
-    else if (isLinkedToRJM) type = 'rjm';
-    else if (isLinkedToOfficial) type = 'official';
-
-    // Explicitly confirm unlinked cycles as 'both' (Official + RJM)
-    // This allows a church with 1 Official + 1 RJM to use the SAME cycle if they haven't split them.
-    if (!isLinkedToOfficial && !isLinkedToRJM) {
-      type = 'both';
-    }
-
-    cycleTypeMap.set(ciclo.id, type);
+  // Load Official Cycles (ordered by numero)
+  for (const ciclo of ciclosOficiais) {
+    cycleTypeMap.set(ciclo.id, 'oficial');
 
     const [cycleItems] = await pool.execute(`
-        SELECT ci.organista_id as id, o.nome, o.categoria, o.permite_rjm, ci.posicao, ci.ciclo_id, ? as cycle_type
+        SELECT ci.organista_id as id, o.nome, o.categoria, ci.posicao, ci.ciclo_id, 
+               'oficial' as cycle_type, ? as cycle_numero, ? as cycle_nome
         FROM ciclo_itens ci
         JOIN organistas o ON ci.organista_id = o.id
         WHERE ci.ciclo_id = ? AND o.ativa = 1
-        ORDER BY ci.posicao ASC, o.nome ASC
-    `, [type, ciclo.id]);
+        ORDER BY ci.posicao ASC
+    `, [ciclo.numero, ciclo.nome, ciclo.id]);
 
     if (cycleItems.length > 0) {
-      console.log(`[RODIZIO] Ciclo ${ciclo.id} - Itens carregados na ordem:`);
-      cycleItems.forEach(i => console.log(`   #${i.posicao} - ${i.nome} (${i.categoria}) [Permite RJM: ${i.permite_rjm}]`));
+      console.log(`[RODIZIO] 📘 Ciclo Oficial ${ciclo.numero} "${ciclo.nome}" - ${cycleItems.length} organista(s)`);
     }
 
     masterItems.push(...cycleItems);
   }
 
-  // CHECK FOR STRICT RJM CYCLES
-  const hasStrictRJMCycle = masterItems.some(i => i.cycle_type === 'rjm');
-  if (hasStrictRJMCycle) {
-    console.log('[RODIZIO] MODO ESTRITO RJM ATIVADO: Existem ciclos RJM dedicados. Ciclos "both" (unlinked) serão ignorados em serviços RJM.');
+  // Load RJM Cycles
+  for (const ciclo of ciclosRJM) {
+    cycleTypeMap.set(ciclo.id, 'rjm');
+
+    const [cycleItems] = await pool.execute(`
+        SELECT ci.organista_id as id, o.nome, o.categoria, ci.posicao, ci.ciclo_id, 
+               'rjm' as cycle_type, NULL as cycle_numero, ? as cycle_nome
+        FROM ciclo_itens ci
+        JOIN organistas o ON ci.organista_id = o.id
+        WHERE ci.ciclo_id = ? AND o.ativa = 1
+        ORDER BY ci.posicao ASC
+    `, [ciclo.nome, ciclo.id]);
+
+    if (cycleItems.length > 0) {
+      console.log(`[RODIZIO] 🎵 Ciclo RJM "${ciclo.nome}" - ${cycleItems.length} organista(s)`);
+    }
+
+    masterItems.push(...cycleItems);
   }
 
-  if (masterItems.length === 0) throw new Error('Nenhum item de ciclo encontrado. Verifique se há organistas no ciclo.');
+  if (masterItems.length === 0) throw new Error('Nenhum item de ciclo encontrado. Verifique se há organistas nos ciclos.');
+
+  console.log(`[RODIZIO] Total: ${ciclosOficiais.length} ciclo(s) oficial(is), ${ciclosRJM.length} ciclo(s) RJM`);
 
   // LOG FINAL MASTER POOL ORDER
   console.log('[RODIZIO] Fila Mestra Final:', masterItems.map(i => i.nome).join(' -> '));
@@ -300,7 +311,8 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
           funcao: 'meia_hora',
           periodo_inicio: dataInicial,
           periodo_fim: formatarData(endDate),
-          ciclo: orgMeia.ciclo_id
+          ciclo: orgMeia.ciclo_id,
+          ciclo_origem: orgMeia.ciclo_id
         });
       }
       if (orgCulto) {
@@ -314,7 +326,8 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
           funcao: 'tocar_culto',
           periodo_inicio: dataInicial,
           periodo_fim: formatarData(endDate),
-          ciclo: orgCulto.ciclo_id
+          ciclo: orgCulto.ciclo_id,
+          ciclo_origem: orgCulto.ciclo_id
         });
       }
     } // end for cultos
