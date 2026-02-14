@@ -166,7 +166,7 @@ router.delete('/:id', authenticate, async (req, res) => {
     }
 });
 
-// Atualizar cultos associados ao ciclo
+// Atualizar cultos associados ao ciclo (usando tabela ciclos_cultos)
 router.put('/:id/cultos', authenticate, async (req, res) => {
     try {
         const { cultos_ids } = req.body; // Array de IDs de cultos
@@ -190,30 +190,39 @@ router.put('/:id/cultos', authenticate, async (req, res) => {
             }
         }
 
-        // 1. Limpar associações anteriores desse ciclo (setar NULL)
-        // Mas apenas para cultos que ESTAVAM associados a este ciclo.
-        // Ou melhor: Resetar TODOS os cultos da igreja? Não, perigoso.
-        // A lógica do front deve enviar TODOS os cultos que pertencem a este ciclo.
-        // Os que NÃO estiverem na lista, mas ESTAVAM associados a este ciclo, devem ser desassociados.
+        // 1. Remover associações antigas deste ciclo na tabela ciclos_cultos
+        await pool.execute('DELETE FROM ciclos_cultos WHERE ciclo_id = ?', [ciclo_id]);
 
-        await pool.execute('UPDATE cultos SET ciclo_id = NULL WHERE ciclo_id = ?', [ciclo_id]);
-
-        // 2. Associar novos
+        // 2. Inserir novas associações
         if (cultos_ids && cultos_ids.length > 0) {
-            // Validar se cultos pertencem à mesma igreja do ciclo?
-            // Sim, mas vamos confiar no filtro do front por enquanto ou fazer um check rápido se precisar.
+            // Validar que os cultos existem e pertencem à mesma igreja do ciclo (segurança multi-tenant)
+            const [cicloInfo] = await pool.execute('SELECT igreja_id FROM ciclos WHERE id = ?', [ciclo_id]);
 
-            // Construir query segura com lista de IDs
-            const placeholders = cultos_ids.map(() => '?').join(',');
-            await pool.execute(
-                `UPDATE cultos SET ciclo_id = ? WHERE id IN (${placeholders})`,
-                [ciclo_id, ...cultos_ids]
-            );
+            if (cicloInfo.length > 0) {
+                const igrejaId = cicloInfo[0].igreja_id;
+
+                // Verificar que todos os cultos pertencem à igreja
+                const placeholders = cultos_ids.map(() => '?').join(',');
+                const [cultosValidos] = await pool.execute(
+                    `SELECT id FROM cultos WHERE id IN (${placeholders}) AND igreja_id = ?`,
+                    [...cultos_ids, igrejaId]
+                );
+
+                // Inserir apenas os cultos válidos
+                if (cultosValidos.length > 0) {
+                    const values = cultosValidos.map(c => [ciclo_id, c.id]);
+                    await pool.query(
+                        'INSERT INTO ciclos_cultos (ciclo_id, culto_id) VALUES ?',
+                        [values]
+                    );
+                }
+            }
         }
 
         res.json({ message: 'Cultos atualizados com sucesso' });
 
     } catch (error) {
+        console.error('Erro ao associar cultos:', error);
         res.status(500).json({ error: error.message });
     }
 });

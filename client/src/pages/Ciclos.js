@@ -97,6 +97,7 @@ export default function Ciclos() {
   const [editingCycle, setEditingCycle] = useState(null); // null or { id?, nome, ordem, selectedCultos: [] }
   const [showCycleModal, setShowCycleModal] = useState(false);
   const [cycleName, setCycleName] = useState('');
+  const [cycleOrder, setCycleOrder] = useState(1); // Estado para ordem
   const [selectedCultosIds, setSelectedCultosIds] = useState([]); // [NEW] IDs dos cultos selecionados no modal
 
   const getToken = () => localStorage.getItem('token');
@@ -296,6 +297,7 @@ export default function Ciclos() {
   const handleNewCycle = () => {
     setEditingCycle(null);
     setCycleName('');
+    setCycleOrder(metadadosCiclos.length + 1); // Próxima ordem disponível
     setSelectedCultosIds([]);
     setShowCycleModal(true);
   };
@@ -303,6 +305,7 @@ export default function Ciclos() {
   const handleEditCycle = (ciclo) => {
     setEditingCycle(ciclo);
     setCycleName(ciclo.nome);
+    setCycleOrder(ciclo.ordem); // Carregar ordem existente
     // Pre-select Cultos assigned to this cycle
     const assigned = todosCultos.filter(c => c.ciclo_id === ciclo.id).map(c => c.id);
     setSelectedCultosIds(assigned);
@@ -324,13 +327,21 @@ export default function Ciclos() {
     try {
       let cicloId = null;
       if (editingCycle) {
-        // Update
-        await api.put(`/ciclos/${editingCycle.id}`, { nome: cycleName, ordem: editingCycle.ordem, ativo: 1 });
+        // Update - INCLUIR ordem
+        await api.put(`/ciclos/${editingCycle.id}`, {
+          nome: cycleName,
+          ordem: cycleOrder,  // ← Usar estado cycleOrder
+          ativo: 1
+        });
         cicloId = editingCycle.id;
       } else {
-        // Create
-        const nextOrder = metadadosCiclos.length + 1;
-        const res = await api.post(`/ciclos`, { igreja_id: igrejaSelecionada, nome: cycleName, ordem: nextOrder, ativo: 1 });
+        // Create - INCLUIR ordem
+        const res = await api.post(`/ciclos`, {
+          igreja_id: igrejaSelecionada,
+          nome: cycleName,
+          ordem: cycleOrder,  // ← Usar estado cycleOrder
+          ativo: 1
+        });
         cicloId = res.data.id;
       }
 
@@ -382,6 +393,22 @@ export default function Ciclos() {
                 onChange={e => setCycleName(e.target.value)}
                 placeholder="Ex: Cultos, RJM"
               />
+            </div>
+
+            {/* Campo Ordem - NOVO */}
+            <div style={styles.modalSection}>
+              <label style={styles.label}>Ordem de Exibição</label>
+              <input
+                type="number"
+                min="1"
+                style={styles.select}
+                value={cycleOrder}
+                onChange={e => setCycleOrder(parseInt(e.target.value) || 1)}
+                placeholder="1, 2, 3..."
+              />
+              <p style={{ fontSize: 11, color: '#666', marginTop: 5 }}>
+                * Define a ordem em que os ciclos serão exibidos.
+              </p>
             </div>
 
             <div style={styles.modalSection}>

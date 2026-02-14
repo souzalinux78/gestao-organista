@@ -56,7 +56,11 @@ router.get('/igreja/:igreja_id', authenticate, async (req, res) => {
 
     const pool = db.getDb();
     const [rows] = await pool.execute(
-      'SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1',
+      `SELECT c.*, 
+              cc.ciclo_id
+       FROM cultos c
+       LEFT JOIN ciclos_cultos cc ON c.id = cc.culto_id
+       WHERE c.igreja_id = ? AND c.ativo = 1`,
       [req.params.igreja_id]
     );
     rows.sort((a, b) => {

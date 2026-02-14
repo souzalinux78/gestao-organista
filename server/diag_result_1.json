@@ -1,0 +1,64 @@
+{
+  "cultos": [
+    {
+      "id": 36,
+      "dia_semana": "Segunda",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial"
+    },
+    {
+      "id": 37,
+      "dia_semana": "Quarta",
+      "hora": "19:30:00",
+      "tipo": "culto_oficial"
+    },
+    {
+      "id": 38,
+      "dia_semana": "Domingo",
+      "hora": "10:00:00",
+      "tipo": "rjm"
+    }
+  ],
+  "organistas": [
+    {
+      "id": 47,
+      "nome": "TESTE1",
+      "oficializada": 1
+    },
+    {
+      "id": 48,
+      "nome": "TESTE2",
+      "oficializada": 1
+    },
+    {
+      "id": 49,
+      "nome": "TESTE3",
+      "oficializada": 1
+    },
+    {
+      "id": 50,
+      "nome": "TESTE4",
+      "oficializada": 1
+    },
+    {
+      "id": 51,
+      "nome": "TESTE5",
+      "oficializada": 1
+    },
+    {
+      "id": 52,
+      "nome": "TESTE6",
+      "oficializada": 1
+    },
+    {
+      "id": 53,
+      "nome": "RJM1",
+      "oficializada": 1
+    },
+    {
+      "id": 54,
+      "nome": "RJM2",
+      "oficializada": 1
+    }
+  ]
+}

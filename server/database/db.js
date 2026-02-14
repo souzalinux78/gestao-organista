@@ -7,10 +7,10 @@ const init = async () => {
   try {
     // Obter configuração validada (sem fallbacks inseguros)
     const envConfig = getConfig();
-    
+
     // Criar banco de dados se não existir (antes de criar o pool)
     await createDatabaseIfNotExists(envConfig);
-    
+
     // Criar pool de conexões com configurações otimizadas
     const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT_MS || 10000);
     pool = mysql.createPool({
@@ -27,7 +27,7 @@ const init = async () => {
       enableKeepAlive: true,
       keepAliveInitialDelay: 0
     });
-    
+
     // Armazenar pool globalmente como fallback
     global.pool = pool;
 
@@ -35,16 +35,17 @@ const init = async () => {
     const connection = await pool.getConnection();
     console.log('Conectado ao banco de dados MySQL');
     connection.release();
-    
+
     // Criar tabelas
     await createTables();
-    
+
     // Verificar e adicionar coluna funcao se necessário (migração)
     await migrateRodiziosFuncao();
     await migrateRodiziosCicloOrigem();
     await migrateTipoUsuario();
     await migrateTelefoneUsuario();
     await migrateCicloItens();
+    await migrateCiclosCultos();
 
     // Migração multi-tenant (FASE 1) - 100% segura, não quebra nada
     try {
@@ -54,7 +55,7 @@ const init = async () => {
       // Não falhar inicialização se migração falhar (pode já estar aplicada)
       console.warn('⚠️  Aviso na migração multi-tenant FASE 1:', error.message);
     }
-    
+
     // Migração multi-tenant (FASE 2) - Adicionar tenant_id em igrejas e organistas
     try {
       const migrateFase2 = require('../scripts/migrate-fase2');
@@ -63,7 +64,7 @@ const init = async () => {
       // Não falhar inicialização se migração falhar (pode já estar aplicada)
       console.warn('⚠️  Aviso na migração multi-tenant FASE 2:', error.message);
     }
-    
+
     // Migração multi-tenant (FASE 5) - Tornar tenant_id obrigatório
     // NOTA: Esta migração é executada automaticamente, mas pode ser desabilitada
     // se preferir executar manualmente para mais controle
@@ -84,7 +85,7 @@ const init = async () => {
 
 const createDatabaseIfNotExists = async (envConfig) => {
   const dbName = envConfig.DB_NAME;
-  
+
   // Criar conexão sem especificar o banco
   const tempPool = mysql.createPool({
     host: envConfig.DB_HOST,
@@ -253,7 +254,7 @@ const createTables = async () => {
 const migrateTipoUsuario = async () => {
   try {
     const pool = getDb();
-    
+
     // Verificar se a coluna já existe
     const [columns] = await pool.execute(`
       SELECT COLUMN_NAME, COLUMN_TYPE
@@ -262,7 +263,7 @@ const migrateTipoUsuario = async () => {
       AND TABLE_NAME = 'usuarios' 
       AND COLUMN_NAME = 'tipo_usuario'
     `);
-    
+
     if (columns.length > 0) {
       // Coluna já existe - verificar se precisa atualizar o ENUM
       const columnType = columns[0].COLUMN_TYPE;
@@ -282,14 +283,14 @@ const migrateTipoUsuario = async () => {
       }
       return;
     }
-    
+
     // Adicionar coluna tipo_usuario
     await pool.execute(`
       ALTER TABLE usuarios 
       ADD COLUMN tipo_usuario ENUM('encarregado', 'examinadora', 'instrutoras') DEFAULT NULL 
       AFTER role
     `);
-    
+
     console.log('✅ Migração: Campo tipo_usuario adicionado com sucesso!');
   } catch (error) {
     // Não falhar se a coluna já existir ou se houver outro erro
@@ -303,7 +304,7 @@ const migrateTipoUsuario = async () => {
 const migrateTelefoneUsuario = async () => {
   try {
     const pool = getDb();
-    
+
     // Verificar se a coluna já existe
     const [columns] = await pool.execute(`
       SELECT COLUMN_NAME
@@ -312,7 +313,7 @@ const migrateTelefoneUsuario = async () => {
       AND TABLE_NAME = 'usuarios' 
       AND COLUMN_NAME = 'telefone'
     `);
-    
+
     if (columns.length === 0) {
       // Adicionar coluna telefone
       await pool.execute(`
@@ -342,10 +343,10 @@ const migrateRodiziosFuncao = async () => {
        AND TABLE_NAME = 'rodizios' 
        AND COLUMN_NAME = 'funcao'`
     );
-    
+
     if (columns.length === 0) {
       console.log('🔄 Adicionando coluna funcao na tabela rodizios...');
-      
+
       // Adicionar coluna funcao
       try {
         await pool.execute(`
@@ -362,7 +363,7 @@ const migrateRodiziosFuncao = async () => {
           throw error;
         }
       }
-      
+
       // Atualizar rodízios existentes
       try {
         const [updated] = await pool.execute(
@@ -375,7 +376,7 @@ const migrateRodiziosFuncao = async () => {
         // Ignorar erro se não houver rodízios
         console.log('ℹ️ Nenhum rodízio existente para atualizar.');
       }
-      
+
       // Adicionar índice único
       try {
         await pool.execute(`
@@ -459,6 +460,41 @@ const migrateCicloItens = async () => {
   } catch (error) {
     if (error.code !== 'ER_TABLE_EXISTS_ERROR') {
       console.warn('⚠️ Aviso na migração ciclo_itens:', error.message);
+    }
+  }
+};
+
+// Migração: tabela ciclos_cultos (Relacionamento Ciclos-Cultos)
+const migrateCiclosCultos = async () => {
+  try {
+    const pool = getDb();
+    const [tables] = await pool.execute(
+      `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES 
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ciclos_cultos'`
+    );
+    if (tables.length > 0) {
+      console.log('✅ Tabela ciclos_cultos já existe.');
+      return;
+    }
+
+    await pool.execute(`
+      CREATE TABLE ciclos_cultos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ciclo_id INT NOT NULL,
+        culto_id INT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ciclo_id) REFERENCES ciclos(id) ON DELETE CASCADE,
+        FOREIGN KEY (culto_id) REFERENCES cultos(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_ciclo_culto (ciclo_id, culto_id),
+        INDEX idx_ciclos_cultos_ciclo (ciclo_id),
+        INDEX idx_ciclos_cultos_culto (culto_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    console.log('✅ Tabela ciclos_cultos criada (Associação Ciclos-Cultos).');
+  } catch (error) {
+    if (error.code !== 'ER_TABLE_EXISTS_ERROR') {
+      console.warn('⚠️ Aviso na migração ciclos_cultos:', error.message);
     }
   }
 };
