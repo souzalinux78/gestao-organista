@@ -100,7 +100,7 @@ router.get('/:id', authenticate, async (req, res) => {
 // Criar novo culto (com verificação de acesso à igreja)
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { igreja_id, dia_semana, hora, ativo, permite_alunas } = req.body;
+    const { igreja_id, dia_semana, hora, ativo, permite_alunas, tipo_recorrencia, ordem_mes } = req.body;
 
     // Verificar acesso à igreja
     if (req.user.role !== 'admin') {
@@ -119,10 +119,12 @@ router.post('/', authenticate, async (req, res) => {
 
     const permiteAlunasVal = permite_alunas !== undefined ? (permite_alunas ? 1 : 0) : 1;
     const tipoVal = req.body.tipo || 'culto_oficial';
+    const tipoRecorrenciaVal = tipo_recorrencia || 'semanal';
+    const ordemMesVal = (tipoRecorrenciaVal === 'mensal' && ordem_mes) ? parseInt(ordem_mes) : null;
 
     const [result] = await pool.execute(
-      'INSERT INTO cultos (igreja_id, dia_semana, hora, ativo, permite_alunas, tipo) VALUES (?, ?, ?, ?, ?, ?)',
-      [igreja_id, dia_semana, hora, ativo !== undefined ? (ativo ? 1 : 0) : 1, permiteAlunasVal, tipoVal]
+      'INSERT INTO cultos (igreja_id, dia_semana, hora, ativo, permite_alunas, tipo, tipo_recorrencia, ordem_mes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [igreja_id, dia_semana, hora, ativo !== undefined ? (ativo ? 1 : 0) : 1, permiteAlunasVal, tipoVal, tipoRecorrenciaVal, ordemMesVal]
     );
 
     res.json({
@@ -132,7 +134,9 @@ router.post('/', authenticate, async (req, res) => {
       hora,
       ativo,
       permite_alunas: permiteAlunasVal,
-      tipo: tipoVal
+      tipo: tipoVal,
+      tipo_recorrencia: tipoRecorrenciaVal,
+      ordem_mes: ordemMesVal
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -142,7 +146,7 @@ router.post('/', authenticate, async (req, res) => {
 // Atualizar culto (com verificação de acesso)
 router.put('/:id', authenticate, async (req, res) => {
   try {
-    const { dia_semana, hora, ativo, permite_alunas } = req.body;
+    const { dia_semana, hora, ativo, permite_alunas, tipo_recorrencia, ordem_mes } = req.body;
     const pool = db.getDb();
 
     // Verificar acesso ao culto (através da igreja)
@@ -162,9 +166,12 @@ router.put('/:id', authenticate, async (req, res) => {
 
     const permiteAlunasVal = permite_alunas !== undefined ? (permite_alunas ? 1 : 0) : 1;
     const tipoVal = req.body.tipo || 'culto_oficial';
+    const tipoRecorrenciaVal = tipo_recorrencia || 'semanal';
+    const ordemMesVal = (tipoRecorrenciaVal === 'mensal' && ordem_mes) ? parseInt(ordem_mes) : null;
+
     const [result] = await pool.execute(
-      'UPDATE cultos SET dia_semana = ?, hora = ?, ativo = ?, permite_alunas = ?, tipo = ? WHERE id = ?',
-      [dia_semana, hora, ativo ? 1 : 0, permiteAlunasVal, tipoVal, req.params.id]
+      'UPDATE cultos SET dia_semana = ?, hora = ?, ativo = ?, permite_alunas = ?, tipo = ?, tipo_recorrencia = ?, ordem_mes = ? WHERE id = ?',
+      [dia_semana, hora, ativo ? 1 : 0, permiteAlunasVal, tipoVal, tipoRecorrenciaVal, ordemMesVal, req.params.id]
     );
 
     if (result.affectedRows === 0) {
@@ -177,7 +184,9 @@ router.put('/:id', authenticate, async (req, res) => {
       hora,
       ativo,
       permite_alunas: permiteAlunasVal,
-      tipo: tipoVal
+      tipo: tipoVal,
+      tipo_recorrencia: tipoRecorrenciaVal,
+      ordem_mes: ordemMesVal
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

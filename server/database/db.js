@@ -46,6 +46,7 @@ const init = async () => {
     await migrateTelefoneUsuario();
     await migrateCicloItens();
     await migrateCiclosCultos();
+    await migrateCultosRecorrencia();
 
     // Migração multi-tenant (FASE 1) - 100% segura, não quebra nada
     try {
@@ -496,6 +497,30 @@ const migrateCiclosCultos = async () => {
     if (error.code !== 'ER_TABLE_EXISTS_ERROR') {
       console.warn('⚠️ Aviso na migração ciclos_cultos:', error.message);
     }
+  }
+};
+
+// Migração: Recorrência Mensal em Cultos
+const migrateCultosRecorrencia = async () => {
+  try {
+    const pool = getDb();
+    const [columns] = await pool.execute(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cultos' AND COLUMN_NAME = 'tipo_recorrencia'`
+    );
+
+    if (columns.length === 0) {
+      await pool.execute(`
+        ALTER TABLE cultos
+        ADD COLUMN tipo_recorrencia ENUM('semanal','mensal') NOT NULL DEFAULT 'semanal',
+        ADD COLUMN ordem_mes TINYINT NULL
+      `);
+      console.log('✅ Colunas de recorrencia adicionadas em cultos.');
+    } else {
+      console.log('✅ Colunas de recorrencia já existem em cultos.');
+    }
+  } catch (error) {
+    console.warn('⚠️ Aviso na migração cultos recorrencia:', error.message);
   }
 };
 

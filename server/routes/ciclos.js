@@ -64,7 +64,7 @@ router.post('/', authenticate, async (req, res) => {
 
         const [result] = await pool.execute(
             'INSERT INTO ciclos (igreja_id, nome, ordem, ativo, tipo, numero) VALUES (?, ?, ?, ?, ?, ?)',
-            [igreja_id, nome, ordem || 1, ativo !== undefined ? (ativo ? 1 : 0) : 1, tipo || 'oficial', numero]
+            [igreja_id, nome, ordem || 1, ativo !== undefined ? (ativo ? 1 : 0) : 1, tipo || 'oficial', numero || null]
         );
 
         res.json({
@@ -74,7 +74,7 @@ router.post('/', authenticate, async (req, res) => {
             ordem: ordem || 1,
             ativo: ativo !== undefined ? (ativo ? 1 : 0) : 1,
             tipo: tipo || 'oficial',
-            numero
+            numero: numero || null
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -117,7 +117,7 @@ router.put('/:id', authenticate, async (req, res) => {
 
         const [result] = await pool.execute(
             'UPDATE ciclos SET nome = ?, ordem = ?, ativo = ?, tipo = ?, numero = ? WHERE id = ?',
-            [nome, ordem, ativo ? 1 : 0, tipo, numero, req.params.id]
+            [nome, ordem, ativo ? 1 : 0, tipo, numero || null, req.params.id]
         );
 
         if (result.affectedRows === 0) {

@@ -14,7 +14,9 @@ function Cultos({ user }) {
     dia_semana: '',
     hora: '',
     ativo: true,
-    tipo: 'culto_oficial'
+    tipo: 'culto_oficial',
+    tipo_recorrencia: 'semanal',
+    ordem_mes: ''
   });
   const [alert, setAlert] = useState(null);
 
@@ -100,7 +102,9 @@ function Cultos({ user }) {
       dia_semana: culto.dia_semana,
       hora: culto.hora,
       ativo: culto.ativo === 1,
-      tipo: culto.tipo || 'culto_oficial'
+      tipo: culto.tipo || 'culto_oficial',
+      tipo_recorrencia: culto.tipo_recorrencia || 'semanal',
+      ordem_mes: culto.ordem_mes || ''
     });
     setShowForm(true);
   };
@@ -128,7 +132,9 @@ function Cultos({ user }) {
       dia_semana: '',
       hora: '',
       ativo: true,
-      tipo: 'culto_oficial'
+      tipo: 'culto_oficial',
+      tipo_recorrencia: 'semanal',
+      ordem_mes: ''
     });
     setEditing(null);
     setShowForm(false);
@@ -156,7 +162,7 @@ function Cultos({ user }) {
     <div>
       <div className="card">
         <div className="page-header">
-          <h2>Cultos</h2>
+          <h2>Cultos (v2.0)</h2>
           <button
             className="btn btn-primary"
             onClick={() => {
@@ -259,6 +265,88 @@ function Cultos({ user }) {
             </div>
 
             <div className="form-group">
+              <label>Recorrência *</label>
+              <div className="form-group">
+                <label>Recorrência *</label>
+                <div style={{ display: 'flex', gap: '15px', marginTop: '5px' }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'normal',
+                    padding: '8px 12px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    backgroundColor: formData.tipo_recorrencia === 'semanal' ? '#fff9db' : '#fff',
+                    borderColor: formData.tipo_recorrencia === 'semanal' ? '#daa520' : '#ccc',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    <input
+                      type="radio"
+                      name="recorrencia_new"
+                      value="semanal"
+                      checked={formData.tipo_recorrencia === 'semanal'}
+                      onChange={() => setFormData({ ...formData, tipo_recorrencia: 'semanal', ordem_mes: '' })}
+                      style={{ margin: 0, accentColor: '#daa520' }}
+                    />
+                    <span style={{ fontSize: '14px' }}>Toda semana</span>
+                  </label>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'normal',
+                    padding: '8px 12px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    backgroundColor: formData.tipo_recorrencia === 'mensal' ? '#fff9db' : '#fff',
+                    borderColor: formData.tipo_recorrencia === 'mensal' ? '#daa520' : '#ccc',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    <input
+                      type="radio"
+                      name="recorrencia_new"
+                      value="mensal"
+                      checked={formData.tipo_recorrencia === 'mensal'}
+                      onChange={() => setFormData({ ...formData, tipo_recorrencia: 'mensal', ordem_mes: '1' })}
+                      style={{ margin: 0, accentColor: '#daa520' }}
+                    />
+                    <span style={{ fontSize: '14px' }}>Mensal</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {formData.tipo_recorrencia === 'mensal' && (
+              <div className="form-group" style={{
+                marginTop: '15px',
+                padding: '15px',
+                background: '#fff3cd',
+                border: '1px solid #ffeeba',
+                borderRadius: '4px'
+              }}>
+                <label style={{ color: '#856404', fontWeight: 'bold' }}>Em qual semana do mês? *</label>
+                <select
+                  value={formData.ordem_mes}
+                  onChange={(e) => setFormData({ ...formData, ordem_mes: e.target.value })}
+                  required
+                  style={{ marginTop: '5px' }}
+                >
+                  <option value="1">Primeira semana</option>
+                  <option value="2">Segunda semana</option>
+                  <option value="3">Terceira semana</option>
+                  <option value="4">Quarta semana</option>
+                  <option value="5">Quinta semana</option>
+                </select>
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  O culto ocorrerá apenas nesta semana específica de cada mês.
+                </small>
+              </div>
+            )}
+
+            <div className="form-group">
               <label className="checkbox-field">
                 <input
                   type="checkbox"
@@ -343,6 +431,88 @@ function Cultos({ user }) {
             </div>
 
             <div className="form-group">
+              <label>Recorrência *</label>
+              <div className="form-group">
+                <label>Recorrência *</label>
+                <div style={{ display: 'flex', gap: '15px', marginTop: '5px' }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'normal',
+                    padding: '8px 12px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    backgroundColor: formData.tipo_recorrencia === 'semanal' ? '#fff9db' : '#fff',
+                    borderColor: formData.tipo_recorrencia === 'semanal' ? '#daa520' : '#ccc',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    <input
+                      type="radio"
+                      name="recorrencia"
+                      value="semanal"
+                      checked={formData.tipo_recorrencia === 'semanal'}
+                      onChange={() => setFormData({ ...formData, tipo_recorrencia: 'semanal', ordem_mes: '' })}
+                      style={{ margin: 0, accentColor: '#daa520' }}
+                    />
+                    <span style={{ fontSize: '14px' }}>Toda semana</span>
+                  </label>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'normal',
+                    padding: '8px 12px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    backgroundColor: formData.tipo_recorrencia === 'mensal' ? '#fff9db' : '#fff',
+                    borderColor: formData.tipo_recorrencia === 'mensal' ? '#daa520' : '#ccc',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    <input
+                      type="radio"
+                      name="recorrencia"
+                      value="mensal"
+                      checked={formData.tipo_recorrencia === 'mensal'}
+                      onChange={() => setFormData({ ...formData, tipo_recorrencia: 'mensal', ordem_mes: '1' })}
+                      style={{ margin: 0, accentColor: '#daa520' }}
+                    />
+                    <span style={{ fontSize: '14px' }}>Mensal</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {formData.tipo_recorrencia === 'mensal' && (
+              <div className="form-group" style={{
+                marginTop: '15px',
+                padding: '15px',
+                background: '#fff3cd',
+                border: '1px solid #ffeeba',
+                borderRadius: '4px'
+              }}>
+                <label style={{ color: '#856404', fontWeight: 'bold' }}>Em qual semana do mês? *</label>
+                <select
+                  value={formData.ordem_mes}
+                  onChange={(e) => setFormData({ ...formData, ordem_mes: e.target.value })}
+                  required
+                  style={{ marginTop: '5px' }}
+                >
+                  <option value="1">Primeira semana</option>
+                  <option value="2">Segunda semana</option>
+                  <option value="3">Terceira semana</option>
+                  <option value="4">Quarta semana</option>
+                  <option value="5">Quinta semana</option>
+                </select>
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  O culto ocorrerá apenas nesta semana específica de cada mês.
+                </small>
+              </div>
+            )}
+
+            <div className="form-group">
               <label className="checkbox-field">
                 <input
                   type="checkbox"
@@ -381,7 +551,14 @@ function Cultos({ user }) {
                     <td data-label="Igreja" className="td-wrap">{culto.igreja_nome}</td>
                     <td data-label="Dia da Semana">{culto.dia_semana}</td>
                     <td data-label="Hora">{culto.hora ? culto.hora.substring(0, 5) : '-'}</td>
-                    <td data-label="Tipo">{culto.tipo === 'rjm' ? 'RJM' : (culto.tipo === 'outro' ? 'Outro' : 'Oficial')}</td>
+                    <td data-label="Tipo">
+                      {culto.tipo === 'rjm' ? 'RJM' : (culto.tipo === 'outro' ? 'Outro' : 'Oficial')}
+                      {culto.tipo_recorrencia === 'mensal' && (
+                        <div style={{ fontSize: '0.8em', color: '#666' }}>
+                          Mensal ({culto.ordem_mes}ª)
+                        </div>
+                      )}
+                    </td>
                     <td data-label="Ativo">{culto.ativo === 1 ? 'Sim' : 'Não'}</td>
                     <td data-label="Ações">
                       <div className="actions">

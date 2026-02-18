@@ -11,6 +11,11 @@ const normalizarDia = (str) => {
     .trim();
 };
 
+const obterOrdemSemanaNoMes = (data) => {
+  const dia = data.getDate();
+  return Math.ceil(dia / 7);
+};
+
 const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dataInicial, organistaInicialId) => {
   const pool = db.getDb();
 
@@ -118,26 +123,110 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
   if (cicloInicialId || organistaInicialId) {
     console.log(`[RODIZIO] Configurando início: Ciclo=${cicloInicialId}, Organista=${organistaInicialId}`);
 
-    // Find cycle by ID or numero
+    // Strategia de Inicialização Robusta:
+    // 1. Tentar encontrar o Ciclo pelo ID, Número OU NOME
+    let cycleLocked = false;
     if (cicloInicialId) {
+      const termoCiclo = String(cicloInicialId).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
       const cycleIdx = cycleStructure.oficial.findIndex(c =>
-        String(c.cicloId) === String(cicloInicialId) || String(c.numero) === String(cicloInicialId)
+        String(c.cicloId) === String(cicloInicialId) ||
+        String(c.numero) === String(cicloInicialId) ||
+        c.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() === termoCiclo
       );
       if (cycleIdx !== -1) {
         currentOfficialCycleIdx = cycleIdx;
-        console.log(`[RODIZIO] Ciclo inicial definido: Ciclo ${cycleStructure.oficial[cycleIdx].numero}`);
+        cycleLocked = true; // Ciclo foi explicitamente escolhido e encontrado
+        console.log(`[RODIZIO] Ciclo inicial definido e TRAVADO: Ciclo ${cycleStructure.oficial[cycleIdx].numero} (${cycleStructure.oficial[cycleIdx].nome})`);
       }
     }
 
-    // Find organist within the selected cycle
+    // 2. Tentar encontrar o Organista
+    // Se tiver organistaInicialId, procuramos ele.
     if (organistaInicialId && cycleStructure.oficial.length > 0) {
-      const cycle = cycleStructure.oficial[currentOfficialCycleIdx];
-      const itemIdx = cycle.items.findIndex(item => String(item.id) === String(organistaInicialId));
-      if (itemIdx !== -1) {
-        currentOfficialItemIdx = itemIdx;
-        console.log(`[RODIZIO] Organista inicial: ${cycle.items[itemIdx].nome} (posição ${itemIdx + 1})`);
+      let found = false;
+      let targetCycleIdx = currentOfficialCycleIdx;
+      let targetItemIdx = -1;
+
+      // Step 0: Resolve Name from ID (Vital for duplicates with different IDs)
+      let resolvedName = null;
+      // Search globally for the ID to get the Name
+      for (const c of cycleStructure.oficial) {
+        const match = c.items.find(i => String(i.id) === String(organistaInicialId));
+        if (match) {
+          resolvedName = match.nome;
+          break;
+        }
+      }
+      if (!resolvedName) {
+        // Try in RJM just in case
+        for (const c of cycleStructure.rjm) {
+          const match = c.items.find(i => String(i.id) === String(organistaInicialId));
+          if (match) {
+            resolvedName = match.nome;
+            break;
+          }
+        }
+      }
+
+      console.log(`[RODIZIO] ID Inicial: ${organistaInicialId} -> Nome Resolvido: "${resolvedName || '?'}"`);
+
+      const termoOrganistaRaw = String(organistaInicialId).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      const resolvedNameClean = resolvedName ? resolvedName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "") : null;
+
+      // Helper de comparação flexível (ID ou Nome)
+      const matchesOrganist = (item) => {
+        // Normalize item name
+        const cleanItemNome = item.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+        const cleanTermo = termoOrganistaRaw.replace(/\s+/g, "");
+
+        // 1. ID exato (Prioridade Máxima)
+        if (String(item.id) === String(organistaInicialId)) return true;
+
+        // 2. Nome Resolvido (Crucial se ID for diferente mas nome igual)
+        if (resolvedNameClean && cleanItemNome === resolvedNameClean) return true;
+
+        // 3. Nome exato vs Input (caso input seja nome e não ID)
+        if (cleanItemNome === cleanTermo) return true;
+
+        // 4. Nome contém termo (Fallback)
+        if (cleanItemNome.includes(cleanTermo)) return true;
+
+        return false;
+      };
+
+      // Busca Primária: No ciclo atual
+      const currentCycle = cycleStructure.oficial[currentOfficialCycleIdx];
+      const idx = currentCycle.items.findIndex(matchesOrganist);
+
+      if (idx !== -1) {
+        targetItemIdx = idx;
+        found = true;
+      } else if (!cycleLocked) {
+        // Busca Secundária: APENAS se o ciclo não foi travado (Auto-correção)
+        console.warn(`[RODIZIO] Organista ${organistaInicialId} (${resolvedName}) não encontrado no ciclo ${currentCycle.numero}. Buscando em todos (Ciclo não travado)...`);
+        for (let i = 0; i < cycleStructure.oficial.length; i++) {
+          const c = cycleStructure.oficial[i];
+          const searchIdx = c.items.findIndex(matchesOrganist);
+          if (searchIdx !== -1) {
+            targetCycleIdx = i;
+            targetItemIdx = searchIdx;
+            found = true;
+            console.log(`[RODIZIO] Organista encontrado no Ciclo ${c.numero} (Auto-detected)`);
+            break;
+          }
+        }
       } else {
-        console.warn(`[RODIZIO] Organista ${organistaInicialId} não encontrado no ciclo. Iniciando do topo.`);
+        console.warn(`[RODIZIO] Organista ${organistaInicialId} (${resolvedName}) não encontrado no Ciclo ${currentCycle.nome} (Travado). Mantendo ciclo, iniciando do topo.`);
+        // Debug: Listar quem está no ciclo para entender por que falhou
+        currentCycle.items.forEach(i => console.log(`   - Disponível: [ID: ${i.id}] ${i.nome}`));
+      }
+
+      if (found) {
+        currentOfficialCycleIdx = targetCycleIdx;
+        currentOfficialItemIdx = targetItemIdx;
+        console.log(`[RODIZIO] Ponteiro Ajustado: CicloIdx=${currentOfficialCycleIdx}, ItemIdx=${currentOfficialItemIdx} (${cycleStructure.oficial[currentOfficialCycleIdx].items[currentOfficialItemIdx].nome})`);
+      } else {
+        console.warn(`[RODIZIO] CRÍTICO: Organista inicial não encontrada. Iniciando do topo (0).`);
       }
     }
   }
@@ -200,9 +289,22 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
 
     // Filter cultos of the day
     const cultosDoDia = cultos.filter(c => normalizarDia(c.dia_semana).includes(normalizarDia(diaStr)));
-    cultosDoDia.sort((a, b) => a.hora.localeCompare(b.hora));
+    // Removendo sort por hora para manter comportamento original de ordem de processamento
+    // cultosDoDia.sort((a, b) => a.hora.localeCompare(b.hora));
+
+    // Variável para garantir que o ponteiro avance apenas uma vez por data (ciclo por Data)
+    let dailyOfficialCandidate = null;
 
     for (const culto of cultosDoDia) {
+      // Recorrência Mensal
+      if (culto.tipo_recorrencia === 'mensal') {
+        const ordemAtual = obterOrdemSemanaNoMes(currDate);
+        // Usar != para permitir comparacao entre string (do banco) e number (calculado)
+        if (culto.ordem_mes && ordemAtual != culto.ordem_mes) {
+          continue;
+        }
+      }
+
       // Robust service type detection
       const isRJMService = (culto.tipo === 'rjm' || culto.eh_rjm === 1);
       const isOfficialService = (culto.tipo === 'culto_oficial' && !isRJMService);
@@ -219,7 +321,19 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
       else if (isOfficialService) {
         const permiteMesma = !!igrejas[0].mesma_organista_ambas_funcoes;
 
-        const candidate = getNextOfficialOrganist();
+        // Lógica de Ciclo por DATA: Recuperar ou Definir apenas uma vez por dia
+        if (!dailyOfficialCandidate) {
+          // Se for a PRIMEIRA execução global e tivermos um organista inicial definido,
+          // devemos usar o índice ATUAL antes de avançar.
+          // O ponteiro currentOfficialItemIdx JÁ APONTA para o organista inicial escolhido.
+          // getNextOfficialOrganist() pega o atual E AVANÇA.
+          // Isso está correto: Pega TESTE2, avança para TESTE3.
+          // TESTE2 é usado hoje. TESTE3 amanhã.
+
+          dailyOfficialCandidate = getNextOfficialOrganist();
+        }
+        const candidate = dailyOfficialCandidate;
+
         if (!candidate) continue;
 
         if (permiteMesma || isThursday) {
