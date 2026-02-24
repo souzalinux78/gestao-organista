@@ -2,13 +2,14 @@ const db = require('../database/db');
 const axios = require('axios');
 
 // Função para enviar notificação consolidada para encarregados
-const enviarNotificacaoEncarregados = async (rodizios) => {
+const enviarNotificacaoEncarregados = async (rodizios, options = {}) => {
   if (!rodizios || rodizios.length === 0) return;
+  const referencia = options.referencia || 'hoje';
   
   const primeiroRodizio = rodizios[0];
   
   // Criar mensagem consolidada com todos os rodízios
-  let mensagemConsolidada = `📢 Notificação: Organistas escaladas para hoje\n\n`;
+  let mensagemConsolidada = `📢 Notificação: Organistas escaladas para ${referencia}\n\n`;
   mensagemConsolidada += `📅 Data: ${formatarDataBR(primeiroRodizio.data_culto)}\n`;
   mensagemConsolidada += `📍 Igreja: ${primeiroRodizio.igreja_nome}\n\n`;
   mensagemConsolidada += `🎹 Organistas escaladas:\n\n`;
@@ -86,8 +87,9 @@ const enviarNotificacaoEncarregados = async (rodizios) => {
   }
 };
 
-const enviarNotificacaoDiaCulto = async (rodizio, enviarParaEncarregados = false) => {
+const enviarNotificacaoDiaCulto = async (rodizio, enviarParaEncarregados = false, options = {}) => {
   const pool = db.getDb();
+  const tipoNotificacao = options.tipoNotificacao || 'alerta_dia_culto';
   
   try {
     // Calcular hora da meia hora (30 minutos antes do culto)
@@ -160,7 +162,7 @@ ${rodizio.funcao === 'meia_hora' ? `⏰ Horário: ${horaMeiaHoraStr}` : ''}
     
     await pool.execute(
       'INSERT INTO notificacoes (rodizio_id, tipo, enviada, data_envio) VALUES (?, ?, ?, ?)',
-      [rodizio.id, 'alerta_dia_culto', 1, dataEnvioMySQL]
+      [rodizio.id, tipoNotificacao, 1, dataEnvioMySQL]
     );
     
     console.log(`Notificações enviadas para rodízio ID: ${rodizio.id}`);
