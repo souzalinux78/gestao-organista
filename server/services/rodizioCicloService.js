@@ -26,16 +26,31 @@ const gerarRodizioComCiclos = async (igrejaId, periodoMeses, cicloInicialId, dat
   // Fetch Cultos
   const [cultos] = await pool.execute('SELECT * FROM cultos WHERE igreja_id = ? AND ativo = 1', [igrejaId]);
 
-  // 2. LOAD CYCLES BY EXPLICIT TYPE (Using tipo column from DB)
-  const [ciclosOficiais] = await pool.execute(
-    'SELECT * FROM ciclos WHERE igreja_id = ? AND tipo = "oficial" AND ativo = 1 ORDER BY numero ASC',
+  // 2. LOAD CYCLES (defensive split: explicit tipo OR cycle name RJM)
+  const [ciclosAtivos] = await pool.execute(
+    'SELECT * FROM ciclos WHERE igreja_id = ? AND ativo = 1 ORDER BY ordem ASC, id ASC',
     [igrejaId]
   );
 
-  const [ciclosRJM] = await pool.execute(
-    'SELECT * FROM ciclos WHERE igreja_id = ? AND tipo = "rjm" AND ativo = 1 ORDER BY ordem ASC',
-    [igrejaId]
-  );
+  const isRJMCycle = (ciclo) => {
+    const tipoNorm = String(ciclo?.tipo || '').toLowerCase().trim();
+    const nomeNorm = normalizarDia(ciclo?.nome || '');
+    return tipoNorm === 'rjm' || nomeNorm === 'rjm';
+  };
+
+  const ciclosRJM = ciclosAtivos
+    .filter(isRJMCycle)
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0) || a.id - b.id);
+
+  const ciclosOficiais = ciclosAtivos
+    .filter(c => !isRJMCycle(c))
+    .sort((a, b) => {
+      const aNumero = a.numero ?? Number.MAX_SAFE_INTEGER;
+      const bNumero = b.numero ?? Number.MAX_SAFE_INTEGER;
+      if (aNumero !== bNumero) return aNumero - bNumero;
+      if ((a.ordem || 0) !== (b.ordem || 0)) return (a.ordem || 0) - (b.ordem || 0);
+      return a.id - b.id;
+    });
 
   if (ciclosOficiais.length === 0 && ciclosRJM.length === 0) {
     throw new Error('Nenhum ciclo ativo encontrado.');

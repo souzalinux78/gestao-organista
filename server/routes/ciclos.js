@@ -4,6 +4,29 @@ const db = require('../database/db');
 const { authenticate, getUserIgrejas } = require('../middleware/auth');
 const { tenantResolver, getTenantId } = require('../middleware/tenantResolver');
 
+const normalizeCycleText = (value) => {
+    if (!value) return '';
+    return String(value)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+};
+
+const inferCycleType = (tipo, nome) => {
+    const tipoNorm = normalizeCycleText(tipo);
+    if (tipoNorm === 'rjm' || tipoNorm === 'oficial') {
+        return tipoNorm;
+    }
+
+    const nomeNorm = normalizeCycleText(nome);
+    if (nomeNorm === 'rjm' || nomeNorm.includes('rjm')) {
+        return 'rjm';
+    }
+
+    return 'oficial';
+};
+
 // Listar ciclos de uma igreja
 router.get('/igreja/:igreja_id', authenticate, async (req, res) => {
     try {
@@ -35,6 +58,8 @@ router.get('/igreja/:igreja_id', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
     try {
         const { igreja_id, nome, ordem, ativo, tipo, numero } = req.body;
+        const tipoFinal = inferCycleType(tipo, nome);
+        const numeroFinal = tipoFinal === 'oficial' && numero ? parseInt(numero) : null;
 
         // Verificar acesso à igreja
         if (req.user.role !== 'admin') {
@@ -52,19 +77,19 @@ router.post('/', authenticate, async (req, res) => {
         const pool = db.getDb();
 
         // Validar número único para ciclos oficiais
-        if (tipo === 'oficial' && numero) {
+        if (tipoFinal === 'oficial' && numeroFinal) {
             const [existing] = await pool.execute(
                 'SELECT id FROM ciclos WHERE igreja_id = ? AND tipo = "oficial" AND numero = ? AND ativo = 1',
-                [igreja_id, numero]
+                [igreja_id, numeroFinal]
             );
             if (existing.length > 0) {
-                return res.status(400).json({ error: `Já existe um Ciclo Oficial ${numero} nesta igreja` });
+                return res.status(400).json({ error: `Já existe um Ciclo Oficial ${numeroFinal} nesta igreja` });
             }
         }
 
         const [result] = await pool.execute(
             'INSERT INTO ciclos (igreja_id, nome, ordem, ativo, tipo, numero) VALUES (?, ?, ?, ?, ?, ?)',
-            [igreja_id, nome, ordem || 1, ativo !== undefined ? (ativo ? 1 : 0) : 1, tipo || 'oficial', numero || null]
+            [igreja_id, nome, ordem || 1, ativo !== undefined ? (ativo ? 1 : 0) : 1, tipoFinal, numeroFinal]
         );
 
         res.json({
@@ -73,8 +98,8 @@ router.post('/', authenticate, async (req, res) => {
             nome,
             ordem: ordem || 1,
             ativo: ativo !== undefined ? (ativo ? 1 : 0) : 1,
-            tipo: tipo || 'oficial',
-            numero: numero || null
+            tipo: tipoFinal,
+            numero: numeroFinal
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -86,6 +111,8 @@ router.put('/:id', authenticate, async (req, res) => {
     try {
         const { nome, ordem, ativo, tipo, numero } = req.body;
         const pool = db.getDb();
+        const tipoFinal = inferCycleType(tipo, nome);
+        const numeroFinal = tipoFinal === 'oficial' && numero ? parseInt(numero) : null;
 
         // Verificar acesso
         if (req.user.role !== 'admin') {
@@ -102,22 +129,22 @@ router.put('/:id', authenticate, async (req, res) => {
         }
 
         // Validar número único para ciclos oficiais
-        if (tipo === 'oficial' && numero) {
+        if (tipoFinal === 'oficial' && numeroFinal) {
             const [cicloAtual] = await pool.execute('SELECT igreja_id FROM ciclos WHERE id = ?', [req.params.id]);
             if (cicloAtual.length > 0) {
                 const [existing] = await pool.execute(
                     'SELECT id FROM ciclos WHERE igreja_id = ? AND tipo = "oficial" AND numero = ? AND id != ? AND ativo = 1',
-                    [cicloAtual[0].igreja_id, numero, req.params.id]
+                    [cicloAtual[0].igreja_id, numeroFinal, req.params.id]
                 );
                 if (existing.length > 0) {
-                    return res.status(400).json({ error: `Já existe um Ciclo Oficial ${numero} nesta igreja` });
+                    return res.status(400).json({ error: `Já existe um Ciclo Oficial ${numeroFinal} nesta igreja` });
                 }
             }
         }
 
         const [result] = await pool.execute(
             'UPDATE ciclos SET nome = ?, ordem = ?, ativo = ?, tipo = ?, numero = ? WHERE id = ?',
-            [nome, ordem, ativo ? 1 : 0, tipo, numero || null, req.params.id]
+            [nome, ordem, ativo ? 1 : 0, tipoFinal, numeroFinal, req.params.id]
         );
 
         if (result.affectedRows === 0) {
@@ -128,7 +155,9 @@ router.put('/:id', authenticate, async (req, res) => {
             id: req.params.id,
             nome,
             ordem,
-            ativo: ativo ? 1 : 0
+            ativo: ativo ? 1 : 0,
+            tipo: tipoFinal,
+            numero: numeroFinal
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -216,6 +245,35 @@ router.put('/:id/cultos', authenticate, async (req, res) => {
                         [values]
                     );
                 }
+            }
+        }
+
+        // 3. Ajuste defensivo do tipo do ciclo conforme cultos associados.
+        // Se todos os cultos do ciclo forem RJM, o ciclo vira RJM; caso contrário, oficial.
+        const [tiposCultos] = await pool.execute(
+            `SELECT c.tipo
+             FROM ciclos_cultos cc
+             INNER JOIN cultos c ON c.id = cc.culto_id
+             WHERE cc.ciclo_id = ?`,
+            [ciclo_id]
+        );
+
+        if (tiposCultos.length > 0) {
+            const todosRjm = tiposCultos.every(c => String(c.tipo || '').toLowerCase() === 'rjm');
+            const tipoFinal = todosRjm ? 'rjm' : 'oficial';
+            await pool.execute(
+                'UPDATE ciclos SET tipo = ?, numero = CASE WHEN ? = "rjm" THEN NULL ELSE numero END WHERE id = ?',
+                [tipoFinal, tipoFinal, ciclo_id]
+            );
+        } else {
+            // Sem culto associado: usa inferência por nome para evitar ciclo "RJM" salvo como oficial.
+            const [cycleRows] = await pool.execute('SELECT nome FROM ciclos WHERE id = ?', [ciclo_id]);
+            if (cycleRows.length > 0) {
+                const tipoFinal = inferCycleType(null, cycleRows[0].nome);
+                await pool.execute(
+                    'UPDATE ciclos SET tipo = ?, numero = CASE WHEN ? = "rjm" THEN NULL ELSE numero END WHERE id = ?',
+                    [tipoFinal, tipoFinal, ciclo_id]
+                );
             }
         }
 

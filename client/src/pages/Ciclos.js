@@ -325,27 +325,31 @@ export default function Ciclos() {
   const saveCycleMeta = async () => {
     if (!cycleName) return alert("Nome obrigatório");
     try {
+      const selectedCultos = todosCultos.filter(c => selectedCultosIds.includes(c.id));
+      const onlyRjmCultos = selectedCultos.length > 0 && selectedCultos.every(c => String(c.tipo || "").toLowerCase() === "rjm");
+      const nomeNormalizado = String(cycleName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      const tipoCiclo = (onlyRjmCultos || nomeNormalizado.includes("rjm")) ? "rjm" : "oficial";
+
       let cicloId = null;
       if (editingCycle) {
-        // Update - INCLUIR ordem
         await api.put(`/ciclos/${editingCycle.id}`, {
           nome: cycleName,
-          ordem: cycleOrder,  // ← Usar estado cycleOrder
-          ativo: 1
+          ordem: cycleOrder,
+          ativo: 1,
+          tipo: tipoCiclo
         });
         cicloId = editingCycle.id;
       } else {
-        // Create - INCLUIR ordem
         const res = await api.post(`/ciclos`, {
           igreja_id: igrejaSelecionada,
           nome: cycleName,
-          ordem: cycleOrder,  // ← Usar estado cycleOrder
-          ativo: 1
+          ordem: cycleOrder,
+          ativo: 1,
+          tipo: tipoCiclo
         });
         cicloId = res.data.id;
       }
 
-      // Update Cultos Association
       if (cicloId) {
         await api.put(`/ciclos/${cicloId}/cultos`, { cultos_ids: selectedCultosIds });
       }

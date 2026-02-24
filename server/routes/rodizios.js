@@ -372,6 +372,7 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
         primeirosErros: resultado.erros?.slice(0, 5)
       });
       return res.status(400).json({
+        sucesso: false,
         error: 'Erros na importação',
         erros: resultado.erros,
         details: resultado.erros // Adicionado para compatibilidade
@@ -379,6 +380,7 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
     }
 
     res.json({
+      sucesso: true,
       message: `Importação concluída com sucesso! ${resultado.rodiziosInseridos} rodízio(s) inserido(s).`,
       rodiziosInseridos: resultado.rodiziosInseridos,
       totalLinhas: resultado.totalLinhas,
@@ -396,6 +398,7 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
     });
     // CORREÇÃO: Retornar erro claro ao frontend (sem falha silenciosa)
     res.status(400).json({
+      sucesso: false,
       error: errorMessage,
       detalhes: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });

@@ -274,18 +274,30 @@ function Rodizios({ user }) {
       console.log('[CLIENT] Iniciando importação...', { tamanho: csvContent.length });
 
       const response = await importarRodizio(parseInt(gerarForm.igreja_id), csvContent);
+      const payload = response?.data || {};
+      const isSuccess = payload.sucesso !== false;
 
-      if (response.data.sucesso) {
-        const msg = `Importado com sucesso! ${response.data.rodiziosInseridos} registros inseridos.`;
-        showAlert(msg, 'success');
+      if (isSuccess) {
+        const inseridos = Number(payload.rodiziosInseridos || 0);
+        const duplicados = Array.isArray(payload.duplicados) ? payload.duplicados.length : 0;
+
+        let msg = payload.message || `Importação concluída! ${inseridos} registros inseridos.`;
+        let alertType = 'success';
+
+        if (inseridos === 0 && duplicados > 0) {
+          msg = `Importação concluída sem novos registros: ${duplicados} linha(s) já existiam (duplicadas).`;
+          alertType = 'warning';
+        }
+
+        showAlert(msg, alertType);
         loadRodizios();
         setArquivoCSV(null); // Limpar arquivo após sucesso
       } else {
         // Tratar erros de validação retornados pelo backend (sucesso: false)
-        const erros = response.data.erros || [];
+        const erros = payload.erros || payload.details || [];
         const msgErro = erros.length > 0
           ? `Falha na importação:\n- ${erros.slice(0, 10).join('\n- ')}${erros.length > 10 ? '\n...' : ''}`
-          : 'Erro desconhecido na importação';
+          : (payload.error || 'Erro desconhecido na importação');
         showAlert(msgErro, 'error');
       }
     } catch (error) {
