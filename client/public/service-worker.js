@@ -1,31 +1,31 @@
-// Service Worker - Cache Control e Atualização Controlada
-// Versão estática baseada no build (não timestamp dinâmico)
-// Evita loops de reload e garante atualizações controladas
+﻿// Service Worker - Cache Control e AtualizaÃ§Ã£o Controlada
+// VersÃ£o estÃ¡tica baseada no build (nÃ£o timestamp dinÃ¢mico)
+// Evita loops de reload e garante atualizaÃ§Ãµes controladas
 //
-// IMPORTANTE: Para atualizar o Service Worker em produção:
+// IMPORTANTE: Para atualizar o Service Worker em produÃ§Ã£o:
 // 1. Alterar CACHE_VERSION abaixo (ex: 'v1.0.1', 'v1.1.0', etc.)
-// 2. Alterar a mesma versão em client/src/index.js (const swVersion)
+// 2. Alterar a mesma versÃ£o em client/src/index.js (const swVersion)
 // 3. Fazer build e deploy
-// 4. O Service Worker será atualizado na próxima visita do usuário (sem reload automático)
+// 4. O Service Worker serÃ¡ atualizado na prÃ³xima visita do usuÃ¡rio (sem reload automÃ¡tico)
 //
-const CACHE_VERSION = 'v1.0.0'; // Versão estática - alterar apenas em novos builds
+const CACHE_VERSION = 'v1.0.1'; // VersÃ£o estÃ¡tica - alterar apenas em novos builds
 const CACHE_NAME = `gestao-organistas-${CACHE_VERSION}`;
 const STATIC_CACHE_NAME = 'gestao-organistas-static-v1';
 
 const OFFLINE_URL = '/offline.html';
 
-// Instalar Service Worker - SEM forçar ativação imediata
+// Instalar Service Worker - SEM forÃ§ar ativaÃ§Ã£o imediata
 self.addEventListener('install', (event) => {
-  console.log('[SW] Instalando Service Worker - Versão:', CACHE_VERSION);
+  console.log('[SW] Instalando Service Worker - VersÃ£o:', CACHE_VERSION);
   
-  // NÃO forçar skipWaiting - aguardar até que todas as páginas sejam fechadas
-  // Isso evita reloads automáticos em loop
+  // NÃƒO forÃ§ar skipWaiting - aguardar atÃ© que todas as pÃ¡ginas sejam fechadas
+  // Isso evita reloads automÃ¡ticos em loop
   event.waitUntil(
-    // Limpar apenas caches antigos (não o cache atual se já existir)
+    // Limpar apenas caches antigos (nÃ£o o cache atual se jÃ¡ existir)
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // Remover apenas caches de versões antigas
+          // Remover apenas caches de versÃµes antigas
           if (cacheName.startsWith('gestao-organistas-') && cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME) {
             console.log('[SW] Removendo cache antigo:', cacheName);
             return caches.delete(cacheName);
@@ -41,25 +41,25 @@ self.addEventListener('install', (event) => {
         console.log('[SW] Erro ao cachear offline page:', err);
       }
       
-      // Assets estáticos serão cacheados sob demanda
+      // Assets estÃ¡ticos serÃ£o cacheados sob demanda
       const staticCache = await caches.open(STATIC_CACHE_NAME);
-      console.log('[SW] Service Worker instalado - Versão:', CACHE_VERSION);
+      console.log('[SW] Service Worker instalado - VersÃ£o:', CACHE_VERSION);
     })
   );
   
-  // NÃO chamar skipWaiting() aqui - deixar o Service Worker aguardar
+  // NÃƒO chamar skipWaiting() aqui - deixar o Service Worker aguardar
 });
 
-// Ativar Service Worker - SEM forçar controle imediato
+// Ativar Service Worker - SEM forÃ§ar controle imediato
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Ativando Service Worker - Versão:', CACHE_VERSION);
+  console.log('[SW] Ativando Service Worker - VersÃ£o:', CACHE_VERSION);
   
   event.waitUntil(
     // Limpar apenas caches antigos
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // Remover apenas caches de versões antigas
+          // Remover apenas caches de versÃµes antigas
           if (cacheName.startsWith('gestao-organistas-') && cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME) {
             console.log('[SW] Removendo cache antigo:', cacheName);
             return caches.delete(cacheName);
@@ -67,17 +67,17 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => {
-      // NÃO forçar clients.claim() - deixar o Service Worker assumir controle naturalmente
-      // Isso evita reloads automáticos
-      console.log('[SW] Service Worker ativado - Versão:', CACHE_VERSION);
+      // NÃƒO forÃ§ar clients.claim() - deixar o Service Worker assumir controle naturalmente
+      // Isso evita reloads automÃ¡ticos
+      console.log('[SW] Service Worker ativado - VersÃ£o:', CACHE_VERSION);
       return Promise.resolve();
     })
   );
 });
 
-// Interceptar requisições - Network First (Sempre buscar versão atual)
+// Interceptar requisiÃ§Ãµes - Network First (Sempre buscar versÃ£o atual)
 self.addEventListener('fetch', (event) => {
-  // Ignorar requisições que não são GET
+  // Ignorar requisiÃ§Ãµes que nÃ£o sÃ£o GET
   if (event.request.method !== 'GET') {
     return;
   }
@@ -95,7 +95,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
         .then((response) => {
-          // NÃO cachear HTML - sempre buscar da rede
+          // NÃƒO cachear HTML - sempre buscar da rede
           return response;
         })
         .catch(() => {
@@ -106,7 +106,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Estratégia: Cache First para assets estáticos (JS, CSS, imagens, fonts)
+  // EstratÃ©gia: Cache First para assets estÃ¡ticos (JS, CSS, imagens, fonts)
   const isStaticAsset = 
     url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/i) ||
     url.pathname.startsWith('/static/');
@@ -126,7 +126,7 @@ self.addEventListener('fetch', (event) => {
             }).catch(() => {});
             return cachedResponse;
           }
-          // Se não estiver no cache, buscar da rede e cachear
+          // Se nÃ£o estiver no cache, buscar da rede e cachear
           return fetch(event.request, { cache: 'reload' })
             .then((response) => {
               if (response && response.status === 200) {
@@ -153,7 +153,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request, { cache: 'no-store' })
       .then((response) => {
-        // NÃO cachear - sempre da rede
+        // NÃƒO cachear - sempre da rede
         return response;
       })
       .catch(() => {
@@ -163,7 +163,7 @@ self.addEventListener('fetch', (event) => {
             if (cachedResponse) {
               return cachedResponse;
             }
-            // Se for uma requisição de documento e não houver cache, mostrar offline page
+            // Se for uma requisiÃ§Ã£o de documento e nÃ£o houver cache, mostrar offline page
             if (event.request.destination === 'document') {
               return caches.match(OFFLINE_URL);
             }
@@ -175,3 +175,5 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
+

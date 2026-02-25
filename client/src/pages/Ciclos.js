@@ -5,75 +5,88 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 // --- ESTILOS VISUAIS ---
 const styles = {
-  container: { padding: '20px', backgroundColor: '#f8f9fa', minHeight: '100vh', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" },
-  header: { marginBottom: '25px', backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #eaeaea' },
-  label: { display: 'block', marginBottom: '8px', fontWeight: '600', color: '#555' },
-  select: { padding: '10px', fontSize: '16px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', maxWidth: '400px' },
+  container: { padding: '20px', backgroundColor: 'var(--bg-main)', minHeight: '100vh', fontFamily: "Manrope, Inter, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" },
+  header: { marginBottom: '25px', backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '20px', boxShadow: '0 10px 24px rgba(16,24,40,0.06)', border: '1px solid var(--border)' },
+  label: { display: 'block', marginBottom: '8px', fontWeight: '700', color: 'var(--text-main)' },
+  select: { padding: '10px', fontSize: '16px', borderRadius: '14px', border: '1px solid var(--border)', width: '100%', maxWidth: '500px', backgroundColor: 'var(--bg-surface)', color: 'var(--text-main)' },
 
   // Grid ajustado (Wrap)
   grid: { display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' },
 
   card: {
-    background: 'white', borderRadius: '8px', padding: '20px',
+    background: 'var(--bg-card)', borderRadius: '20px', padding: '20px',
     width: '350px',
-    border: '1px solid #e0e0e0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+    border: '1px solid var(--border)', boxShadow: '0 10px 24px rgba(16,24,40,0.06)',
     display: 'flex', flexDirection: 'column',
     position: 'relative'
   },
   cardHeader: { marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  cycleTitle: { margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#333' },
-  cycleSubtitle: { margin: 0, fontSize: '14px', color: '#888', marginTop: '4px' },
+  cycleTitle: { margin: 0, fontSize: '18px', fontWeight: 'bold', color: 'var(--text-main)' },
+  cycleSubtitle: { margin: 0, fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' },
 
   // NEW: Cultos Assigned Display
-  assignedCultos: { marginTop: '5px', fontSize: '12px', color: '#666', borderTop: '1px solid #eee', paddingTop: '5px' },
-  cultoTag: { display: 'inline-block', backgroundColor: '#e0e0e0', padding: '2px 6px', borderRadius: '4px', margin: '2px', fontSize: '11px' },
+  assignedCultos: { marginTop: '5px', fontSize: '12px', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: '5px' },
+  cultoTag: { display: 'inline-block', backgroundColor: 'var(--bg-hover)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '6px', margin: '2px', fontSize: '11px', border: '1px solid var(--border)' },
 
   listContainer: { minHeight: '200px' },
 
   item: {
-    padding: '10px 12px', marginBottom: '8px', backgroundColor: '#fff',
-    border: '1px solid #f0f0f0',
+    padding: '10px 12px', marginBottom: '8px', backgroundColor: 'var(--bg-card)',
+    border: '1px solid var(--border)',
     borderRadius: '6px',
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
   },
   dragging: {
-    backgroundColor: '#fff9c4',
-    border: '1px solid #fbc02d',
+    backgroundColor: 'var(--primary-soft)',
+    border: '1px solid var(--primary)',
     boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
   },
 
-  rank: { fontWeight: 'bold', color: '#555', width: '25px', fontSize: '14px' },
-  name: { flex: 1, fontSize: '15px', color: '#333', fontWeight: '500' },
+  rank: { fontWeight: 'bold', color: 'var(--text-muted)', width: '25px', fontSize: '14px' },
+  name: { flex: 1, fontSize: '15px', color: 'var(--text-main)', fontWeight: '600' },
 
   badge: { fontSize: '11px', padding: '4px 8px', borderRadius: '4px', fontWeight: '600', textTransform: 'uppercase', marginLeft: '8px' },
   badgeOficial: { backgroundColor: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9' },
   badgeRJM: { backgroundColor: '#e3f2fd', color: '#1565c0', border: '1px solid #bbdefb' },
   badgeAluna: { backgroundColor: '#fff3e0', color: '#ef6c00', border: '1px solid #ffe0b2' },
 
-  btnIcon: { background: 'none', border: '1px solid #eee', cursor: 'pointer', color: '#d32f2f', borderRadius: '4px', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  btnIcon: { background: 'none', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--danger)', borderRadius: '6px', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
 
-  cardFooter: { marginTop: '20px', borderTop: '1px solid #f5f5f5', paddingTop: '15px' },
-  btnAddMode: { background: 'none', border: 'none', color: '#d4b106', cursor: 'pointer', fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', padding: '10px' },
+  cardFooter: { marginTop: '20px', borderTop: '1px solid var(--border)', paddingTop: '15px' },
+  btnAddMode: { background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: '700', fontSize: '14px', display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', padding: '10px' },
 
-  addArea: { display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: '#f9f9f9', padding: '10px', borderRadius: '6px', border: '1px solid #eee' },
-  addSelect: { padding: '8px', borderRadius: '4px', border: '1px solid #ddd', width: '100%' },
+  addArea: { display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: 'var(--bg-hover)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)' },
+  addSelect: { padding: '8px', borderRadius: '10px', border: '1px solid var(--border)', width: '100%', backgroundColor: 'var(--bg-surface)', color: 'var(--text-main)' },
   btnAddActions: { display: 'flex', gap: '5px' },
-  btnAddConfirm: { padding: '8px', backgroundColor: '#2e7d32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', flex: 1 },
-  btnAddCancel: { padding: '8px', backgroundColor: '#e0e0e0', color: '#333', border: 'none', borderRadius: '4px', cursor: 'pointer', flex: 1 },
+  btnAddConfirm: { padding: '8px', background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', flex: 1, fontWeight: '700' },
+  btnAddCancel: { padding: '8px', backgroundColor: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '10px', cursor: 'pointer', flex: 1, fontWeight: '600' },
 
-  btnSave: { width: '100%', padding: '10px', backgroundColor: '#d4b106', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px', fontSize: '14px' },
+  btnSave: { width: '100%', padding: '10px', background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px', fontSize: '14px' },
 
   controls: { marginTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' },
-  btnControl: { padding: '8px 15px', backgroundColor: '#fff', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' },
-  btnNewCycle: { padding: '8px 15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' },
+  btnControl: { padding: '8px 15px', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '12px', cursor: 'pointer', fontWeight: '600', color: 'var(--text-main)' },
+  btnNewCycle: { padding: '10px 18px', background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700' },
 
   cycleActions: { display: 'flex', gap: '5px' },
-  btnAction: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' },
+  btnAction: {
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '700',
+    width: '24px',
+    height: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'var(--text-main)'
+  },
 
   // Modal styles extra
   modalSection: { marginBottom: '15px' },
-  checkboxGroup: { display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '150px', overflowY: 'auto', border: '1px solid #eee', padding: '10px', borderRadius: '4px' }
+  checkboxGroup: { display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', background: 'var(--bg-surface)' }
 };
 
 export default function Ciclos() {
@@ -178,7 +191,7 @@ export default function Ciclos() {
       // Melhor processar o que veio e depois garantir que todos metadados tenham entrada
 
       dados.forEach((item, index) => {
-        const cicloId = item.ciclo; // Agora é o ID do ciclo
+        const cicloId = item.ciclo; // Now uses cycle ID
         if (!organizados[cicloId]) organizados[cicloId] = [];
 
         const orgId = item.organista_id || (item.organista && item.organista.id) || item.id;
@@ -238,7 +251,7 @@ export default function Ciclos() {
     const organistaOriginal = todasOrganistas.find(o => String(o.id) === idBusca);
 
     if (!organistaOriginal) {
-      alert("Erro: Organista não encontrada na lista.");
+      alert("Erro: Organista nao encontrada na lista.");
       return;
     }
 
@@ -273,11 +286,11 @@ export default function Ciclos() {
       }).filter(Boolean);
 
       console.log(`Salvando Ciclo ID ${cicloId}...`, itensLimpos);
-      // Usando a nova rota em /ciclos que é mais garantida
+      // Using the dedicated /ciclos route for reliability
       await api.put(`/ciclos/${cicloId}/itens`, { itens: itensLimpos });
 
       await carregarDados(); // Recarrega tudo para garantir sincronia
-      alert(`✅ Ciclo salvo com sucesso!`);
+      alert("Ciclo salvo com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar:", error);
       alert("Erro ao salvar.");
@@ -297,7 +310,7 @@ export default function Ciclos() {
   const handleNewCycle = () => {
     setEditingCycle(null);
     setCycleName('');
-    setCycleOrder(metadadosCiclos.length + 1); // Próxima ordem disponível
+    setCycleOrder(metadadosCiclos.length + 1); // Next available order
     setSelectedCultosIds([]);
     setShowCycleModal(true);
   };
@@ -323,7 +336,7 @@ export default function Ciclos() {
   };
 
   const saveCycleMeta = async () => {
-    if (!cycleName) return alert("Nome obrigatório");
+    if (!cycleName) return alert("Nome obrigatorio");
     try {
       const selectedCultos = todosCultos.filter(c => selectedCultosIds.includes(c.id));
       const onlyRjmCultos = selectedCultos.length > 0 && selectedCultos.every(c => String(c.tipo || "").toLowerCase() === "rjm");
@@ -372,7 +385,7 @@ export default function Ciclos() {
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3>Gestão de Ciclos</h3>
+          <h3>{"Gest\u00e3o de Ciclos"}</h3>
           <button style={styles.btnNewCycle} onClick={handleNewCycle}>+ Novo Ciclo</button>
         </div>
         <label style={styles.label}>Selecione a Igreja:</label>
@@ -383,10 +396,10 @@ export default function Ciclos() {
 
       {showCycleModal && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)',
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.38)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-          <div style={{ background: 'white', padding: 20, borderRadius: 8, minWidth: 400, maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', boxShadow: '0 10px 24px rgba(16,24,40,0.08)', padding: 20, borderRadius: 16, minWidth: 400, maxHeight: '90vh', overflowY: 'auto' }}>
             <h4>{editingCycle ? 'Editar Ciclo' : 'Novo Ciclo'}</h4>
 
             <div style={styles.modalSection}>
@@ -401,7 +414,7 @@ export default function Ciclos() {
 
             {/* Campo Ordem - NOVO */}
             <div style={styles.modalSection}>
-              <label style={styles.label}>Ordem de Exibição</label>
+              <label style={styles.label}>{"Ordem de Exibi\u00e7\u00e3o"}</label>
               <input
                 type="number"
                 min="1"
@@ -410,8 +423,8 @@ export default function Ciclos() {
                 onChange={e => setCycleOrder(parseInt(e.target.value) || 1)}
                 placeholder="1, 2, 3..."
               />
-              <p style={{ fontSize: 11, color: '#666', marginTop: 5 }}>
-                * Define a ordem em que os ciclos serão exibidos.
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 5 }}>
+                {"* Define a ordem em que os ciclos serao exibidos."}
               </p>
             </div>
 
@@ -423,7 +436,7 @@ export default function Ciclos() {
                   const assignedToName = isAssignedToOther ? metadadosCiclos.find(c => c.id === culto.ciclo_id)?.nome : null;
 
                   return (
-                    <label key={culto.id} style={{ display: 'flex', alignItems: 'center', gap: 5, color: isAssignedToOther ? '#999' : '#333' }}>
+                    <label key={culto.id} style={{ display: 'flex', alignItems: 'center', gap: 5, color: isAssignedToOther ? 'var(--text-light)' : 'var(--text-main)' }}>
                       <input
                         type="checkbox"
                         checked={selectedCultosIds.includes(culto.id)}
@@ -436,8 +449,8 @@ export default function Ciclos() {
                   );
                 })}
               </div>
-              <p style={{ fontSize: 11, color: '#666', marginTop: 5 }}>
-                * Marque os cultos que serão atendidos por este ciclo.
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 5 }}>
+                {"* Marque os cultos que serao atendidos por este ciclo."}
               </p>
             </div>
 
@@ -472,8 +485,8 @@ export default function Ciclos() {
                       )}
                     </div>
                     <div style={styles.cycleActions}>
-                      <button style={styles.btnAction} onClick={() => handleEditCycle(ciclo)}>✏️</button>
-                      <button style={styles.btnAction} onClick={() => handleDeleteCycle(ciclo.id)}>🗑️</button>
+                      <button style={styles.btnAction} onClick={() => handleEditCycle(ciclo)} title="Editar ciclo">E</button>
+                      <button style={{ ...styles.btnAction, color: 'var(--danger)' }} onClick={() => handleDeleteCycle(ciclo.id)} title="Excluir ciclo">X</button>
                     </div>
                   </div>
 
@@ -484,7 +497,7 @@ export default function Ciclos() {
                         ref={provided.innerRef}
                         style={{
                           ...styles.listContainer,
-                          backgroundColor: snapshot.isDraggingOver ? '#fafafa' : 'transparent'
+                          backgroundColor: snapshot.isDraggingOver ? 'var(--bg-hover)' : 'transparent'
                         }}
                       >
                         {(ciclosItens[ciclo.id] || []).map((item, index) => (
@@ -501,7 +514,7 @@ export default function Ciclos() {
                                 }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                                  <span style={styles.rank}>{index + 1}º</span>
+                                  <span style={styles.rank}>{index + 1}{"\u00ba"}</span>
                                   <span style={styles.name}>{item.nome || item.organista?.nome}</span>
                                 </div>
                                 {item.categoria === 'rjm' ? <span style={{ ...styles.badge, ...styles.badgeRJM }}>RJM</span> :
@@ -509,7 +522,7 @@ export default function Ciclos() {
                                     <span style={{ ...styles.badge, ...styles.badgeOficial }}>Oficial</span> :
                                     <span style={{ ...styles.badge, ...styles.badgeAluna }}>Aluna</span>)
                                 }
-                                <button style={styles.btnIcon} onClick={() => removerOrganista(ciclo.id, index)}>✕</button>
+                                <button style={styles.btnIcon} onClick={() => removerOrganista(ciclo.id, index)}>X</button>
                               </div>
                             )}
                           </Draggable>
@@ -558,3 +571,4 @@ export default function Ciclos() {
     </div>
   );
 }
+

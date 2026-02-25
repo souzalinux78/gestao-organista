@@ -135,6 +135,13 @@ export const getConfiguracoes = () => api.get('/configuracoes');
 export const getConfiguracao = (chave) => api.get(`/configuracoes/${chave}`);
 export const salvarConfiguracao = (chave, valor, descricao = null) => api.post('/configuracoes', { chave, valor, descricao });
 export const deletarConfiguracao = (chave) => api.delete(`/configuracoes/${chave}`);
+export const getMensagemTemplates = (igrejaId) => api.get('/mensagens/templates', { params: { igreja_id: igrejaId } });
+export const salvarMensagemTemplates = (igrejaId, organistaTemplate, encarregadoTemplate) =>
+  api.put('/mensagens/templates', {
+    igreja_id: igrejaId,
+    organista_template: organistaTemplate,
+    encarregado_template: encarregadoTemplate
+  });
 export const getMe = () => api.get('/auth/me');
 export const createUsuario = (data) => api.post('/auth/usuarios', data);
 export const getUsuarios = () => api.get('/auth/usuarios');

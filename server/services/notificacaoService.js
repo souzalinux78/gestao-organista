@@ -1,5 +1,93 @@
 const db = require('../database/db');
 const axios = require('axios');
+const { TEMPLATE_KEYS, renderTemplate } = require('../utils/messageTemplates');
+
+const TEMPLATE_CACHE_TTL_MS = 5 * 60 * 1000;
+const templateCache = new Map();
+
+const clearTemplateCache = (igrejaId = null) => {
+  if (igrejaId === null || igrejaId === undefined) {
+    templateCache.clear();
+    return;
+  }
+  templateCache.delete(Number(igrejaId));
+};
+
+const formatarHoraHHMM = (hora) => {
+  if (!hora) return '';
+  return String(hora).split(':').slice(0, 2).join(':');
+};
+
+const calcularHoraMeiaHoraStr = (horaCulto) => {
+  if (!horaCulto) return '';
+  const [hora, minuto] = String(horaCulto).split(':');
+  const base = new Date();
+  base.setHours(parseInt(hora, 10), parseInt(minuto, 10) - 30, 0, 0);
+  return `${String(base.getHours()).padStart(2, '0')}:${String(base.getMinutes()).padStart(2, '0')}`;
+};
+
+const getFuncaoTexto = (rodizio) => {
+  if (rodizio.funcao === 'meia_hora') {
+    return 'Meia hora (30 min antes do culto)';
+  }
+  const isRJM = rodizio.culto_tipo === 'rjm' || rodizio.eh_rjm === 1;
+  return isRJM ? 'RJM' : 'Culto';
+};
+
+const buildListaRodiziosTexto = (rodizios) => {
+  const linhas = [];
+  for (const rodizio of rodizios) {
+    const horaMeiaHoraStr = calcularHoraMeiaHoraStr(rodizio.hora_culto);
+    const horaCulto = formatarHoraHHMM(rodizio.hora_culto);
+    const funcaoTexto = getFuncaoTexto(rodizio);
+    linhas.push(`${funcaoTexto}`);
+    linhas.push(` - Organista: ${rodizio.organista_nome}`);
+    linhas.push(` - Telefone: ${rodizio.organista_telefone || 'Nao informado'}`);
+    linhas.push(` - Hora: ${horaCulto}`);
+    if (rodizio.funcao === 'meia_hora') {
+      linhas.push(` - Meia hora: ${horaMeiaHoraStr}`);
+    }
+    linhas.push('');
+  }
+  return linhas.join('\n').trim();
+};
+
+const getTemplatesByIgreja = async (igrejaId) => {
+  if (!igrejaId) return { organista: null, encarregado: null };
+
+  const now = Date.now();
+  const cacheItem = templateCache.get(igrejaId);
+  if (cacheItem && cacheItem.expiresAt > now) {
+    return cacheItem.value;
+  }
+
+  const pool = db.getDb();
+  const keyOrganista = TEMPLATE_KEYS.organista(igrejaId);
+  const keyEncarregado = TEMPLATE_KEYS.encarregado(igrejaId);
+
+  try {
+    const [rows] = await pool.execute(
+      'SELECT chave, valor FROM configuracoes WHERE chave IN (?, ?)',
+      [keyOrganista, keyEncarregado]
+    );
+
+    const map = new Map(rows.map(r => [r.chave, r.valor]));
+    const value = {
+      organista: map.get(keyOrganista) || null,
+      encarregado: map.get(keyEncarregado) || null
+    };
+
+    templateCache.set(igrejaId, {
+      value,
+      expiresAt: now + TEMPLATE_CACHE_TTL_MS
+    });
+
+    return value;
+  } catch (error) {
+    console.warn(`[TEMPLATE] Falha ao carregar templates da igreja ${igrejaId}:`, error.message);
+    return { organista: null, encarregado: null };
+  }
+};
 
 // Função para enviar notificação consolidada para encarregados
 const enviarNotificacaoEncarregados = async (rodizios, options = {}) => {
@@ -7,41 +95,13 @@ const enviarNotificacaoEncarregados = async (rodizios, options = {}) => {
   const referencia = options.referencia || 'hoje';
   
   const primeiroRodizio = rodizios[0];
-  
-  // Criar mensagem consolidada com todos os rodízios
-  let mensagemConsolidada = `📢 Notificação: Organistas escaladas para ${referencia}\n\n`;
-  mensagemConsolidada += `📅 Data: ${formatarDataBR(primeiroRodizio.data_culto)}\n`;
-  mensagemConsolidada += `📍 Igreja: ${primeiroRodizio.igreja_nome}\n\n`;
-  mensagemConsolidada += `🎹 Organistas escaladas:\n\n`;
-  
-  for (const rodizio of rodizios) {
-    const funcaoTexto = rodizio.funcao === 'meia_hora' 
-      ? '🎵 Meia Hora (30 min antes do culto)' 
-      : '🎹 Tocar no Culto';
-    
-    const [hora, minuto] = rodizio.hora_culto.split(':');
-    const horaMeiaHora = new Date();
-    horaMeiaHora.setHours(parseInt(hora), parseInt(minuto) - 30, 0, 0);
-    const horaMeiaHoraStr = `${String(horaMeiaHora.getHours()).padStart(2, '0')}:${String(horaMeiaHora.getMinutes()).padStart(2, '0')}`;
-    
-    mensagemConsolidada += `${funcaoTexto}\n`;
-    mensagemConsolidada += `   👤 ${rodizio.organista_nome}\n`;
-    mensagemConsolidada += `   📞 ${rodizio.organista_telefone || 'Não informado'}\n`;
-    mensagemConsolidada += `   🕐 Hora: ${rodizio.hora_culto}\n`;
-    if (rodizio.funcao === 'meia_hora') {
-      mensagemConsolidada += `   ⏰ Meia hora: ${horaMeiaHoraStr}\n`;
-    }
-    mensagemConsolidada += `\n`;
-  }
-  
-  mensagemConsolidada = mensagemConsolidada.trim();
-  
+  const listaRodiziosTexto = buildListaRodiziosTexto(rodizios);
+  const templates = await getTemplatesByIgreja(primeiroRodizio.igreja_id);
+
   // Preparar payload consolidado com todos os rodízios
   const rodiziosFormatados = rodizios.map(rodizio => {
-    const [hora, minuto] = rodizio.hora_culto.split(':');
-    const horaMeiaHora = new Date();
-    horaMeiaHora.setHours(parseInt(hora), parseInt(minuto) - 30, 0, 0);
-    const horaMeiaHoraStr = `${String(horaMeiaHora.getHours()).padStart(2, '0')}:${String(horaMeiaHora.getMinutes()).padStart(2, '0')}`;
+    const horaMeiaHoraStr = calcularHoraMeiaHoraStr(rodizio.hora_culto);
+    const funcaoTexto = getFuncaoTexto(rodizio);
     
     return {
       rodizio_id: rodizio.id,
@@ -54,15 +114,35 @@ const enviarNotificacaoEncarregados = async (rodizios, options = {}) => {
         data: rodizio.data_culto || null,
         data_formatada: formatarDataBR(rodizio.data_culto),
         dia_semana: rodizio.dia_semana || null,
-        hora: rodizio.hora_culto || null,
+        hora: formatarHoraHHMM(rodizio.hora_culto) || null,
         funcao: rodizio.funcao || null,
-        funcao_texto: rodizio.funcao === 'meia_hora' 
-          ? 'Meia Hora (30 min antes do culto)' 
-          : 'Tocar no Culto',
+        funcao_texto: funcaoTexto,
         hora_meia_hora: rodizio.funcao === 'meia_hora' ? horaMeiaHoraStr : null
       }
     };
   });
+
+  let mensagemConsolidada;
+  if (templates.encarregado) {
+    mensagemConsolidada = renderTemplate(templates.encarregado, {
+      referencia,
+      data: formatarDataBR(primeiroRodizio.data_culto),
+      dia_semana: primeiroRodizio.dia_semana || '',
+      igreja_nome: primeiroRodizio.igreja_nome || '',
+      lista_rodizios: listaRodiziosTexto,
+      organista_nome: primeiroRodizio.organista_nome || '',
+      organista_telefone: primeiroRodizio.organista_telefone || '',
+      funcao: getFuncaoTexto(primeiroRodizio),
+      hora: formatarHoraHHMM(primeiroRodizio.hora_culto),
+      hora_meia_hora: calcularHoraMeiaHoraStr(primeiroRodizio.hora_culto)
+    }).trim();
+  } else {
+    mensagemConsolidada = `📢 Notificação: Organistas escaladas para ${referencia}\n\n` +
+      `📅 Data: ${formatarDataBR(primeiroRodizio.data_culto)}\n` +
+      `📍 Igreja: ${primeiroRodizio.igreja_nome}\n\n` +
+      `🎹 Organistas escaladas:\n\n` +
+      `${listaRodiziosTexto}`;
+  }
   
   // Enviar para encarregado local (1 webhook com todos os rodízios)
   if (primeiroRodizio.encarregado_local_telefone) {
@@ -92,49 +172,42 @@ const enviarNotificacaoDiaCulto = async (rodizio, enviarParaEncarregados = false
   const tipoNotificacao = options.tipoNotificacao || 'alerta_dia_culto';
   
   try {
-    // Calcular hora da meia hora (30 minutos antes do culto)
-    const [hora, minuto] = rodizio.hora_culto.split(':');
-    const horaMeiaHora = new Date();
-    horaMeiaHora.setHours(parseInt(hora), parseInt(minuto) - 30, 0, 0);
-    const horaMeiaHoraStr = `${String(horaMeiaHora.getHours()).padStart(2, '0')}:${String(horaMeiaHora.getMinutes()).padStart(2, '0')}`;
+    const horaMeiaHoraStr = calcularHoraMeiaHoraStr(rodizio.hora_culto);
+    const horaCultoSemSegundos = formatarHoraHHMM(rodizio.hora_culto);
+    const funcaoTexto = getFuncaoTexto(rodizio);
+    const templates = await getTemplatesByIgreja(rodizio.igreja_id);
     
-    // Determinar função
-    const funcaoTexto = rodizio.funcao === 'meia_hora' 
-      ? 'Meia hora (30 min antes do culto)' 
-      : 'Culto';
-    const horaCultoSemSegundos = rodizio.hora_culto
-      ? rodizio.hora_culto.split(':').slice(0, 2).join(':')
-      : null;
-    
-    // Mensagem para a organista (tom congregacional e acolhedor)
-    const linhasMensagem = [
-      `🎶 Olá, ${rodizio.organista_nome}! A paz de Deus 🙏`,
-      '',
-      rodizio.data_culto ? `📅 Data: ${formatarDataBR(rodizio.data_culto)}` : null,
-      rodizio.igreja_nome ? `📍 Igreja: ${rodizio.igreja_nome}` : null,
-      `🎯 Função: ${funcaoTexto}`,
-      rodizio.funcao === 'meia_hora'
-        ? `🕐 Horário: ${horaMeiaHoraStr}`
-        : horaCultoSemSegundos
-          ? `🕐 Horário: ${horaCultoSemSegundos}`
-          : null,
-      '',
-      'Que Deus abençoe sua participação nesta noite'
-    ].filter(Boolean);
-    const mensagemOrganista = removerEmojisAfetivos(linhasMensagem.join('\n'));
-    
-    // Mensagem para encarregados
-    const mensagemEncarregados = `
-📢 Notificação: Organista escalada para hoje
-
-🎹 Organista: ${rodizio.organista_nome}
-📞 Telefone: ${rodizio.organista_telefone || 'Não informado'}
-📅 Data: ${formatarDataBR(rodizio.data_culto)}
-🕐 Hora do culto: ${rodizio.hora_culto}
-🎯 Função: ${funcaoTexto}
-${rodizio.funcao === 'meia_hora' ? `⏰ Horário: ${horaMeiaHoraStr}` : ''}
-📍 Igreja: ${rodizio.igreja_nome}
-    `.trim();
+    // Mensagem para a organista (tom congregacional e acolhedor), com fallback para template customizado
+    let mensagemOrganista;
+    if (templates.organista) {
+      mensagemOrganista = removerEmojisAfetivos(renderTemplate(templates.organista, {
+        organista_nome: rodizio.organista_nome || '',
+        organista_telefone: rodizio.organista_telefone || '',
+        igreja_nome: rodizio.igreja_nome || '',
+        data: formatarDataBR(rodizio.data_culto),
+        dia_semana: rodizio.dia_semana || '',
+        funcao: funcaoTexto,
+        hora: rodizio.funcao === 'meia_hora' ? horaMeiaHoraStr : horaCultoSemSegundos,
+        hora_meia_hora: horaMeiaHoraStr,
+        referencia: 'hoje'
+      }).trim());
+    } else {
+      const linhasMensagem = [
+        `🎶 Olá, ${rodizio.organista_nome}! A paz de Deus 🙏`,
+        '',
+        rodizio.data_culto ? `📅 Data: ${formatarDataBR(rodizio.data_culto)}` : null,
+        rodizio.igreja_nome ? `📍 Igreja: ${rodizio.igreja_nome}` : null,
+        `🎯 Função: ${funcaoTexto}`,
+        rodizio.funcao === 'meia_hora'
+          ? `🕐 Horário: ${horaMeiaHoraStr}`
+          : horaCultoSemSegundos
+            ? `🕐 Horário: ${horaCultoSemSegundos}`
+            : null,
+        '',
+        'Que Deus abençoe sua participação nesta noite'
+      ].filter(Boolean);
+      mensagemOrganista = removerEmojisAfetivos(linhasMensagem.join('\n'));
+    }
     
     // Enviar webhook para a organista (1 webhook por organista/rodízio)
     const telefoneOrganista = rodizio.organista_telefone || 'webhook_organista';
@@ -383,5 +456,6 @@ const removerEmojisAfetivos = (mensagem) => {
 module.exports = {
   enviarNotificacaoDiaCulto,
   enviarNotificacaoEncarregados,
-  enviarMensagem
+  enviarMensagem,
+  clearTemplateCache
 };

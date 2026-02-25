@@ -179,9 +179,9 @@
 }
 
 .ciclo-lista__btn:hover:not(:disabled) {
-  background: var(--primary, #1976d2);
+  background: var(--primary);
   color: #fff;
-  border-color: var(--primary, #1976d2);
+  border-color: var(--primary);
 }
 
 .ciclo-lista__btn:disabled {
@@ -217,7 +217,7 @@
 .ciclo-add summary {
   cursor: pointer;
   font-size: 0.9rem;
-  color: var(--primary, #1976d2);
+  color: var(--primary);
 }
 
 .ciclo-add-lista {
@@ -249,7 +249,7 @@
 
 .ciclo-card__salvar {
   padding: 0.5rem 1rem;
-  background: var(--primary, #1976d2);
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 6px;

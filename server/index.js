@@ -119,6 +119,7 @@ const notificacoesRoutes = require('./routes/notificacoes');
 const diagnosticoRoutes = require('./routes/diagnostico');
 const adminRoutes = require('./routes/admin');
 const configuracoesRoutes = require('./routes/configuracoes');
+const mensagensRoutes = require('./routes/mensagens');
 
 // Rotas públicas
 // Aplicar rate limit específico para login usando middleware condicional
@@ -157,6 +158,7 @@ if (rateLimit && apiLimiter) {
   app.use('/api/diagnostico', apiLimiter, diagnosticoRoutes);
   app.use('/api/admin', apiLimiter, adminRoutes);
   app.use('/api/configuracoes', apiLimiter, configuracoesRoutes);
+  app.use('/api/mensagens', apiLimiter, mensagensRoutes);
   app.use('/api/ciclos', apiLimiter, require('./routes/ciclos'));
 } else {
   // Se rate limit não estiver disponível, usar rotas sem rate limit
@@ -169,6 +171,7 @@ if (rateLimit && apiLimiter) {
   app.use('/api/diagnostico', diagnosticoRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/configuracoes', configuracoesRoutes);
+  app.use('/api/mensagens', mensagensRoutes);
   app.use('/api/ciclos', require('./routes/ciclos'));
 }
 
