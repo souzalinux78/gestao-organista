@@ -9,6 +9,16 @@ const { validate, schemas } = require('../middleware/validation');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 
+function normalizeText(value) {
+  if (typeof value !== 'string') return value;
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function normalizeEmail(value) {
+  if (typeof value !== 'string') return '';
+  return value.trim().toLowerCase();
+}
+
 // Função para enviar webhook de novo cadastro
 const enviarWebhookCadastro = async (dadosUsuario) => {
   try {
@@ -110,16 +120,20 @@ const enviarWebhookAprovacao = async ({ aprovadoPor, usuario, igrejas }) => {
 router.post('/register', async (req, res) => {
   try {
     const { nome, email, senha, igreja, tipo_usuario, telefone } = req.body;
+    const nomeNormalizado = normalizeText(nome);
+    const emailNormalizado = normalizeEmail(email);
+    const igrejaNormalizada = normalizeText(igreja);
+    const telefoneNormalizado = typeof telefone === 'string' ? telefone.trim() : '';
 
-    if (!nome || !email || !senha) {
+    if (!nomeNormalizado || !emailNormalizado || !senha) {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
     }
 
-    if (!telefone || telefone.trim() === '') {
+    if (!telefoneNormalizado) {
       return res.status(400).json({ error: 'O campo Celular é obrigatório para aprovação' });
     }
 
-    if (!igreja || igreja.trim() === '') {
+    if (!igrejaNormalizada) {
       return res.status(400).json({ error: 'O campo Igreja/Comum é obrigatório' });
     }
 
@@ -132,8 +146,8 @@ router.post('/register', async (req, res) => {
 
     // Verificar se email já existe
     const [existing] = await pool.execute(
-      'SELECT id FROM usuarios WHERE email = ?',
-      [email]
+      'SELECT id FROM usuarios WHERE email = ? OR LOWER(email) = ? LIMIT 1',
+      [emailNormalizado, emailNormalizado]
     );
 
     if (existing.length > 0) {
@@ -169,28 +183,28 @@ router.post('/register', async (req, res) => {
     let sql, values;
     if (temTipoUsuario && temTenantId && temTelefone && defaultTenantId) {
       sql = 'INSERT INTO usuarios (nome, email, telefone, senha_hash, role, tipo_usuario, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-      values = [nome, email, telefone.trim(), senhaHash, 'usuario', tipoUsuarioValido, defaultTenantId, 0];
+      values = [nomeNormalizado, emailNormalizado, telefoneNormalizado, senhaHash, 'usuario', tipoUsuarioValido, defaultTenantId, 0];
     } else if (temTipoUsuario && temTelefone) {
       sql = 'INSERT INTO usuarios (nome, email, telefone, senha_hash, role, tipo_usuario, aprovado) VALUES (?, ?, ?, ?, ?, ?, ?)';
-      values = [nome, email, telefone.trim(), senhaHash, 'usuario', tipoUsuarioValido, 0];
+      values = [nomeNormalizado, emailNormalizado, telefoneNormalizado, senhaHash, 'usuario', tipoUsuarioValido, 0];
     } else if (temTenantId && temTelefone && defaultTenantId) {
       sql = 'INSERT INTO usuarios (nome, email, telefone, senha_hash, role, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?, ?)';
-      values = [nome, email, telefone.trim(), senhaHash, 'usuario', defaultTenantId, 0];
+      values = [nomeNormalizado, emailNormalizado, telefoneNormalizado, senhaHash, 'usuario', defaultTenantId, 0];
     } else if (temTelefone) {
       sql = 'INSERT INTO usuarios (nome, email, telefone, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?, ?)';
-      values = [nome, email, telefone.trim(), senhaHash, 'usuario', 0];
+      values = [nomeNormalizado, emailNormalizado, telefoneNormalizado, senhaHash, 'usuario', 0];
     } else if (temTipoUsuario && temTenantId && defaultTenantId) {
       sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, tipo_usuario, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?, ?)';
-      values = [nome, email, senhaHash, 'usuario', tipoUsuarioValido, defaultTenantId, 0];
+      values = [nomeNormalizado, emailNormalizado, senhaHash, 'usuario', tipoUsuarioValido, defaultTenantId, 0];
     } else if (temTipoUsuario) {
       sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, tipo_usuario, aprovado) VALUES (?, ?, ?, ?, ?, ?)';
-      values = [nome, email, senhaHash, 'usuario', tipoUsuarioValido, 0];
+      values = [nomeNormalizado, emailNormalizado, senhaHash, 'usuario', tipoUsuarioValido, 0];
     } else if (temTenantId && defaultTenantId) {
       sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?)';
-      values = [nome, email, senhaHash, 'usuario', defaultTenantId, 0];
+      values = [nomeNormalizado, emailNormalizado, senhaHash, 'usuario', defaultTenantId, 0];
     } else {
       sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)';
-      values = [nome, email, senhaHash, 'usuario', 0];
+      values = [nomeNormalizado, emailNormalizado, senhaHash, 'usuario', 0];
     }
     
     const [result] = await pool.execute({
@@ -233,7 +247,7 @@ router.post('/register', async (req, res) => {
             tenant_id
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           values: [
-            igreja.trim(),
+            igrejaNormalizada,
             null,
             null,
             null,
@@ -251,7 +265,7 @@ router.post('/register', async (req, res) => {
             mesma_organista_ambas_funcoes
           ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
           values: [
-            igreja.trim(),
+            igrejaNormalizada,
             null,
             null,
             null,
@@ -279,11 +293,11 @@ router.post('/register', async (req, res) => {
     // Enviar webhook de novo cadastro (não bloqueia a resposta)
     enviarWebhookCadastro({
       id: userId,
-      nome,
-      email,
-      telefone: telefone ? telefone.trim() : null,
+      nome: nomeNormalizado,
+      email: emailNormalizado,
+      telefone: telefoneNormalizado || null,
       tipo_usuario: tipoUsuarioValido,
-      igreja: igreja.trim(),
+      igreja: igrejaNormalizada,
       igreja_id: igrejaId,
       created_at: new Date().toISOString()
     }).catch(err => {
@@ -297,6 +311,10 @@ router.post('/register', async (req, res) => {
     });
   } catch (error) {
     console.error('Erro no cadastro:', error);
+
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Email ja cadastrado' });
+    }
     
     // Tratar timeout do banco
     if (error.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || error.code === 'ETIMEDOUT') {
@@ -311,10 +329,12 @@ router.post('/register', async (req, res) => {
 router.post('/login', validate(schemas.login), asyncHandler(async (req, res) => {
   const { email, senha } = req.body; // Já validado e sanitizado
 
+  const emailNormalizado = normalizeEmail(email);
+
   const pool = db.getDb();
   const [users] = await pool.execute(
-    'SELECT * FROM usuarios WHERE email = ?',
-    [email]
+    'SELECT * FROM usuarios WHERE LOWER(email) = ? LIMIT 1',
+    [emailNormalizado]
   );
 
   if (users.length === 0) {
@@ -405,8 +425,10 @@ router.get('/me', authenticate, async (req, res) => {
 router.post('/usuarios', authenticate, isAdmin, async (req, res) => {
   try {
     const { nome, email, senha, role, igreja_ids } = req.body;
+    const nomeNormalizado = normalizeText(nome);
+    const emailNormalizado = normalizeEmail(email);
 
-    if (!nome || !email || !senha) {
+    if (!nomeNormalizado || !emailNormalizado || !senha) {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
     }
 
@@ -414,8 +436,8 @@ router.post('/usuarios', authenticate, isAdmin, async (req, res) => {
 
     // Verificar se email já existe
     const [existing] = await pool.execute(
-      'SELECT id FROM usuarios WHERE email = ?',
-      [email]
+      'SELECT id FROM usuarios WHERE email = ? OR LOWER(email) = ? LIMIT 1',
+      [emailNormalizado, emailNormalizado]
     );
 
     if (existing.length > 0) {
@@ -446,10 +468,10 @@ router.post('/usuarios', authenticate, isAdmin, async (req, res) => {
     let sql, values;
     if (temTenantId && tenantIdParaNovoUsuario) {
       sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, tenant_id, aprovado) VALUES (?, ?, ?, ?, ?, ?)';
-      values = [nome, email, senhaHash, role || 'usuario', tenantIdParaNovoUsuario, aprovado];
+      values = [nomeNormalizado, emailNormalizado, senhaHash, role || 'usuario', tenantIdParaNovoUsuario, aprovado];
     } else {
       sql = 'INSERT INTO usuarios (nome, email, senha_hash, role, aprovado) VALUES (?, ?, ?, ?, ?)';
-      values = [nome, email, senhaHash, role || 'usuario', aprovado];
+      values = [nomeNormalizado, emailNormalizado, senhaHash, role || 'usuario', aprovado];
     }
     
     const [result] = await pool.execute(sql, values);
@@ -471,14 +493,17 @@ router.post('/usuarios', authenticate, isAdmin, async (req, res) => {
 
     res.json({
       id: userId,
-      nome,
-      email,
+      nome: nomeNormalizado,
+      email: emailNormalizado,
       role: role || 'usuario',
       message: 'Usuário criado com sucesso'
     });
   } catch (error) {
-    console.error('Erro ao criar usuário:', error);
-    res.status(500).json({ error: 'Erro ao criar usuário' });
+    console.error('Erro ao criar usuario:', error);
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Email ja cadastrado' });
+    }
+    res.status(500).json({ error: 'Erro ao criar usuario' });
   }
 });
 
@@ -513,6 +538,8 @@ router.get('/usuarios', authenticate, isAdmin, async (req, res) => {
 router.put('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
   try {
     const { nome, email, senha, role, ativo, igreja_ids } = req.body;
+    const nomeNormalizado = typeof nome === 'string' ? normalizeText(nome) : nome;
+    const emailNormalizado = typeof email === 'string' ? normalizeEmail(email) : email;
     const pool = db.getDb();
 
     // Verificar se usuário existe
@@ -524,8 +551,8 @@ router.put('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
     // Verificar se email já está em uso por outro usuário
     if (email) {
       const [existing] = await pool.execute(
-        'SELECT id FROM usuarios WHERE email = ? AND id != ?',
-        [email, req.params.id]
+        'SELECT id FROM usuarios WHERE (email = ? OR LOWER(email) = ?) AND id != ? LIMIT 1',
+        [emailNormalizado, emailNormalizado, req.params.id]
       );
       if (existing.length > 0) {
         return res.status(400).json({ error: 'Email já está em uso por outro usuário' });
@@ -538,11 +565,11 @@ router.put('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
 
     if (nome) {
       updates.push('nome = ?');
-      values.push(nome);
+      values.push(nomeNormalizado);
     }
     if (email) {
       updates.push('email = ?');
-      values.push(email);
+      values.push(emailNormalizado);
     }
     if (senha) {
       // Hash da senha antes de atualizar
@@ -591,6 +618,9 @@ router.put('/usuarios/:id', authenticate, isAdmin, async (req, res) => {
 
     res.json({ message: 'Usuário atualizado com sucesso' });
   } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Email ja esta em uso por outro usuario' });
+    }
     res.status(500).json({ error: error.message });
   }
 });
