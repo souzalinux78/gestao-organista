@@ -279,59 +279,80 @@ function NotificacoesConfig({ user }) {
         <div className="notificacao-destinatarios">
           {destinatarios.map((destinatario, index) => (
             <div className="notificacao-destinatario-row" key={`${destinatario.cargo}-${index}`}>
-              <select
-                value={destinatario.cargo || ''}
-                onChange={(e) => handleDestinatarioChange(index, 'cargo', e.target.value)}
-                disabled={loading || loadingConfig || saving}
-              >
-                {cargosDisponiveis.map((cargo) => (
-                  <option key={cargo.key} value={cargo.key}>{cargo.label}</option>
-                ))}
-              </select>
+              <div className="notificacao-destinatario-fields">
+                <div className="notificacao-inline-field">
+                  <label htmlFor={`cargo-${index}`}>Cargo</label>
+                  <select
+                    id={`cargo-${index}`}
+                    value={destinatario.cargo || ''}
+                    onChange={(e) => handleDestinatarioChange(index, 'cargo', e.target.value)}
+                    disabled={loading || loadingConfig || saving}
+                  >
+                    {cargosDisponiveis.map((cargo) => (
+                      <option key={cargo.key} value={cargo.key}>{cargo.label}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <input
-                type="text"
-                placeholder="Nome"
-                value={destinatario.nome || ''}
-                onChange={(e) => handleDestinatarioChange(index, 'nome', e.target.value)}
-                disabled={loading || loadingConfig || saving}
-              />
+                <div className="notificacao-inline-field">
+                  <label htmlFor={`nome-${index}`}>Nome</label>
+                  <input
+                    id={`nome-${index}`}
+                    type="text"
+                    placeholder="Nome do destinatario"
+                    value={destinatario.nome || ''}
+                    onChange={(e) => handleDestinatarioChange(index, 'nome', e.target.value)}
+                    disabled={loading || loadingConfig || saving}
+                  />
+                </div>
 
-              <input
-                type="text"
-                placeholder="Telefone"
-                value={destinatario.telefone || ''}
-                onChange={(e) => handleDestinatarioChange(index, 'telefone', e.target.value)}
-                disabled={loading || loadingConfig || saving}
-              />
+                <div className="notificacao-inline-field">
+                  <label htmlFor={`telefone-${index}`}>Telefone</label>
+                  <input
+                    id={`telefone-${index}`}
+                    type="text"
+                    inputMode="tel"
+                    placeholder="(00) 00000-0000"
+                    value={destinatario.telefone || ''}
+                    onChange={(e) => handleDestinatarioChange(index, 'telefone', e.target.value)}
+                    disabled={loading || loadingConfig || saving}
+                  />
+                </div>
+              </div>
 
-              <label className="notificacao-check">
-                <input
-                  type="checkbox"
-                  checked={destinatario.ativo !== false}
-                  onChange={(e) => handleDestinatarioChange(index, 'ativo', e.target.checked)}
-                  disabled={loading || loadingConfig || saving}
-                />
-                Ativo
-              </label>
+              <div className="notificacao-destinatario-actions">
+                <label className="notificacao-switch" htmlFor={`ativo-${index}`}>
+                  <input
+                    id={`ativo-${index}`}
+                    type="checkbox"
+                    checked={destinatario.ativo !== false}
+                    onChange={(e) => handleDestinatarioChange(index, 'ativo', e.target.checked)}
+                    disabled={loading || loadingConfig || saving}
+                  />
+                  <span className="notificacao-switch-slider" />
+                  <span className="notificacao-switch-text">Ativo</span>
+                </label>
 
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => handleTesteDestinatario(index)}
-                disabled={loading || loadingConfig || saving || !String(destinatario.telefone || '').trim() || testingDestinatarioIndex !== null}
-              >
-                {testingDestinatarioIndex === index ? 'Testando...' : 'Testar'}
-              </button>
+                <div className="notificacao-row-buttons">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => handleTesteDestinatario(index)}
+                    disabled={loading || loadingConfig || saving || !String(destinatario.telefone || '').trim() || testingDestinatarioIndex !== null}
+                  >
+                    {testingDestinatarioIndex === index ? 'Testando...' : 'Testar'}
+                  </button>
 
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={() => handleRemoverDestinatario(index)}
-                disabled={loading || loadingConfig || saving || destinatarios.length <= 1}
-              >
-                Remover
-              </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => handleRemoverDestinatario(index)}
+                    disabled={loading || loadingConfig || saving || destinatarios.length <= 1}
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
