@@ -249,6 +249,66 @@ function Rodizios({ user }) {
     }
   };
 
+  const handleExportarCSV = () => {
+    if (!rodizios || rodizios.length === 0) {
+      showAlert('Nenhum rodizio para exportar.', 'error');
+      return;
+    }
+
+    const escapeCSV = (valor) => {
+      if (valor === null || valor === undefined) return '';
+      const texto = String(valor).replace(/"/g, '""');
+      return `"${texto}"`;
+    };
+
+    const linhas = [];
+    linhas.push([
+      'data',
+      'dia_semana',
+      'hora',
+      'ciclo',
+      'funcao',
+      'organista',
+      'telefone',
+      'igreja'
+    ].join(';'));
+
+    for (const r of rodizios) {
+      const funcaoTexto = r.funcao === 'meia_hora'
+        ? 'Meia Hora'
+        : (r.culto_tipo === 'rjm' ? 'RJM' : 'Culto');
+
+      linhas.push([
+        escapeCSV(formatarData(r.data_culto)),
+        escapeCSV(r.dia_semana || ''),
+        escapeCSV(r.hora_culto ? String(r.hora_culto).slice(0, 5) : ''),
+        escapeCSV(r.ciclo_nome || r.ciclo_origem || ''),
+        escapeCSV(funcaoTexto),
+        escapeCSV(r.organista_nome || ''),
+        escapeCSV(r.organista_telefone || ''),
+        escapeCSV(r.igreja_nome || '')
+      ].join(';'));
+    }
+
+    const conteudo = `\uFEFF${linhas.join('\n')}`;
+    const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+
+    const igrejaNome = filtros.igreja_id
+      ? (igrejas.find((i) => String(i.id) === String(filtros.igreja_id))?.nome || 'igreja')
+      : 'todas_igrejas';
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    link.setAttribute('download', `backup_rodizio_${igrejaNome.replace(/\s+/g, '_')}_${timestamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => window.URL.revokeObjectURL(url), 100);
+    showAlert('Backup CSV exportado com sucesso!');
+  };
+
   const handleTestarWebhook = async () => {
     try { setLoadingWebhook(true); await testarWebhook(); showAlert('Webhook OK!'); }
     catch { showAlert('Erro Webhook', 'error'); } finally { setLoadingWebhook(false); }
@@ -333,6 +393,9 @@ function Rodizios({ user }) {
     <div>
       <div className="card">
         <h2>Gerar Rodízio</h2>
+        <p className="lead">
+          Fluxo recomendado: gerar rodizio, revisar/editar na tabela abaixo e gerar o PDF no proprio menu de Rodizios.
+        </p>
         {alert && <div className={`alert alert-${alert.type}`} style={{ whiteSpace: 'pre-wrap', textAlign: 'left' }}>{alert.message}</div>}
 
         <form onSubmit={handleGerarRodizio} className="form--spaced">
@@ -415,6 +478,7 @@ function Rodizios({ user }) {
             {igrejas.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
           </select>
           <button className="btn btn-success" onClick={handleGerarPDF} disabled={!filtros.igreja_id}>Gerar PDF</button>
+          <button className="btn btn-secondary" onClick={handleExportarCSV} disabled={rodizios.length === 0}>Baixar CSV (Backup)</button>
         </div>
 
         {rodizios.length === 0 ? <div className="empty">Nenhum rodízio</div> : (

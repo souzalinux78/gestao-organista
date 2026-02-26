@@ -7,8 +7,6 @@ import {
   BookOpenText,
   Building2,
   CalendarDays,
-  ClipboardList,
-  FileText,
   LayoutGrid,
   LogOut,
   Menu,
@@ -190,15 +188,11 @@ function Sidebar({ user, location, onLogout }) {
           </Link>
           <Link to="/rodizios" className={`sidebar-nav__item ${location.pathname === '/rodizios' ? 'active' : ''}`} onClick={closeSidebar}>
             <span className="sidebar-nav__icon"><CalendarDays size={18} /></span>
-            <span className="sidebar-nav__text">Rodizios</span>
+            <span className="sidebar-nav__text">Rodizios e PDF</span>
           </Link>
           <Link to="/ciclos" className={`sidebar-nav__item ${location.pathname === '/ciclos' ? 'active' : ''}`} onClick={closeSidebar}>
             <span className="sidebar-nav__icon"><RefreshCw size={18} /></span>
             <span className="sidebar-nav__text">Ciclos</span>
-          </Link>
-          <Link to="/escalas" className={`sidebar-nav__item ${location.pathname === '/escalas' ? 'active' : ''}`} onClick={closeSidebar}>
-            <span className="sidebar-nav__icon"><ClipboardList size={18} /></span>
-            <span className="sidebar-nav__text">Escalas</span>
           </Link>
           {(user?.role === 'admin' || user?.tipo_usuario === 'encarregado') && (
             <>
@@ -214,10 +208,6 @@ function Sidebar({ user, location, onLogout }) {
           )}
           {user?.role === 'admin' && (
             <>
-              <Link to="/relatorios-admin" className={`sidebar-nav__item ${location.pathname === '/relatorios-admin' ? 'active' : ''}`} onClick={closeSidebar}>
-                <span className="sidebar-nav__icon"><FileText size={18} /></span>
-                <span className="sidebar-nav__text">Relatorios</span>
-              </Link>
               <Link to="/admin" className={`sidebar-nav__item ${location.pathname === '/admin' ? 'active' : ''}`} onClick={closeSidebar}>
                 <span className="sidebar-nav__icon"><UserRound size={18} /></span>
                 <span className="sidebar-nav__text">Usuarios</span>
@@ -227,12 +217,6 @@ function Sidebar({ user, location, onLogout }) {
                 <span className="sidebar-nav__text">Configuracoes</span>
               </Link>
             </>
-          )}
-          {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora' || user?.tipo_usuario === 'instrutoras') && (
-            <Link to="/relatorios" className={`sidebar-nav__item ${location.pathname === '/relatorios' ? 'active' : ''}`} onClick={closeSidebar}>
-              <span className="sidebar-nav__icon"><FileText size={18} /></span>
-              <span className="sidebar-nav__text">Relatorios</span>
-            </Link>
           )}
         </nav>
 
