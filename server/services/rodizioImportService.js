@@ -21,6 +21,43 @@ const DIAS_SEMANA_MAP = {
 };
 
 /**
+ * Faz parse de uma linha CSV respeitando campos entre aspas e aspas escapadas ("")
+ * @param {string} linha
+ * @param {string} delimitador
+ * @returns {string[]}
+ */
+function parseLinhaCSV(linha, delimitador) {
+  const campos = [];
+  let atual = '';
+  let emAspas = false;
+
+  for (let i = 0; i < linha.length; i++) {
+    const ch = linha[i];
+
+    if (ch === '"') {
+      if (emAspas && linha[i + 1] === '"') {
+        atual += '"';
+        i++;
+      } else {
+        emAspas = !emAspas;
+      }
+      continue;
+    }
+
+    if (ch === delimitador && !emAspas) {
+      campos.push(atual.trim());
+      atual = '';
+      continue;
+    }
+
+    atual += ch;
+  }
+
+  campos.push(atual.trim());
+  return campos;
+}
+
+/**
  * Parse CSV simples (linha por linha) com detecção automática de delimitador
  * @param {string} csvContent - Conteúdo do CSV
  * @returns {Array} Array de objetos com os dados
@@ -43,7 +80,8 @@ function parseCSV(csvContent) {
   logger.info(`[IMPORT] Delimitador detectado: "${delimitador}" (vírgulas: ${countComma}, ponto-e-vírgulas: ${countSemicolon})`);
 
   // Primeira linha é o cabeçalho
-  const cabecalho = cabecalhoLinha.split(delimitador).map(c => c.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+  const cabecalho = parseLinhaCSV(cabecalhoLinha, delimitador)
+    .map(c => c.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
 
   // Formatos aceitos
   const formatoNovo = ['igreja', 'data', 'horario', 'tipo', 'organista'];
@@ -89,7 +127,7 @@ function parseCSV(csvContent) {
   const dados = [];
   for (let i = 1; i < linhas.length; i++) {
     // CORREÇÃO CRÍTICA: Usar o delimitador detectado para separar as colunas nos dados também!
-    const valores = linhas[i].split(delimitador).map(v => v.trim());
+    const valores = parseLinhaCSV(linhas[i], delimitador);
 
     if (valores.length < cabecalho.length) {
       logger.warn(`[IMPORT] Linha ${i + 1} ignorada: colunas insuficientes. Esperado ${cabecalho.length}, encontrado ${valores.length}`, { valores, delimitador });
