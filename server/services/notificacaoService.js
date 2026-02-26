@@ -1,6 +1,7 @@
 const db = require('../database/db');
 const axios = require('axios');
 const { TEMPLATE_KEYS, renderTemplate } = require('../utils/messageTemplates');
+const { getConfiguracaoEnvio } = require('./notificacaoConfigService');
 
 const TEMPLATE_CACHE_TTL_MS = 5 * 60 * 1000;
 const templateCache = new Map();
@@ -90,19 +91,45 @@ const getTemplatesByIgreja = async (igrejaId) => {
 };
 
 // Função para enviar notificação consolidada para encarregados
+const registrarNotificacaoPorRodizio = async (pool, rodizios, tipoNotificacao) => {
+  if (!tipoNotificacao || !Array.isArray(rodizios) || rodizios.length === 0) return;
+
+  const agora = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  for (const rodizio of rodizios) {
+    await pool.execute(
+      `INSERT INTO notificacoes (rodizio_id, tipo, enviada, data_envio)
+       SELECT ?, ?, 1, ?
+       FROM DUAL
+       WHERE NOT EXISTS (
+         SELECT 1 FROM notificacoes
+         WHERE rodizio_id = ?
+           AND tipo = ?
+       )`,
+      [rodizio.id, tipoNotificacao, agora, rodizio.id, tipoNotificacao]
+    );
+  }
+};
+
 const enviarNotificacaoEncarregados = async (rodizios, options = {}) => {
   if (!rodizios || rodizios.length === 0) return;
   const referencia = options.referencia || 'hoje';
-  
+  const pool = db.getDb();
+
   const primeiroRodizio = rodizios[0];
   const listaRodiziosTexto = buildListaRodiziosTexto(rodizios);
   const templates = await getTemplatesByIgreja(primeiroRodizio.igreja_id);
+  const configEnvio = await getConfiguracaoEnvio(pool, primeiroRodizio.igreja_id, primeiroRodizio);
+  const destinatariosAtivos = (configEnvio.destinatarios || []).filter((item) => item.ativo !== false && item.telefone);
 
-  // Preparar payload consolidado com todos os rodízios
+  if (destinatariosAtivos.length === 0) {
+    console.log(`Nenhum destinatario ativo para notificacao consolidada da igreja ${primeiroRodizio.igreja_nome || primeiroRodizio.igreja_id}`);
+    return;
+  }
+
   const rodiziosFormatados = rodizios.map(rodizio => {
     const horaMeiaHoraStr = calcularHoraMeiaHoraStr(rodizio.hora_culto);
     const funcaoTexto = getFuncaoTexto(rodizio);
-    
+
     return {
       rodizio_id: rodizio.id,
       organista: {
@@ -137,33 +164,32 @@ const enviarNotificacaoEncarregados = async (rodizios, options = {}) => {
       hora_meia_hora: calcularHoraMeiaHoraStr(primeiroRodizio.hora_culto)
     }).trim();
   } else {
-    mensagemConsolidada = `📢 Notificação: Organistas escaladas para ${referencia}\n\n` +
-      `📅 Data: ${formatarDataBR(primeiroRodizio.data_culto)}\n` +
-      `📍 Igreja: ${primeiroRodizio.igreja_nome}\n\n` +
-      `🎹 Organistas escaladas:\n\n` +
+    mensagemConsolidada = `Notificacao: Organistas escaladas para ${referencia}
+
+` +
+      `Data: ${formatarDataBR(primeiroRodizio.data_culto)}
+` +
+      `Igreja: ${primeiroRodizio.igreja_nome}
+
+` +
+      `Organistas escaladas:
+
+` +
       `${listaRodiziosTexto}`;
   }
-  
-  // Enviar para encarregado local (1 webhook com todos os rodízios)
-  if (primeiroRodizio.encarregado_local_telefone) {
+
+  for (const destinatario of destinatariosAtivos) {
     await enviarMensagemEncarregados(
-      primeiroRodizio.encarregado_local_telefone,
+      destinatario,
       mensagemConsolidada,
       primeiroRodizio,
       rodiziosFormatados
     );
-    console.log(`✅ Webhook consolidado enviado para encarregado local: ${primeiroRodizio.encarregado_local_nome}`);
+    console.log(`Webhook consolidado enviado para ${destinatario.cargo}: ${destinatario.nome || destinatario.telefone}`);
   }
-  
-  // Enviar para encarregado regional (1 webhook com todos os rodízios)
-  if (primeiroRodizio.encarregado_regional_telefone) {
-    await enviarMensagemEncarregados(
-      primeiroRodizio.encarregado_regional_telefone,
-      mensagemConsolidada,
-      primeiroRodizio,
-      rodiziosFormatados
-    );
-    console.log(`✅ Webhook consolidado enviado para encarregado regional: ${primeiroRodizio.encarregado_regional_nome}`);
+
+  if (options.tipoNotificacaoRegistro) {
+    await registrarNotificacaoPorRodizio(pool, rodizios, options.tipoNotificacaoRegistro);
   }
 };
 
@@ -214,19 +240,8 @@ const enviarNotificacaoDiaCulto = async (rodizio, enviarParaEncarregados = false
     await enviarMensagem(telefoneOrganista, mensagemOrganista, rodizio);
     console.log(`✅ Webhook disparado para organista: ${rodizio.organista_nome} (${rodizio.funcao === 'meia_hora' ? 'Meia Hora' : 'Tocar no Culto'})`);
     
-    // Enviar a MESMA mensagem da organista para encarregado local (se configurado)
-    if (rodizio.encarregado_local_telefone && rodizio.encarregado_local_telefone.trim()) {
-      await enviarMensagem(rodizio.encarregado_local_telefone.trim(), mensagemOrganista, rodizio);
-      console.log(`✅ Webhook disparado para encarregado local: ${rodizio.encarregado_local_nome || 'N/A'}`);
-    }
-    
-    // Enviar a MESMA mensagem da organista para encarregado regional (se configurado)
-    if (rodizio.encarregado_regional_telefone && rodizio.encarregado_regional_telefone.trim()) {
-      await enviarMensagem(rodizio.encarregado_regional_telefone.trim(), mensagemOrganista, rodizio);
-      console.log(`✅ Webhook disparado para encarregado regional: ${rodizio.encarregado_regional_nome || 'N/A'}`);
-    }
-    
-    // NÃO enviar mensagem consolidada aqui - será enviado consolidado depois (opcional)
+    // Nao enviar para encarregados aqui.
+    // O consolidado respeita horario e destinatarios configurados.
     
     // Registrar notificação no banco
     // Formatar data para MySQL (YYYY-MM-DD HH:MM:SS)
@@ -269,10 +284,13 @@ const formatarTimestampBR = () => {
 };
 
 // Função especial para enviar mensagem consolidada para encarregados
-const enviarMensagemEncarregados = async (telefone, mensagem, primeiroRodizio, rodiziosFormatados) => {
+const enviarMensagemEncarregados = async (destinatario, mensagem, primeiroRodizio, rodiziosFormatados) => {
   const webhookNotificacao = process.env.WEBHOOK_NOTIFICACAO;
   const mensagemSanitizada = removerEmojisAfetivos(mensagem);
-  
+  const telefone = destinatario?.telefone || null;
+  const cargo = destinatario?.cargo || 'encarregado';
+  const nomeDestinatario = destinatario?.nome || null;
+
   if (webhookNotificacao) {
     try {
       const payload = {
@@ -281,9 +299,8 @@ const enviarMensagemEncarregados = async (telefone, mensagem, primeiroRodizio, r
         timestamp_iso: new Date().toISOString(),
         destinatario: {
           telefone: telefone || null,
-          tipo: telefone === primeiroRodizio.encarregado_local_telefone 
-            ? 'encarregado_local' 
-            : 'encarregado_regional'
+          tipo: cargo,
+          nome: nomeDestinatario
         },
         mensagem: mensagemSanitizada,
         dados: {
@@ -303,25 +320,72 @@ const enviarMensagemEncarregados = async (telefone, mensagem, primeiroRodizio, r
           rodizios: rodiziosFormatados
         }
       };
-      
-      console.log(`📤 [WEBHOOK ENCARREGADOS] Enviando para: ${telefone}`);
-      console.log(`📋 [WEBHOOK ENCARREGADOS] Payload:`, JSON.stringify(payload, null, 2));
-      
+
+      console.log(`[WEBHOOK ENCARREGADOS] Enviando para: ${cargo} - ${telefone}`);
+      console.log(`[WEBHOOK ENCARREGADOS] Payload:`, JSON.stringify(payload, null, 2));
+
       await axios.post(webhookNotificacao, payload, {
         headers: {
           'Content-Type': 'application/json'
         },
         timeout: 10000
       });
-      console.log(`✅ [WEBHOOK ENCARREGADOS] Mensagem enviada com sucesso para ${telefone}`);
+      console.log(`[WEBHOOK ENCARREGADOS] Mensagem enviada com sucesso para ${telefone}`);
     } catch (error) {
       console.error(`Erro ao enviar mensagem para encarregado ${telefone}:`, error.message);
     }
   } else {
-    console.log(`[SIMULAÇÃO] Mensagem para encarregado ${telefone}:`);
+    console.log(`[SIMULACAO] Mensagem para encarregado ${telefone}:`);
     console.log(mensagemSanitizada);
-    console.log('Rodízios:', JSON.stringify(rodiziosFormatados, null, 2));
+    console.log('Rodizios:', JSON.stringify(rodiziosFormatados, null, 2));
   }
+};
+
+const enviarMensagemTesteConfiguracao = async ({
+  telefone,
+  mensagem,
+  igrejaNome,
+  usuarioNome,
+  cargo = 'teste',
+  nomeDestinatario = null
+}) => {
+  const webhookNotificacao = process.env.WEBHOOK_NOTIFICACAO;
+  const mensagemSanitizada = removerEmojisAfetivos(mensagem);
+  const cargoNormalizado = String(cargo || 'teste').trim() || 'teste';
+  const nomeNormalizado = nomeDestinatario ? String(nomeDestinatario).trim() : null;
+
+  if (webhookNotificacao) {
+    const payload = {
+      tipo: 'notificacao_teste_configuracao',
+      timestamp: formatarTimestampBR(),
+      timestamp_iso: new Date().toISOString(),
+      destinatario: {
+        telefone: telefone || null,
+        tipo: cargoNormalizado,
+        nome: nomeNormalizado
+      },
+      mensagem: mensagemSanitizada,
+      dados: {
+        igreja_nome: igrejaNome || null,
+        enviado_por: usuarioNome || null,
+        cargo_destinatario: cargoNormalizado
+      }
+    };
+
+    console.log(`[WEBHOOK TESTE] Enviando para: ${telefone}`);
+    console.log(`[WEBHOOK TESTE] Payload:`, JSON.stringify(payload, null, 2));
+
+    await axios.post(webhookNotificacao, payload, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000
+    });
+    return;
+  }
+
+  console.log(`[SIMULACAO TESTE] Mensagem para ${telefone}:`);
+  console.log(mensagemSanitizada);
 };
 
 const enviarMensagem = async (telefone, mensagem, dadosRodizio = null) => {
@@ -456,6 +520,7 @@ const removerEmojisAfetivos = (mensagem) => {
 module.exports = {
   enviarNotificacaoDiaCulto,
   enviarNotificacaoEncarregados,
+  enviarMensagemTesteConfiguracao,
   enviarMensagem,
   clearTemplateCache
 };

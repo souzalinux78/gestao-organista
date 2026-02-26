@@ -232,6 +232,12 @@ export const getEscalaPDFPrevia = (payload) =>
 // Notificações
 export const getNotificacoes = () => api.get('/notificacoes');
 export const enviarNotificacao = (rodizioId) => api.post(`/notificacoes/enviar/${rodizioId}`);
+export const getNotificacaoConfiguracao = (igrejaId) =>
+  api.get('/notificacoes/configuracoes', { params: { igreja_id: igrejaId } });
+export const salvarNotificacaoConfiguracao = (payload) =>
+  api.put('/notificacoes/configuracoes', payload);
+export const testarNotificacaoConfiguracao = (payload) =>
+  api.post('/notificacoes/configuracoes/teste', payload);
 
 // Diagnóstico
 export const getDiagnosticoIgreja = (igrejaId) => api.get(`/diagnostico/igreja/${igrejaId}`);

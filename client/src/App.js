@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } f
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { isTokenExpired } from './utils/jwt';
 import {
+  BellRing,
   BookOpenText,
   Building2,
   CalendarDays,
@@ -37,6 +38,7 @@ const Configuracoes = lazy(() => import('./pages/Configuracoes'));
 const Ciclos = lazy(() => import('./pages/Ciclos'));
 const Escalas = lazy(() => import('./pages/Escalas'));
 const Mensagens = lazy(() => import('./pages/Mensagens'));
+const NotificacoesConfig = lazy(() => import('./pages/NotificacoesConfig'));
 
 function PrivateRoute({ children }) {
   const { loading } = useAuth();
@@ -103,11 +105,20 @@ function AppContent() {
                 <>
                   <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
                   <Route path="/relatorios-admin" element={<PrivateRoute><RelatoriosAdmin user={user} /></PrivateRoute>} />
-                  <Route path="/configuracoes" element={<PrivateRoute><Configuracoes /></PrivateRoute>} />
                 </>
               )}
+              <Route
+                path="/configuracoes"
+                element={user?.role === 'admin'
+                  ? <PrivateRoute><Configuracoes /></PrivateRoute>
+                  : <Navigate to="/" replace />
+                }
+              />
               {(user?.role === 'admin' || user?.tipo_usuario === 'encarregado') && (
-                <Route path="/mensagens" element={<PrivateRoute><Mensagens user={user} /></PrivateRoute>} />
+                <>
+                  <Route path="/mensagens" element={<PrivateRoute><Mensagens user={user} /></PrivateRoute>} />
+                  <Route path="/notificacoes-config" element={<PrivateRoute><NotificacoesConfig user={user} /></PrivateRoute>} />
+                </>
               )}
               {(user?.tipo_usuario === 'encarregado' || user?.tipo_usuario === 'examinadora' || user?.tipo_usuario === 'instrutoras') && (
                 <Route path="/relatorios" element={<PrivateRoute><Relatorios user={user} /></PrivateRoute>} />
@@ -190,10 +201,16 @@ function Sidebar({ user, location, onLogout }) {
             <span className="sidebar-nav__text">Escalas</span>
           </Link>
           {(user?.role === 'admin' || user?.tipo_usuario === 'encarregado') && (
-            <Link to="/mensagens" className={`sidebar-nav__item ${location.pathname === '/mensagens' ? 'active' : ''}`} onClick={closeSidebar}>
-              <span className="sidebar-nav__icon"><MessageCircle size={18} /></span>
-              <span className="sidebar-nav__text">Mensagens</span>
-            </Link>
+            <>
+              <Link to="/mensagens" className={`sidebar-nav__item ${location.pathname === '/mensagens' ? 'active' : ''}`} onClick={closeSidebar}>
+                <span className="sidebar-nav__icon"><MessageCircle size={18} /></span>
+                <span className="sidebar-nav__text">Mensagens</span>
+              </Link>
+              <Link to="/notificacoes-config" className={`sidebar-nav__item ${location.pathname === '/notificacoes-config' ? 'active' : ''}`} onClick={closeSidebar}>
+                <span className="sidebar-nav__icon"><BellRing size={18} /></span>
+                <span className="sidebar-nav__text">Config. Envio</span>
+              </Link>
+            </>
           )}
           {user?.role === 'admin' && (
             <>
