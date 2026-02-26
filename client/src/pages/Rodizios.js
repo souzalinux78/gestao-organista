@@ -255,6 +255,11 @@ function Rodizios({ user }) {
       return;
     }
 
+    if (!filtros.igreja_id) {
+      showAlert('Selecione uma igreja no filtro para gerar um CSV 100% reimportável.', 'error');
+      return;
+    }
+
     const escapeCSV = (valor) => {
       if (valor === null || valor === undefined) return '';
       const texto = String(valor).replace(/"/g, '""');
@@ -263,14 +268,14 @@ function Rodizios({ user }) {
 
     const linhas = [];
     linhas.push([
+      'igreja',
       'data',
-      'dia_semana',
-      'hora',
-      'ciclo',
-      'funcao',
+      'horario',
+      'tipo',
       'organista',
       'telefone',
-      'igreja'
+      'dia_semana',
+      'ciclo'
     ].join(';'));
 
     for (const r of rodizios) {
@@ -279,14 +284,14 @@ function Rodizios({ user }) {
         : (r.culto_tipo === 'rjm' ? 'RJM' : 'Culto');
 
       linhas.push([
+        escapeCSV(r.igreja_nome || ''),
         escapeCSV(formatarData(r.data_culto)),
-        escapeCSV(r.dia_semana || ''),
         escapeCSV(r.hora_culto ? String(r.hora_culto).slice(0, 5) : ''),
-        escapeCSV(r.ciclo_nome || r.ciclo_origem || ''),
         escapeCSV(funcaoTexto),
         escapeCSV(r.organista_nome || ''),
         escapeCSV(r.organista_telefone || ''),
-        escapeCSV(r.igreja_nome || '')
+        escapeCSV(r.dia_semana || ''),
+        escapeCSV(r.ciclo_nome || r.ciclo_origem || '')
       ].join(';'));
     }
 

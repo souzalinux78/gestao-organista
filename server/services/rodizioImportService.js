@@ -53,9 +53,11 @@ function parseCSV(csvContent) {
   const ehFormatoAntigo = formatoAntigo.every(campo => cabecalho.includes(campo));
 
   if (!ehFormatoNovo && !ehFormatoAntigo) {
-    // Se não encontrou cabeçalho exato, tentar ver se pelo menos os campos essenciais existem
-    const camposEssenciais = ['data', 'tipo', 'organista'];
-    const possuiEssenciais = camposEssenciais.every(campo => cabecalho.some(c => c.includes(campo)));
+    // Se não encontrou cabeçalho exato, aceitar aliases essenciais (tipo/funcao)
+    const possuiData = cabecalho.some(c => c.includes('data'));
+    const possuiTipoOuFuncao = cabecalho.some(c => c.includes('tipo') || c.includes('funcao'));
+    const possuiOrganista = cabecalho.some(c => c.includes('organista'));
+    const possuiEssenciais = possuiData && possuiTipoOuFuncao && possuiOrganista;
 
     if (!possuiEssenciais) {
       throw new Error(`Cabeçalho não reconhecido. Use colunas: ${formatoNovo.join(', ')} (separadas por vírgula ou ponto e vírgula)`);
@@ -542,3 +544,4 @@ async function importarRodizio(userId, igrejaId, csvContent) {
 module.exports = {
   importarRodizio
 };
+
