@@ -19,7 +19,7 @@ const RODIZIO_BASE_QUERY = `
          i.encarregado_regional_nome, 
          i.encarregado_regional_telefone,
          c.dia_semana, 
-         c.hora as hora_culto,
+         c.hora as culto_hora,
          c.tipo as culto_tipo,
          o.categoria as organista_categoria,
          cic.nome as ciclo_nome,
@@ -246,22 +246,22 @@ async function deletarRodizio(rodizioId) {
 /**
  * Atualiza horário de rodízios em massa por igreja/período
  * @param {number} igrejaId
- * @param {string} horaDeHHMM - Hora origem em HH:MM
+ * @param {string} horaDeHHMMSS - Hora origem em HH:MM:SS
  * @param {string} horaParaHHMMSS - Hora destino em HH:MM:SS
  * @param {string|null} periodoInicio - YYYY-MM-DD
  * @param {string|null} periodoFim - YYYY-MM-DD
  * @returns {Promise<number>} Quantidade de linhas atualizadas
  */
-async function atualizarHorarioEmMassa(igrejaId, horaDeHHMM, horaParaHHMMSS, periodoInicio = null, periodoFim = null) {
+async function atualizarHorarioEmMassa(igrejaId, horaDeHHMMSS, horaParaHHMMSS, periodoInicio = null, periodoFim = null) {
   const pool = db.getDb();
 
   let query = `
     UPDATE rodizios
        SET hora_culto = ?
      WHERE igreja_id = ?
-       AND TIME_FORMAT(hora_culto, '%H:%i') = ?
+       AND TIME(hora_culto) = TIME(?)
   `;
-  const params = [horaParaHHMMSS, igrejaId, horaDeHHMM];
+  const params = [horaParaHHMMSS, igrejaId, horaDeHHMMSS];
 
   if (periodoInicio) {
     query += ' AND data_culto >= ?';

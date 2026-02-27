@@ -15,12 +15,29 @@ const logger = require('../utils/logger');
 function normalizarHoraParaHHMMSS(horaInput) {
   if (typeof horaInput !== 'string') return null;
   const valor = horaInput.trim();
-  const match = valor.match(/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
-  if (!match) return null;
-  const hh = match[1];
-  const mm = match[2];
-  const ss = match[3] || '00';
-  return `${hh}:${mm}:${ss}`;
+
+  const match24 = valor.match(/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
+  if (match24) {
+    const hh = match24[1];
+    const mm = match24[2];
+    const ss = match24[3] || '00';
+    return `${hh}:${mm}:${ss}`;
+  }
+
+  const match12 = valor.match(/^(0?[1-9]|1[0-2]):([0-5]\d)(?::([0-5]\d))?\s*(AM|PM)$/i);
+  if (match12) {
+    let hh = parseInt(match12[1], 10);
+    const mm = match12[2];
+    const ss = match12[3] || '00';
+    const period = match12[4].toUpperCase();
+
+    if (period === 'AM' && hh === 12) hh = 0;
+    if (period === 'PM' && hh !== 12) hh += 12;
+
+    return `${String(hh).padStart(2, '0')}:${mm}:${ss}`;
+  }
+
+  return null;
 }
 
 // Listar rodÃ­zios (filtrado por igrejas do usuÃ¡rio e tenant)
@@ -151,7 +168,7 @@ router.post('/ajustar-horario', authenticate, tenantResolver, checkIgrejaAccess,
     const horaParaNormalizada = normalizarHoraParaHHMMSS(hora_para);
 
     if (!horaDeNormalizada || !horaParaNormalizada) {
-      return res.status(400).json({ error: 'hora_de e hora_para devem estar no formato HH:MM' });
+      return res.status(400).json({ error: 'hora_de e hora_para devem estar no formato HH:MM (24h) ou HH:MM AM/PM' });
     }
 
     if (horaDeNormalizada === horaParaNormalizada) {
@@ -160,7 +177,7 @@ router.post('/ajustar-horario', authenticate, tenantResolver, checkIgrejaAccess,
 
     const atualizados = await rodizioRepository.atualizarHorarioEmMassa(
       igreja_id,
-      horaDeNormalizada.slice(0, 5),
+      horaDeNormalizada,
       horaParaNormalizada,
       periodo_inicio || null,
       periodo_fim || null
