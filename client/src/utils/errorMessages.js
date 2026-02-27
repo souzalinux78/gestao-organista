@@ -154,9 +154,11 @@ export function isRecoverableError(error) {
   return false;
 }
 
-export default {
+const errorMessagesUtils = {
   getErrorMessage,
   getErrorTitle,
   isRecoverableError,
   errorMessages
 };
+
+export default errorMessagesUtils;

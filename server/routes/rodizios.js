@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
 const rodizioService = require('../services/rodizioService');
@@ -12,13 +12,24 @@ const { tenantResolver, getTenantId } = require('../middleware/tenantResolver');
 const { checkIgrejaAccess, checkRodizioAccess } = require('../middleware/igrejaAccess');
 const logger = require('../utils/logger');
 
-// Listar rodízios (filtrado por igrejas do usuário e tenant)
+function normalizarHoraParaHHMMSS(horaInput) {
+  if (typeof horaInput !== 'string') return null;
+  const valor = horaInput.trim();
+  const match = valor.match(/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
+  if (!match) return null;
+  const hh = match[1];
+  const mm = match[2];
+  const ss = match[3] || '00';
+  return `${hh}:${mm}:${ss}`;
+}
+
+// Listar rodÃ­zios (filtrado por igrejas do usuÃ¡rio e tenant)
 router.get('/', authenticate, tenantResolver, async (req, res) => {
   try {
     const { igreja_id, periodo_inicio, periodo_fim } = req.query;
     const tenantId = getTenantId(req);
 
-    // Obter igrejas do usuário (já filtradas por tenant)
+    // Obter igrejas do usuÃ¡rio (jÃ¡ filtradas por tenant)
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
 
@@ -26,14 +37,14 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
       return res.json([]);
     }
 
-    // Se usuário comum especificou igreja_id, verificar acesso
+    // Se usuÃ¡rio comum especificou igreja_id, verificar acesso
     if (igreja_id && req.user.role !== 'admin') {
       if (!igrejaIds.includes(parseInt(igreja_id))) {
         return res.status(403).json({ error: 'Acesso negado a esta igreja' });
       }
     }
 
-    // Usar repository para buscar rodízios
+    // Usar repository para buscar rodÃ­zios
     const igrejasParaBuscar = igreja_id ? [parseInt(igreja_id)] : igrejaIds;
     const rodizios = await rodizioRepository.buscarRodiziosCompletos(
       igrejasParaBuscar,
@@ -47,15 +58,15 @@ router.get('/', authenticate, tenantResolver, async (req, res) => {
   }
 });
 
-// Gerar rodízio (com verificação de acesso à igreja)
-// CORREÇÃO: Adicionar tenantResolver antes de checkIgrejaAccess para garantir que req.tenantId esteja disponível
+// Gerar rodÃ­zio (com verificaÃ§Ã£o de acesso Ã  igreja)
+// CORREÃ‡ÃƒO: Adicionar tenantResolver antes de checkIgrejaAccess para garantir que req.tenantId esteja disponÃ­vel
 router.post('/gerar', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
   try {
     const { periodo_meses, ciclo_inicial, data_inicial, organista_inicial } = req.body;
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
 
     if (!periodo_meses) {
-      return res.status(400).json({ error: 'periodo_meses é obrigatório' });
+      return res.status(400).json({ error: 'periodo_meses Ã© obrigatÃ³rio' });
     }
 
     // Aceitar 3, 6 ou 12 meses
@@ -63,7 +74,7 @@ router.post('/gerar', authenticate, tenantResolver, checkIgrejaAccess, async (re
       return res.status(400).json({ error: 'periodo_meses deve ser 3, 6 ou 12' });
     }
 
-    // ciclo_inicial é opcional, mas se fornecido deve ser válido
+    // ciclo_inicial Ã© opcional, mas se fornecido deve ser vÃ¡lido
     const cicloInicial = ciclo_inicial !== undefined && ciclo_inicial !== null && ciclo_inicial !== ''
       ? parseInt(ciclo_inicial)
       : null;
@@ -80,28 +91,28 @@ router.post('/gerar', authenticate, tenantResolver, checkIgrejaAccess, async (re
       await webhookService.enviarRodizio(rodizios);
     } catch (webhookError) {
       console.error('Erro ao enviar webhook:', webhookError);
-      // Não falha a requisição se o webhook falhar
+      // NÃ£o falha a requisiÃ§Ã£o se o webhook falhar
     }
 
     res.json({
-      message: `Rodízio gerado com sucesso para ${periodo_meses} meses`,
+      message: `RodÃ­zio gerado com sucesso para ${periodo_meses} meses`,
       rodizios: rodizios.length,
       dados: rodizios
     });
   } catch (error) {
-    console.error('Erro ao gerar rodízio:', error);
+    console.error('Erro ao gerar rodÃ­zio:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Gerar PDF do rodízio (com verificação de acesso)
-// CORREÇÃO: Adicionar tenantResolver antes de checkIgrejaAccess
+// Gerar PDF do rodÃ­zio (com verificaÃ§Ã£o de acesso)
+// CORREÃ‡ÃƒO: Adicionar tenantResolver antes de checkIgrejaAccess
 router.get('/pdf/:igreja_id', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
   try {
     const { periodo_inicio, periodo_fim } = req.query;
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
 
-    // Usar repository para buscar rodízios
+    // Usar repository para buscar rodÃ­zios
     const rows = await rodizioRepository.buscarRodiziosCompletos(
       igreja_id,
       periodo_inicio || null,
@@ -110,7 +121,7 @@ router.get('/pdf/:igreja_id', authenticate, tenantResolver, checkIgrejaAccess, a
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: 'Nenhum rodízio encontrado para o período selecionado' });
+      return res.status(404).json({ error: 'Nenhum rodÃ­zio encontrado para o perÃ­odo selecionado' });
     }
 
     try {
@@ -129,56 +140,90 @@ router.get('/pdf/:igreja_id', authenticate, tenantResolver, checkIgrejaAccess, a
   }
 });
 
-// Atualizar rodízio (com verificação de acesso)
+// Atualizar rodÃ­zio (com verificaÃ§Ã£o de acesso)
+// Ajustar horário em massa (com verificação de acesso à igreja)
+router.post('/ajustar-horario', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
+  try {
+    const igreja_id = req.igrejaId;
+    const { hora_de, hora_para, periodo_inicio, periodo_fim } = req.body || {};
+
+    const horaDeNormalizada = normalizarHoraParaHHMMSS(hora_de);
+    const horaParaNormalizada = normalizarHoraParaHHMMSS(hora_para);
+
+    if (!horaDeNormalizada || !horaParaNormalizada) {
+      return res.status(400).json({ error: 'hora_de e hora_para devem estar no formato HH:MM' });
+    }
+
+    if (horaDeNormalizada === horaParaNormalizada) {
+      return res.status(400).json({ error: 'hora_de e hora_para não podem ser iguais' });
+    }
+
+    const atualizados = await rodizioRepository.atualizarHorarioEmMassa(
+      igreja_id,
+      horaDeNormalizada.slice(0, 5),
+      horaParaNormalizada,
+      periodo_inicio || null,
+      periodo_fim || null
+    );
+
+    return res.json({
+      message: `Horário atualizado com sucesso em ${atualizados} rodízio(s).`,
+      atualizados
+    });
+  } catch (error) {
+    console.error('Erro ao ajustar horário em massa:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
 router.put('/:id', authenticate, checkRodizioAccess, async (req, res) => {
   try {
     const { organista_id } = req.body;
     const pool = db.getDb();
 
     if (!organista_id) {
-      return res.status(400).json({ error: 'organista_id é obrigatório' });
+      return res.status(400).json({ error: 'organista_id Ã© obrigatÃ³rio' });
     }
 
-    // Verificar se a organista existe e está ativa
+    // Verificar se a organista existe e estÃ¡ ativa
     const [organistas] = await pool.execute('SELECT id, ativa FROM organistas WHERE id = ?', [organista_id]);
     if (organistas.length === 0) {
-      return res.status(404).json({ error: 'Organista não encontrada' });
+      return res.status(404).json({ error: 'Organista nÃ£o encontrada' });
     }
     if (!organistas[0].ativa) {
-      return res.status(400).json({ error: 'Organista não está ativa' });
+      return res.status(400).json({ error: 'Organista nÃ£o estÃ¡ ativa' });
     }
 
-    // Atualizar rodízio usando repository
+    // Atualizar rodÃ­zio usando repository
     const atualizado = await rodizioRepository.atualizarRodizio(req.rodizioId, { organista_id });
 
     if (!atualizado) {
-      return res.status(404).json({ error: 'Rodízio não encontrado' });
+      return res.status(404).json({ error: 'RodÃ­zio nÃ£o encontrado' });
     }
 
-    res.json({ message: 'Rodízio atualizado com sucesso' });
+    res.json({ message: 'RodÃ­zio atualizado com sucesso' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Deletar rodízio (com verificação de acesso)
+// Deletar rodÃ­zio (com verificaÃ§Ã£o de acesso)
 router.delete('/:id', authenticate, checkRodizioAccess, async (req, res) => {
   try {
     // Usar repository para deletar
     const deletado = await rodizioRepository.deletarRodizio(req.rodizioId);
 
     if (!deletado) {
-      return res.status(404).json({ error: 'Rodízio não encontrado' });
+      return res.status(404).json({ error: 'RodÃ­zio nÃ£o encontrado' });
     }
 
-    res.json({ message: 'Rodízio deletado com sucesso' });
+    res.json({ message: 'RodÃ­zio deletado com sucesso' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Deletar rodízios de uma igreja (com verificação de acesso)
-// CORREÇÃO: Adicionar tenantResolver antes de checkIgrejaAccess
+// Deletar rodÃ­zios de uma igreja (com verificaÃ§Ã£o de acesso)
+// CORREÃ‡ÃƒO: Adicionar tenantResolver antes de checkIgrejaAccess
 router.delete('/igreja/:igreja_id', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
   try {
     const { periodo_inicio, periodo_fim, a_partir_de } = req.query;
@@ -189,25 +234,25 @@ router.delete('/igreja/:igreja_id', authenticate, tenantResolver, checkIgrejaAcc
       igreja_id,
       periodo_inicio || null,
       periodo_fim || null,
-      a_partir_de || null // Novo parâmetro para deletar do futuro
+      a_partir_de || null // Novo parÃ¢metro para deletar do futuro
     );
 
-    res.json({ message: `${deletados} rodízio(s) deletado(s) com sucesso` });
+    res.json({ message: `${deletados} rodÃ­zio(s) deletado(s) com sucesso` });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Refazer rodízio (Smart Regenerate)
+// Refazer rodÃ­zio (Smart Regenerate)
 router.post('/refazer', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
   try {
     const { igreja_id, periodo_meses, ciclo_inicial, data_inicial, organista_inicial } = req.body;
 
-    // 1. Limpar rodízios FUTUROS (da data inicial em diante)
+    // 1. Limpar rodÃ­zios FUTUROS (da data inicial em diante)
     if (data_inicial) {
       await rodizioRepository.deletarRodizios(igreja_id, null, null, data_inicial);
     } else {
-      // Se não tem data, limpa tudo (comportamento padrão)
+      // Se nÃ£o tem data, limpa tudo (comportamento padrÃ£o)
       await rodizioRepository.deletarRodizios(igreja_id);
     }
 
@@ -221,32 +266,32 @@ router.post('/refazer', authenticate, tenantResolver, checkIgrejaAccess, async (
     );
 
     res.json({
-      message: `Rodízio refeito com sucesso a partir de ${data_inicial || 'hoje'}`,
+      message: `RodÃ­zio refeito com sucesso a partir de ${data_inicial || 'hoje'}`,
       rodizios: rodizios.length,
       dados: rodizios
     });
 
   } catch (error) {
-    console.error('Erro ao refazer rodízio:', error);
+    console.error('Erro ao refazer rodÃ­zio:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Testar webhook (simula envio de notificação)
+// Testar webhook (simula envio de notificaÃ§Ã£o)
 router.post('/testar-webhook', authenticate, async (req, res) => {
   try {
     const hoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-    // Obter todas as igrejas do usuário
+    // Obter todas as igrejas do usuÃ¡rio
     const tenantId = getTenantId(req);
     const igrejas = await getUserIgrejas(req.user.id, req.user.role === 'admin', tenantId);
     const igrejaIds = igrejas.map(i => i.id);
 
     if (igrejaIds.length === 0) {
-      return res.status(404).json({ error: 'Nenhuma igreja associada ao usuário' });
+      return res.status(404).json({ error: 'Nenhuma igreja associada ao usuÃ¡rio' });
     }
 
-    // Buscar a próxima data de culto com rodízio (hoje ou futura)
+    // Buscar a prÃ³xima data de culto com rodÃ­zio (hoje ou futura)
     const proximos = await rodizioRepository.buscarRodiziosCompletos(
       igrejaIds,
       hoje,
@@ -255,22 +300,22 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
     );
 
     if (proximos.length === 0) {
-      return res.status(404).json({ error: 'Nenhum rodízio encontrado para teste. Gere um rodízio primeiro.' });
+      return res.status(404).json({ error: 'Nenhum rodÃ­zio encontrado para teste. Gere um rodÃ­zio primeiro.' });
     }
 
     const rodizioBase = proximos[0];
 
-    // Buscar TODOS os rodízios da mesma igreja e mesma data (meia_hora + tocar_culto)
+    // Buscar TODOS os rodÃ­zios da mesma igreja e mesma data (meia_hora + tocar_culto)
     const rodiziosDoDia = await rodizioRepository.buscarRodiziosDoDia(
       rodizioBase.data_culto,
       rodizioBase.igreja_id
     );
 
     if (rodiziosDoDia.length === 0) {
-      return res.status(404).json({ error: 'Nenhum rodízio encontrado para a data/igreja do teste.' });
+      return res.status(404).json({ error: 'Nenhum rodÃ­zio encontrado para a data/igreja do teste.' });
     }
 
-    // Simular envio de notificação (que chama o webhook)
+    // Simular envio de notificaÃ§Ã£o (que chama o webhook)
     try {
       // 1) Enviar webhook para cada organista (meia_hora e tocar_culto) - paralelizado
       const notificacoesPromises = rodiziosDoDia.map(async (r) => {
@@ -286,7 +331,7 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
             sucesso: true
           };
         } catch (error) {
-          console.error(`Erro ao enviar notificação para ${r.organista_nome}:`, error.message);
+          console.error(`Erro ao enviar notificaÃ§Ã£o para ${r.organista_nome}:`, error.message);
           return {
             organista: r.organista_nome,
             data: r.data_culto,
@@ -323,10 +368,10 @@ router.post('/testar-webhook', authenticate, async (req, res) => {
   }
 });
 
-// Importar rodízio via CSV (com verificação de acesso à igreja)
+// Importar rodÃ­zio via CSV (com verificaÃ§Ã£o de acesso Ã  igreja)
 router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async (req, res) => {
   try {
-    logger.info('[ROUTE] Iniciando importação de rodízio via CSV', {
+    logger.info('[ROUTE] Iniciando importaÃ§Ã£o de rodÃ­zio via CSV', {
       userId: req.user?.id,
       igrejaId: req.igrejaId
     });
@@ -335,18 +380,18 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
     const igreja_id = req.igrejaId; // Vem do middleware checkIgrejaAccess
 
     if (!csv_content) {
-      logger.warn('[ROUTE] Tentativa de importação sem conteúdo CSV');
-      return res.status(400).json({ error: 'Conteúdo do CSV é obrigatório' });
+      logger.warn('[ROUTE] Tentativa de importaÃ§Ã£o sem conteÃºdo CSV');
+      return res.status(400).json({ error: 'ConteÃºdo do CSV Ã© obrigatÃ³rio' });
     }
 
     if (typeof csv_content !== 'string') {
-      logger.warn('[ROUTE] Conteúdo CSV não é string', { type: typeof csv_content });
-      return res.status(400).json({ error: 'Conteúdo do CSV deve ser uma string' });
+      logger.warn('[ROUTE] ConteÃºdo CSV nÃ£o Ã© string', { type: typeof csv_content });
+      return res.status(400).json({ error: 'ConteÃºdo do CSV deve ser uma string' });
     }
 
     if (csv_content.trim().length === 0) {
-      logger.warn('[ROUTE] Conteúdo CSV está vazio');
-      return res.status(400).json({ error: 'Conteúdo do CSV está vazio' });
+      logger.warn('[ROUTE] ConteÃºdo CSV estÃ¡ vazio');
+      return res.status(400).json({ error: 'ConteÃºdo do CSV estÃ¡ vazio' });
     }
 
     logger.info('[ROUTE] Processando CSV', { tamanho: csv_content.length });
@@ -357,7 +402,7 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
       csv_content
     );
 
-    logger.info('[ROUTE] Resultado da importação:', {
+    logger.info('[ROUTE] Resultado da importaÃ§Ã£o:', {
       sucesso: resultado.sucesso,
       rodiziosInseridos: resultado.rodiziosInseridos,
       totalLinhas: resultado.totalLinhas,
@@ -366,14 +411,14 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
     });
 
     if (!resultado.sucesso) {
-      logger.warn('[ROUTE] Importação falhou com erros de validação', {
+      logger.warn('[ROUTE] ImportaÃ§Ã£o falhou com erros de validaÃ§Ã£o', {
         igrejaId: igreja_id,
         totalErros: resultado.erros?.length,
         primeirosErros: resultado.erros?.slice(0, 5)
       });
       return res.status(400).json({
         sucesso: false,
-        error: 'Erros na importação',
+        error: 'Erros na importaÃ§Ã£o',
         erros: resultado.erros,
         details: resultado.erros // Adicionado para compatibilidade
       });
@@ -381,22 +426,22 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
 
     res.json({
       sucesso: true,
-      message: `Importação concluída com sucesso! ${resultado.rodiziosInseridos} rodízio(s) inserido(s).`,
+      message: `ImportaÃ§Ã£o concluÃ­da com sucesso! ${resultado.rodiziosInseridos} rodÃ­zio(s) inserido(s).`,
       rodiziosInseridos: resultado.rodiziosInseridos,
       totalLinhas: resultado.totalLinhas,
       duplicados: resultado.duplicados.length > 0 ? resultado.duplicados : undefined
     });
   } catch (error) {
-    console.error('Erro ao importar rodízio:', error);
-    // CORREÇÃO: Tratamento robusto de erros - nunca retornar 500 sem mensagem clara
-    const errorMessage = error.message || 'Erro desconhecido ao importar rodízio';
-    logger.error('Erro na importação de rodízio:', {
+    console.error('Erro ao importar rodÃ­zio:', error);
+    // CORREÃ‡ÃƒO: Tratamento robusto de erros - nunca retornar 500 sem mensagem clara
+    const errorMessage = error.message || 'Erro desconhecido ao importar rodÃ­zio';
+    logger.error('Erro na importaÃ§Ã£o de rodÃ­zio:', {
       userId: req.user?.id,
       igrejaId: req.igrejaId ?? req.body?.igreja_id ?? null,
       error: errorMessage,
       stack: error.stack
     });
-    // CORREÇÃO: Retornar erro claro ao frontend (sem falha silenciosa)
+    // CORREÃ‡ÃƒO: Retornar erro claro ao frontend (sem falha silenciosa)
     res.status(400).json({
       sucesso: false,
       error: errorMessage,
@@ -406,3 +451,5 @@ router.post('/importar', authenticate, tenantResolver, checkIgrejaAccess, async 
 });
 
 module.exports = router;
+
+

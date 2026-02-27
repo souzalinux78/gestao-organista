@@ -154,7 +154,7 @@ export function validateForm(formData, schema) {
   };
 }
 
-export default {
+const formValidationUtils = {
   validateEmail,
   validatePhone,
   validateRequired,
@@ -165,3 +165,5 @@ export default {
   validateField,
   validateForm
 };
+
+export default formValidationUtils;

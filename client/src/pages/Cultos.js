@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { getCultos, createCulto, updateCulto, deleteCulto, getCultosIgreja } from '../services/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getCultos, createCulto, updateCulto, deleteCulto } from '../services/api';
 import { getIgrejas } from '../services/api';
 import Modal from '../components/Modal';
 
@@ -20,10 +20,35 @@ function Cultos({ user }) {
   });
   const [alert, setAlert] = useState(null);
 
+  const showAlert = useCallback((message, type = 'success') => {
+    setAlert({ message, type });
+    setTimeout(() => setAlert(null), 5000);
+  }, []);
+
+  const loadCultos = useCallback(async () => {
+    try {
+      const response = await getCultos();
+      setCultos(response.data);
+    } catch (error) {
+      showAlert('Erro ao carregar cultos', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [showAlert]);
+
+  const loadIgrejas = useCallback(async () => {
+    try {
+      const response = await getIgrejas();
+      setIgrejas(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar igrejas:', error);
+    }
+  }, []);
+
   useEffect(() => {
     loadCultos();
     loadIgrejas();
-  }, []);
+  }, [loadCultos, loadIgrejas]);
 
   useEffect(() => {
     // Se usuário comum tem apenas 1 igreja, selecionar automaticamente
@@ -44,32 +69,7 @@ function Cultos({ user }) {
         return prev;
       });
     }
-  }, [showForm, editing, user, igrejas.length]);
-
-  const loadCultos = async () => {
-    try {
-      const response = await getCultos();
-      setCultos(response.data);
-    } catch (error) {
-      showAlert('Erro ao carregar cultos', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadIgrejas = async () => {
-    try {
-      const response = await getIgrejas();
-      setIgrejas(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar igrejas:', error);
-    }
-  };
-
-  const showAlert = (message, type = 'success') => {
-    setAlert({ message, type });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  }, [showForm, editing, user, igrejas]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

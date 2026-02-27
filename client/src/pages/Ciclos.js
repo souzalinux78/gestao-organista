@@ -116,13 +116,15 @@ export default function Ciclos() {
   const getToken = () => localStorage.getItem('token');
   const api = axios.create({ baseURL: '/api', headers: { 'Authorization': `Bearer ${getToken()}` } });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { carregarIgrejas(); }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (igrejaSelecionada) {
       carregarDados();
     }
-  }, [igrejaSelecionada]);
+  }, [igrejaSelecionada]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const carregarIgrejas = async () => {
     try {

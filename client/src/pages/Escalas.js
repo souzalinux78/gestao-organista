@@ -218,7 +218,6 @@ function Escalas({ user }) {
     }
   };
 
-  const itensParaTabela = detalheEscala?.itens ?? previaItens;
   const formatarDataBr = (s) => {
     if (!s) return '-';
     const [y, m, d] = s.split(/[-T]/);

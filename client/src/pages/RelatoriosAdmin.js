@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getIgrejas, getRodizioPDF } from '../services/api';
 
-function RelatoriosAdmin({ user }) {
+function RelatoriosAdmin() {
   const navigate = useNavigate();
   const [igrejas, setIgrejas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,11 +13,12 @@ function RelatoriosAdmin({ user }) {
   });
   const [alert, setAlert] = useState(null);
 
-  useEffect(() => {
-    loadIgrejas();
+  const showAlert = useCallback((message, type = 'success') => {
+    setAlert({ message, type });
+    setTimeout(() => setAlert(null), 5000);
   }, []);
 
-  const loadIgrejas = async () => {
+  const loadIgrejas = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getIgrejas();
@@ -34,12 +35,11 @@ function RelatoriosAdmin({ user }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, showAlert]);
 
-  const showAlert = (message, type = 'success') => {
-    setAlert({ message, type });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    loadIgrejas();
+  }, [loadIgrejas]);
 
   const handleGerarPDF = async (igrejaId) => {
     if (!igrejaId) {

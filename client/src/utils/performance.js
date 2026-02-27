@@ -172,7 +172,7 @@ function logMetrics() {
   console.groupEnd();
 }
 
-export default {
+const performanceUtils = {
   measurePageLoad,
   measureRender,
   measureAsync,
@@ -180,3 +180,5 @@ export default {
   getMemoryInfo,
   logInitialPerformance
 };
+
+export default performanceUtils;

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getIgrejas, getRodizioPDF } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
-function Relatorios({ user }) {
+function Relatorios() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const [igrejas, setIgrejas] = useState([]);
@@ -15,11 +15,12 @@ function Relatorios({ user }) {
   });
   const [alert, setAlert] = useState(null);
 
-  useEffect(() => {
-    loadIgrejas();
+  const showAlert = useCallback((message, type = 'success') => {
+    setAlert({ message, type });
+    setTimeout(() => setAlert(null), 5000);
   }, []);
 
-  const loadIgrejas = async () => {
+  const loadIgrejas = useCallback(async () => {
     try {
       setLoading(true);
       // Buscar apenas igrejas do usuário (encarregado, examinadora ou instrutoras)
@@ -41,12 +42,11 @@ function Relatorios({ user }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, showAlert]);
 
-  const showAlert = (message, type = 'success') => {
-    setAlert({ message, type });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    loadIgrejas();
+  }, [loadIgrejas]);
 
   const handleGerarPDF = async (igrejaId) => {
     if (!igrejaId) {

@@ -109,10 +109,12 @@ export function getTokenInfo(token) {
   };
 }
 
-export default {
+const jwtUtils = {
   decodeJWT,
   isTokenExpired,
   isTokenValid,
   getTokenTimeRemaining,
   getTokenInfo
 };
+
+export default jwtUtils;

@@ -243,12 +243,47 @@ async function deletarRodizio(rodizioId) {
   return result.affectedRows > 0;
 }
 
+/**
+ * Atualiza horário de rodízios em massa por igreja/período
+ * @param {number} igrejaId
+ * @param {string} horaDeHHMM - Hora origem em HH:MM
+ * @param {string} horaParaHHMMSS - Hora destino em HH:MM:SS
+ * @param {string|null} periodoInicio - YYYY-MM-DD
+ * @param {string|null} periodoFim - YYYY-MM-DD
+ * @returns {Promise<number>} Quantidade de linhas atualizadas
+ */
+async function atualizarHorarioEmMassa(igrejaId, horaDeHHMM, horaParaHHMMSS, periodoInicio = null, periodoFim = null) {
+  const pool = db.getDb();
+
+  let query = `
+    UPDATE rodizios
+       SET hora_culto = ?
+     WHERE igreja_id = ?
+       AND TIME_FORMAT(hora_culto, '%H:%i') = ?
+  `;
+  const params = [horaParaHHMMSS, igrejaId, horaDeHHMM];
+
+  if (periodoInicio) {
+    query += ' AND data_culto >= ?';
+    params.push(periodoInicio);
+  }
+
+  if (periodoFim) {
+    query += ' AND data_culto <= ?';
+    params.push(periodoFim);
+  }
+
+  const [result] = await pool.execute(query, params);
+  return result.affectedRows || 0;
+}
+
 module.exports = {
   buscarRodiziosCompletos,
   buscarRodiziosDoDia,
   existeRodizio,
   inserirRodizios,
   atualizarRodizio,
+  atualizarHorarioEmMassa,
   deletarRodizios,
   deletarRodizio,
   RODIZIO_BASE_QUERY

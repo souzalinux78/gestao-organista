@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { getConfiguracoes, getConfiguracao, salvarConfiguracao, deletarConfiguracao } from '../services/api';
+import { getConfiguracao, salvarConfiguracao } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import useToast from '../hooks/useToast';
 import Toast from '../components/Toast';
@@ -14,11 +14,7 @@ function Configuracoes() {
   const [saving, setSaving] = useState(false);
   const { toast, showSuccess, showError, hideToast } = useToast();
 
-  useEffect(() => {
-    loadConfiguracoes();
-  }, []);
-
-  const loadConfiguracoes = async () => {
+  const loadConfiguracoes = useCallback(async () => {
     try {
       setLoading(true);
       // Buscar diretamente a configuração do webhook (mais confiável do que listar tudo)
@@ -41,7 +37,11 @@ function Configuracoes() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    loadConfiguracoes();
+  }, [loadConfiguracoes]);
 
   const handleSalvarWebhook = async (e) => {
     e.preventDefault();

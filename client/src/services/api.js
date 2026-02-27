@@ -195,6 +195,7 @@ export const gerarRodizio = (igrejaId, periodoMeses, cicloInicial = null, dataIn
     organista_inicial: organistaInicial
   });
 export const refazerRodizio = (payload) => api.post('/rodizios/refazer', payload);
+export const ajustarHorarioRodizios = (payload) => api.post('/rodizios/ajustar-horario', payload);
 export const importarRodizio = (igrejaId, csvContent) => {
   console.log('[API] Enviando importação de rodízio:', { igrejaId, csvContentLength: csvContent?.length });
   return api.post('/rodizios/importar', {

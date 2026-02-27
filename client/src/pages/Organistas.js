@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getOrganistas, createOrganista, updateOrganista, deleteOrganista, getIgrejas, getOrganistasIgreja } from '../services/api';
-import LoadingSpinner from '../components/LoadingSpinner';
 import Toast from '../components/Toast';
 import useToast from '../hooks/useToast';
 import { getErrorMessage } from '../utils/errorMessages';
@@ -28,13 +27,15 @@ function Organistas({ user }) {
   });
   const { toast, showSuccess, showError, hideToast } = useToast();
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadOrganistas();
     if (user?.role === 'admin') {
       loadIgrejas();
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Só aplicar filtro se já tiver carregado as organistas inicialmente
     if (organistas.length > 0 || filtroIgreja) {
@@ -44,9 +45,9 @@ function Organistas({ user }) {
         setOrganistasFiltradas(organistas);
       }
     }
-  }, [filtroIgreja]);
+  }, [filtroIgreja]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadOrganistas = async () => {
+  const loadOrganistas = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getOrganistas();
@@ -60,9 +61,9 @@ function Organistas({ user }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
-  const loadOrganistasPorIgreja = async (igrejaId) => {
+  const loadOrganistasPorIgreja = useCallback(async (igrejaId) => {
     try {
       setLoading(true);
       const response = await getOrganistasIgreja(igrejaId);
@@ -73,16 +74,16 @@ function Organistas({ user }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
-  const loadIgrejas = async () => {
+  const loadIgrejas = useCallback(async () => {
     try {
       const response = await getIgrejas();
       setIgrejas(response.data);
     } catch (error) {
       console.error('[Organistas] Erro ao carregar igrejas:', error);
     }
-  };
+  }, []);
 
   // showAlert substituído por useToast
 

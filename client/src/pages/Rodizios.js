@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getRodizios, gerarRodizio, refazerRodizio, getRodizioPDF, limparRodiziosIgreja, testarWebhook, updateRodizio, importarRodizio } from '../services/api';
+import { getRodizios, gerarRodizio, refazerRodizio, getRodizioPDF, limparRodiziosIgreja, testarWebhook, updateRodizio, importarRodizio, ajustarHorarioRodizios } from '../services/api';
 import { getIgrejas, getCiclosIgreja, getOrganistasIgreja } from '../services/api';
 import { formatarDataBrasileira, parseDataBrasileira, aplicarMascaraData } from '../utils/dateHelpers';
 import { useAuth } from '../contexts/AuthContext';
 
 function Rodizios({ user }) {
-  const navigate = useNavigate();
 
   // CORREÇÃO: Hook chamado incondicionalmente (sempre executa)
   const { user: authUser } = useAuth();
@@ -36,15 +34,19 @@ function Rodizios({ user }) {
   const [ciclosIgreja, setCiclosIgreja] = useState([]);
   const [organistasIgreja, setOrganistasIgreja] = useState([]);
   const [alert, setAlert] = useState(null);
+  const [ajusteHorarioForm, setAjusteHorarioForm] = useState({ hora_de: '', hora_para: '' });
+  const [loadingAjusteHorario, setLoadingAjusteHorario] = useState(false);
+  const [ultimoAjusteHorario, setUltimoAjusteHorario] = useState(null);
 
   // Estados de Edição na Tabela
   const [editandoRodizio, setEditandoRodizio] = useState(null);
   const [organistaEditando, setOrganistaEditando] = useState('');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadIgrejas();
     loadRodizios();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (currentUser?.role !== 'admin' && igrejas.length === 1) {
@@ -53,6 +55,7 @@ function Rodizios({ user }) {
     }
   }, [igrejas, currentUser]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (gerarForm.igreja_id) {
       loadCiclosIgreja(gerarForm.igreja_id);
@@ -62,7 +65,7 @@ function Rodizios({ user }) {
       setOrganistasIgreja([]);
       setGerarForm(prev => ({ ...prev, ciclo_inicial: '', organista_inicial: '' }));
     }
-  }, [gerarForm.igreja_id]);
+  }, [gerarForm.igreja_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadCiclosIgreja = async (igrejaId) => {
     try {
@@ -117,9 +120,10 @@ function Rodizios({ user }) {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadRodizios();
-  }, [filtros.igreja_id, filtros.periodo_inicio, filtros.periodo_fim]);
+  }, [filtros.igreja_id, filtros.periodo_inicio, filtros.periodo_fim]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- FUNÇÕES DE EDIÇÃO ---
   const handleIniciarEdicao = async (rodizio) => {
@@ -390,6 +394,103 @@ function Rodizios({ user }) {
     }
   };
 
+  const horaValida = (hora) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(hora || '').trim());
+
+  const handleAjustarHorarioEmMassa = async () => {
+    if (!filtros.igreja_id) {
+      showAlert('Selecione uma igreja no filtro para ajustar horários em massa.', 'error');
+      return;
+    }
+
+    const horaDe = String(ajusteHorarioForm.hora_de || '').trim();
+    const horaPara = String(ajusteHorarioForm.hora_para || '').trim();
+
+    if (!horaValida(horaDe) || !horaValida(horaPara)) {
+      showAlert('Informe hora de origem e destino no formato HH:MM.', 'error');
+      return;
+    }
+
+    if (horaDe === horaPara) {
+      showAlert('A hora de origem e destino não podem ser iguais.', 'error');
+      return;
+    }
+
+    const periodoInicio = filtros.periodo_inicio || null;
+    const periodoFim = filtros.periodo_fim || null;
+    const recorte = periodoInicio || periodoFim
+      ? `Período: ${periodoInicio || 'início'} até ${periodoFim || 'fim'}`
+      : 'Período: todos os registros da igreja selecionada';
+
+    if (!window.confirm(`Alterar todos os horários ${horaDe} para ${horaPara}?\n${recorte}`)) return;
+
+    try {
+      setLoadingAjusteHorario(true);
+      const response = await ajustarHorarioRodizios({
+        igreja_id: parseInt(filtros.igreja_id),
+        hora_de: horaDe,
+        hora_para: horaPara,
+        periodo_inicio: periodoInicio,
+        periodo_fim: periodoFim
+      });
+
+      const atualizados = Number(response?.data?.atualizados || 0);
+      if (atualizados === 0) {
+        showAlert('Nenhum rodízio foi atualizado com esse filtro/horário.', 'warning');
+      } else {
+        showAlert(`Horário atualizado com sucesso em ${atualizados} rodízio(s).`);
+      }
+
+      setUltimoAjusteHorario({
+        igreja_id: filtros.igreja_id,
+        hora_de: horaDe,
+        hora_para: horaPara,
+        periodo_inicio: periodoInicio,
+        periodo_fim: periodoFim
+      });
+
+      await loadRodizios();
+    } catch (error) {
+      showAlert(error.response?.data?.error || 'Erro ao ajustar horário em massa', 'error');
+    } finally {
+      setLoadingAjusteHorario(false);
+    }
+  };
+
+  const handleDesfazerAjusteHorario = async () => {
+    if (!ultimoAjusteHorario) {
+      showAlert('Nenhum ajuste em massa recente para desfazer.', 'error');
+      return;
+    }
+
+    if (String(filtros.igreja_id || '') !== String(ultimoAjusteHorario.igreja_id || '')) {
+      showAlert('Selecione a mesma igreja do último ajuste para desfazer.', 'error');
+      return;
+    }
+
+    const { hora_de, hora_para, periodo_inicio, periodo_fim, igreja_id } = ultimoAjusteHorario;
+    if (!window.confirm(`Desfazer ajuste em massa?\nVoltar de ${hora_para} para ${hora_de}.`)) return;
+
+    try {
+      setLoadingAjusteHorario(true);
+      const response = await ajustarHorarioRodizios({
+        igreja_id: parseInt(igreja_id),
+        hora_de: hora_para,
+        hora_para: hora_de,
+        periodo_inicio,
+        periodo_fim
+      });
+
+      const atualizados = Number(response?.data?.atualizados || 0);
+      showAlert(`Desfeito com sucesso em ${atualizados} rodízio(s).`);
+      setUltimoAjusteHorario(null);
+      await loadRodizios();
+    } catch (error) {
+      showAlert(error.response?.data?.error || 'Erro ao desfazer ajuste em massa', 'error');
+    } finally {
+      setLoadingAjusteHorario(false);
+    }
+  };
+
   const formatarData = (d) => formatarDataBrasileira(d);
 
   if (loading) return <div className="loading">Carregando...</div>;
@@ -484,6 +585,43 @@ function Rodizios({ user }) {
           </select>
           <button className="btn btn-success" onClick={handleGerarPDF} disabled={!filtros.igreja_id}>Gerar PDF</button>
           <button className="btn btn-secondary" onClick={handleExportarCSV} disabled={rodizios.length === 0}>Baixar CSV (Backup)</button>
+        </div>
+
+        <div className="form-section" style={{ marginTop: '16px', borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+          <h3 style={{ marginTop: 0 }}>Ajuste rápido de horário (em massa)</h3>
+          <div className="btn-row btn-row--no-margin">
+            <input
+              type="time"
+              value={ajusteHorarioForm.hora_de}
+              onChange={(e) => setAjusteHorarioForm(prev => ({ ...prev, hora_de: e.target.value }))}
+              placeholder="De"
+              title="Hora de origem"
+            />
+            <input
+              type="time"
+              value={ajusteHorarioForm.hora_para}
+              onChange={(e) => setAjusteHorarioForm(prev => ({ ...prev, hora_para: e.target.value }))}
+              placeholder="Para"
+              title="Hora de destino"
+            />
+            <button
+              className="btn btn-primary"
+              onClick={handleAjustarHorarioEmMassa}
+              disabled={loadingAjusteHorario || !filtros.igreja_id}
+            >
+              {loadingAjusteHorario ? 'Aplicando...' : 'Aplicar em massa'}
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={handleDesfazerAjusteHorario}
+              disabled={loadingAjusteHorario || !ultimoAjusteHorario}
+            >
+              Desfazer último ajuste
+            </button>
+          </div>
+          <small className="form-hint">
+            Dica: selecione a igreja e, se necessário, período início/fim no filtro antes de aplicar.
+          </small>
         </div>
 
         {rodizios.length === 0 ? <div className="empty">Nenhum rodízio</div> : (

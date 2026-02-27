@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getIgrejas, createIgreja, updateIgreja, deleteIgreja, getOrganistasIgreja, addOrganistaIgreja, removeOrganistaIgreja } from '../services/api';
 import { getOrganistas } from '../services/api';
 import Modal from '../components/Modal';
@@ -23,12 +23,12 @@ function Igrejas({ user }) {
   const [allOrganistas, setAllOrganistas] = useState([]);
   const [showOrganistasModal, setShowOrganistasModal] = useState(false);
 
-  useEffect(() => {
-    loadIgrejas();
-    loadAllOrganistas();
+  const showAlert = useCallback((message, type = 'success') => {
+    setAlert({ message, type });
+    setTimeout(() => setAlert(null), 5000);
   }, []);
 
-  const loadIgrejas = async () => {
+  const loadIgrejas = useCallback(async () => {
     try {
       const response = await getIgrejas();
       setIgrejas(response.data);
@@ -37,9 +37,9 @@ function Igrejas({ user }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
 
-  const loadAllOrganistas = async () => {
+  const loadAllOrganistas = useCallback(async () => {
     try {
       const response = await getOrganistas();
       // CORREÇÃO: Remover filtro de oficializada - listar TODAS as organistas ativas
@@ -48,7 +48,12 @@ function Igrejas({ user }) {
     } catch (error) {
       console.error('Erro ao carregar organistas:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadIgrejas();
+    loadAllOrganistas();
+  }, [loadIgrejas, loadAllOrganistas]);
 
   const loadOrganistasIgreja = async (igrejaId) => {
     try {
@@ -64,11 +69,6 @@ function Igrejas({ user }) {
       console.error('[DEBUG] Erro ao carregar organistas:', error);
       showAlert('Erro ao carregar organistas da igreja: ' + (error.response?.data?.error || error.message), 'error');
     }
-  };
-
-  const showAlert = (message, type = 'success') => {
-    setAlert({ message, type });
-    setTimeout(() => setAlert(null), 5000);
   };
 
   const handleSubmit = async (e) => {
@@ -536,3 +536,4 @@ function Igrejas({ user }) {
 }
 
 export default Igrejas;
+

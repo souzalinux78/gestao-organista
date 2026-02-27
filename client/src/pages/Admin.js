@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario, aprovarUsuario, rejeitarUsuario } from '../services/api';
 import { getIgrejas } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -25,11 +25,12 @@ function Admin() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [alert, setAlert] = useState(null);
 
-  useEffect(() => {
-    loadData();
+  const showAlert = useCallback((message, type = 'success') => {
+    setAlert({ message, type });
+    setTimeout(() => setAlert(null), 5000);
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [usuariosRes, igrejasRes] = await Promise.all([
         getUsuarios(),
@@ -42,12 +43,11 @@ function Admin() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
 
-  const showAlert = (message, type = 'success') => {
-    setAlert({ message, type });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
